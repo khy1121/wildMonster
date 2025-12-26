@@ -35,7 +35,8 @@ export function calculateStats(base: Stats, level: number, unlockedNodes: string
   return stats;
 }
 
-export function validateSpawn(species: MonsterSpecies, state: GameState): boolean {
+export function validateSpawn(species: MonsterSpecies | undefined, state: GameState): boolean {
+  if (!species) return false;
   if (!species.spawnConditions) return true;
 
   return species.spawnConditions.every(cond => {
@@ -179,6 +180,7 @@ export function addExpToTamer(tamer: Tamer, amount: number): { tamer: Tamer; lev
 
 export function calculateCaptureChance(speciesId: string, currentHp: number, maxHp: number): number {
   const species = MONSTER_DATA[speciesId];
+  if (!species) return 0;
   const rarityMultipliers: Record<Rarity, number> = { 'Common': 1.0, 'Uncommon': 0.6, 'Rare': 0.3, 'Legendary': 0.1 };
   const hpFactor = 1 - (currentHp / maxHp);
   const rarityFactor = rarityMultipliers[species.rarity] || 0.5;
@@ -188,6 +190,7 @@ export function calculateCaptureChance(speciesId: string, currentHp: number, max
 
 export function rollLoot(speciesId: string, rng: RNG): BattleRewards {
   const species = MONSTER_DATA[speciesId];
+  if (!species) return { exp: 25, gold: 10, items: [] };
   const rewards: BattleRewards = { exp: species.isSpecial ? 75 : 25, gold: rng.range(5, 15), items: [] };
   if (species.lootTable) {
     for (const entry of species.lootTable) {

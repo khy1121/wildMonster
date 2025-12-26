@@ -1,11 +1,12 @@
 
-import { MonsterSpecies, ElementType } from '../domain/types';
+import { MonsterSpecies, ElementType, FactionType } from '../domain/types';
 
 export const MONSTER_DATA: Record<string, MonsterSpecies> = {
   'pyrocat': {
     id: 'pyrocat',
     name: 'Pyrocat',
     type: ElementType.FIRE,
+    faction: FactionType.EMBER_CLAN,
     icon: '🔥',
     rarity: 'Common',
     baseStats: { hp: 50, maxHp: 50, attack: 12, defense: 8, speed: 10 },
@@ -34,6 +35,7 @@ export const MONSTER_DATA: Record<string, MonsterSpecies> = {
     id: 'lunacat',
     name: 'Lunacat',
     type: ElementType.DARK,
+    faction: FactionType.GLOOM_STALKERS,
     icon: '🐈',
     rarity: 'Rare',
     isSpecial: true,
@@ -49,12 +51,13 @@ export const MONSTER_DATA: Record<string, MonsterSpecies> = {
     id: 'thunderhoof',
     name: 'Thunderhoof',
     type: ElementType.ELECTRIC,
+    faction: FactionType.STORM_HERDERS,
     icon: '🦌',
     rarity: 'Legendary',
     isSpecial: true,
     auraColor: 0xfacc15,
     baseStats: { hp: 150, maxHp: 150, attack: 35, defense: 20, speed: 30 },
-    learnableSkills: ['scratch', 'ember'], // Placeholder for electric skills later
+    learnableSkills: ['scratch', 'ember'], 
     spawnConditions: [
       { type: 'LEVEL_MIN', value: 10 }
     ],
@@ -64,6 +67,7 @@ export const MONSTER_DATA: Record<string, MonsterSpecies> = {
     id: 'flarelion',
     name: 'Flarelion',
     type: ElementType.FIRE,
+    faction: FactionType.EMBER_CLAN,
     icon: '🦁',
     rarity: 'Uncommon',
     baseStats: { hp: 100, maxHp: 100, attack: 28, defense: 15, speed: 18 },
@@ -74,6 +78,7 @@ export const MONSTER_DATA: Record<string, MonsterSpecies> = {
     id: 'shadowcat',
     name: 'Shadowcat',
     type: ElementType.DARK,
+    faction: FactionType.GLOOM_STALKERS,
     icon: '🐈‍⬛',
     rarity: 'Uncommon',
     baseStats: { hp: 80, maxHp: 80, attack: 22, defense: 12, speed: 30 },
@@ -84,6 +89,7 @@ export const MONSTER_DATA: Record<string, MonsterSpecies> = {
     id: 'droplet',
     name: 'Droplet',
     type: ElementType.WATER,
+    faction: FactionType.TIDE_WATCHERS,
     icon: '💧',
     rarity: 'Common',
     baseStats: { hp: 60, maxHp: 60, attack: 8, defense: 12, speed: 8 },
@@ -103,6 +109,7 @@ export const MONSTER_DATA: Record<string, MonsterSpecies> = {
     id: 'mistlynx',
     name: 'Mistlynx',
     type: ElementType.WATER,
+    faction: FactionType.TIDE_WATCHERS,
     icon: '🐆',
     rarity: 'Uncommon',
     baseStats: { hp: 95, maxHp: 95, attack: 24, defense: 18, speed: 22 },

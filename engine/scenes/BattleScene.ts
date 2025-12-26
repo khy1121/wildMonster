@@ -6,10 +6,12 @@ import { MONSTER_DATA } from '../../data/monsters';
 import { SKILL_DATA, SKILL_TREES } from '../../data/skills';
 import { SUPPORT_SKILLS } from '../../data/tamer';
 import { CombatEntity, calculateDamage, updateCooldowns } from '../../domain/combat';
+import { getTranslation } from '../../localization/strings';
 
 export interface BattleInitData {
   enemyId: string;
   enemyLevel: number;
+  isBoss?: boolean;
 }
 
 export class BattleScene extends Phaser.Scene {
@@ -21,6 +23,7 @@ export class BattleScene extends Phaser.Scene {
 
   private playerEntity!: CombatEntity;
   private enemyEntity!: CombatEntity;
+  private enemySpeciesId!: string;
   
   private playerHpBar!: Phaser.GameObjects.Rectangle;
   private enemyHpBar!: Phaser.GameObjects.Rectangle;
@@ -29,6 +32,7 @@ export class BattleScene extends Phaser.Scene {
   private tamerButtons: Phaser.GameObjects.Container[] = [];
   private captureButton!: Phaser.GameObjects.Container;
   private battleEnded = false;
+  private isBossBattle = false;
 
   private tamerCooldowns: Record<string, number> = {};
 
@@ -37,25 +41,25 @@ export class BattleScene extends Phaser.Scene {
   }
 
   create(data: BattleInitData) {
-    const { enemyId = 'droplet', enemyLevel = 5 } = data;
+    const { enemyId = 'droplet', enemyLevel = 5, isBoss = false } = data;
+    this.enemySpeciesId = enemyId;
+    this.isBossBattle = isBoss;
     const { width, height } = this.cameras.main;
     this.battleEnded = false;
     this.tamerCooldowns = {};
     
-    // Crucial: Clear button arrays on every scene start to prevent stale references
     this.skillButtons = [];
     this.tamerButtons = [];
 
-    // Background
+    const state = gameStateManager.getState();
+    const t = getTranslation(state.language);
+
     this.add.rectangle(width / 2, height / 2, width, height, 0x0f172a, 0.95);
     this.add.circle(width / 2, height / 2, 250, 0x1e293b, 0.5).setStrokeStyle(2, 0x6366f1, 0.3);
 
-    const state = gameStateManager.getState();
     const activeMonster = state.tamer.party[0];
     
-    // Defensive check for missing monster
     if (!activeMonster) {
-        console.error("No active monster in party for battle");
         this.scene.stop();
         this.scene.resume('OverworldScene');
         return;
@@ -63,6 +67,12 @@ export class BattleScene extends Phaser.Scene {
 
     const playerSpecies = MONSTER_DATA[activeMonster.speciesId];
     const enemySpecies = MONSTER_DATA[enemyId];
+
+    if (!enemySpecies) {
+        this.scene.stop();
+        this.scene.resume('OverworldScene');
+        return;
+    }
 
     const activeSkills = [...(playerSpecies.learnableSkills || [])];
     const tree = SKILL_TREES[activeMonster.speciesId];
@@ -77,7 +87,7 @@ export class BattleScene extends Phaser.Scene {
 
     this.playerEntity = {
       uid: activeMonster.uid,
-      name: playerSpecies.name,
+      name: t.species[activeMonster.speciesId as keyof typeof t.species] || playerSpecies.name,
       level: activeMonster.level,
       hp: activeMonster.currentHp,
       maxHp: activeMonster.currentStats.maxHp,
@@ -87,10 +97,12 @@ export class BattleScene extends Phaser.Scene {
     };
 
     const enemyBaseStats = enemySpecies.baseStats;
-    const enemyGrowth = 1 + (enemyLevel - 1) * 0.15;
+    const bossMult = isBoss ? 2.0 : 1.0;
+    const enemyGrowth = (1 + (enemyLevel - 1) * 0.15) * bossMult;
+    
     this.enemyEntity = {
       uid: 'wild-enemy',
-      name: enemySpecies.name,
+      name: t.species[enemyId as keyof typeof t.species] || enemySpecies.name,
       level: enemyLevel,
       hp: Math.floor(enemyBaseStats.hp * enemyGrowth),
       maxHp: Math.floor(enemyBaseStats.maxHp * enemyGrowth),
@@ -111,16 +123,21 @@ export class BattleScene extends Phaser.Scene {
 
     this.enemyVisual = this.add.container(width * 0.75, height * 0.4);
     this.enemyVisual.add(this.add.text(0, 0, enemySpecies.icon, { fontSize: '100px' }).setOrigin(0.5));
-    this.enemyHpBar = this.createHpBar(this.enemyVisual, 0, 80, `Wild ${this.enemyEntity.name}`);
+    
+    if (isBoss) {
+        const bossAura = this.add.circle(0, 0, 60, 0xfacc15, 0.3);
+        this.enemyVisual.addAt(bossAura, 0);
+        this.tweens.add({ targets: bossAura, scale: 1.5, alpha: 0, duration: 800, loop: -1 });
+    }
 
-    // Command Bars
-    this.createMonsterSkillButtons(width / 2, height - 160);
-    this.createTamerCommandBar(width / 2, height - 80);
-    this.createCaptureButton(width / 2, height - 25);
+    this.enemyHpBar = this.createHpBar(this.enemyVisual, 0, 80, isBoss ? `BOSS ${this.enemyEntity.name}` : `Wild ${this.enemyEntity.name}`);
 
-    // AI Loop
+    this.createMonsterSkillButtons(width / 2, height - 160, t);
+    this.createTamerCommandBar(width / 2, height - 80, t);
+    this.createCaptureButton(width / 2, height - 25, t);
+
     this.time.addEvent({
-      delay: 2000,
+      delay: isBoss ? 1500 : 2000,
       callback: this.enemyAIAction,
       callbackScope: this,
       loop: true
@@ -129,14 +146,11 @@ export class BattleScene extends Phaser.Scene {
 
   update(time: number, delta: number) {
     if (this.battleEnded) return;
-    
-    // Ensure entities are initialized before processing
     if (!this.playerEntity || !this.enemyEntity) return;
 
     this.playerEntity = updateCooldowns(this.playerEntity, delta);
     this.enemyEntity = updateCooldowns(this.enemyEntity, delta);
     
-    // Update Tamer Cooldowns
     for (const key in this.tamerCooldowns) {
       this.tamerCooldowns[key] = Math.max(0, this.tamerCooldowns[key] - delta);
     }
@@ -152,7 +166,7 @@ export class BattleScene extends Phaser.Scene {
     return bar;
   }
 
-  createMonsterSkillButtons(centerX: number, y: number) {
+  createMonsterSkillButtons(centerX: number, y: number, t: any) {
     const skills = this.playerEntity.skills;
     const spacing = 140;
     const startX = centerX - ((skills.length - 1) * spacing) / 2;
@@ -163,7 +177,7 @@ export class BattleScene extends Phaser.Scene {
 
       const btn = this.add.container(startX + i * spacing, y);
       const bg = this.add.rectangle(0, 0, 130, 50, 0x4338ca, 1).setInteractive({ useHandCursor: true });
-      const label = this.add.text(0, -8, skill.name, { fontSize: '14px', fontStyle: 'bold' }).setOrigin(0.5);
+      const label = this.add.text(0, -8, t.skills[sId] || skill.name, { fontSize: '14px', fontStyle: 'bold' }).setOrigin(0.5);
       const cdText = this.add.text(0, 12, 'READY', { fontSize: '10px' }).setOrigin(0.5);
       
       btn.add([bg, label, cdText]);
@@ -172,13 +186,13 @@ export class BattleScene extends Phaser.Scene {
     });
   }
 
-  createTamerCommandBar(centerX: number, y: number) {
-    const tamer = gameStateManager.getState().tamer;
-    const skills = tamer.unlockedSupportSkills || [];
+  createTamerCommandBar(centerX: number, y: number, t: any) {
+    const state = gameStateManager.getState();
+    const skills = state.tamer.unlockedSupportSkills || [];
     const spacing = 120;
     const startX = centerX - ((skills.length - 1) * spacing) / 2;
 
-    this.add.text(centerX, y - 45, 'TAMER COMMANDS', { fontSize: '12px', fontStyle: 'bold', color: '#6366f1' }).setOrigin(0.5);
+    this.add.text(centerX, y - 45, t.ui.tamer_commands.toUpperCase(), { fontSize: '12px', fontStyle: 'bold', color: '#6366f1' }).setOrigin(0.5);
 
     skills.forEach((sId, i) => {
       const skill = SUPPORT_SKILLS[sId];
@@ -186,7 +200,7 @@ export class BattleScene extends Phaser.Scene {
 
       const btn = this.add.container(startX + i * spacing, y);
       const bg = this.add.rectangle(0, 0, 110, 40, 0x312e81, 1).setInteractive({ useHandCursor: true });
-      const label = this.add.text(0, 0, `${skill.icon} ${skill.name}`, { fontSize: '12px', fontStyle: 'bold' }).setOrigin(0.5);
+      const label = this.add.text(0, 0, `${skill.icon} ${t.skills[sId] || skill.name}`, { fontSize: '12px', fontStyle: 'bold' }).setOrigin(0.5);
       
       btn.add([bg, label]);
       bg.on('pointerdown', () => this.useTamerSkill(sId));
@@ -217,16 +231,17 @@ export class BattleScene extends Phaser.Scene {
     }
   }
 
-  createCaptureButton(centerX: number, y: number) {
+  createCaptureButton(centerX: number, y: number, t: any) {
     const state = gameStateManager.getState();
     const orb = state.tamer.inventory.find(i => i.itemId === 'capture_orb');
     const quantity = orb ? orb.quantity : 0;
     this.captureButton = this.add.container(centerX, y);
     const bg = this.add.rectangle(0, 0, 200, 30, 0x059669, 1).setInteractive({ useHandCursor: true });
-    const text = this.add.text(0, 0, `🧿 CAPTURE (x${quantity})`, { fontSize: '12px', fontStyle: 'bold' }).setOrigin(0.5);
+    const text = this.add.text(0, 0, `🧿 ${t.ui.capture} (x${quantity})`, { fontSize: '12px', fontStyle: 'bold' }).setOrigin(0.5);
     this.captureButton.add([bg, text]);
     bg.on('pointerdown', () => this.useCaptureOrb());
-    if (quantity <= 0) {
+    
+    if (quantity <= 0 || this.isBossBattle) {
       bg.setFillStyle(0x374151);
       this.captureButton.alpha = 0.5;
       bg.disableInteractive();
@@ -234,7 +249,6 @@ export class BattleScene extends Phaser.Scene {
   }
 
   updateUI() {
-    // Defensive check: Ensure bars exist before updating
     if (!this.playerHpBar || !this.enemyHpBar || !this.playerEntity || !this.enemyEntity) return;
 
     const pPct = Math.max(0, Math.min(1, this.playerEntity.hp / this.playerEntity.maxHp)) || 0;
@@ -286,14 +300,18 @@ export class BattleScene extends Phaser.Scene {
   }
 
   useCaptureOrb() {
-    if (this.battleEnded) return;
-    const success = gameStateManager.attemptCapture(this.enemyEntity.name.toLowerCase().replace("wild ", ""), this.enemyEntity.level, this.enemyEntity.hp, this.enemyEntity.maxHp);
+    if (this.battleEnded || this.isBossBattle) return;
+    const success = gameStateManager.attemptCapture(this.enemySpeciesId, this.enemyEntity.level, this.enemyEntity.hp, this.enemyEntity.maxHp);
     this.battleEnded = true;
+    
+    const state = gameStateManager.getState();
+    const t = getTranslation(state.language);
+
     this.tweens.add({
       targets: this.enemyVisual, scale: 0.1, alpha: 0, duration: 500, ease: 'Power2',
       onComplete: () => {
         const { width, height } = this.cameras.main;
-        const msg = success ? 'CAPTURED!' : 'ESCAPED!';
+        const msg = success ? t.ui.captured : t.ui.escaped;
         const color = success ? '#10b981' : '#f59e0b';
         this.add.text(width / 2, height / 2, msg, { fontSize: '64px', color, fontStyle: 'bold' }).setOrigin(0.5);
         this.time.delayedCall(1500, () => {
@@ -330,20 +348,22 @@ export class BattleScene extends Phaser.Scene {
     if (this.battleEnded) return;
     this.battleEnded = true;
     const { width, height } = this.cameras.main;
-    const msg = winner === 'PLAYER' ? 'VICTORY!' : 'DEFEATED';
+    
+    const state = gameStateManager.getState();
+    const t = getTranslation(state.language);
+
+    const msg = winner === 'PLAYER' ? t.ui.victory : t.ui.defeated;
     const color = winner === 'PLAYER' ? '#22c55e' : '#ef4444';
     this.add.text(width / 2, height / 2, msg, { fontSize: '80px', color, fontStyle: 'bold' }).setOrigin(0.5);
     
-    const state = gameStateManager.getState();
     if (state.tamer.party.length > 0 && this.playerEntity) {
-        // Find the matching monster in the real state
         const idx = state.tamer.party.findIndex(m => m.uid === this.playerEntity.uid);
         if (idx !== -1) state.tamer.party[idx].currentHp = this.playerEntity.hp;
     }
 
     this.time.delayedCall(2000, () => {
       if (winner === 'PLAYER' && this.enemyEntity) {
-        gameStateManager.grantRewards(this.enemyEntity.name.toLowerCase().replace("wild ", ""), this.enemyEntity.level);
+        gameStateManager.grantRewards(this.enemySpeciesId, this.enemyEntity.level, this.isBossBattle);
       }
       gameEvents.emitEvent({ type: 'BATTLE_END', winner });
       this.scene.stop();

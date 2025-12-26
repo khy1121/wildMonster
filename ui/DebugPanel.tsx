@@ -1,41 +1,64 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { MONSTER_DATA } from '../data/monsters';
+import { GameState } from '../domain/types';
+import { getTranslation } from '../localization/strings';
+import { Button } from './components/Button';
 
 interface DebugPanelProps {
+  state: GameState;
   onAddGold: (amt: number) => void;
   onAddMonster: (speciesId: string) => void;
   onClose: () => void;
 }
 
-const DebugPanel: React.FC<DebugPanelProps> = ({ onAddGold, onAddMonster, onClose }) => {
+export const DebugPanel: React.FC<DebugPanelProps> = ({ state, onAddGold, onAddMonster, onClose }) => {
+  const t = getTranslation(state.language);
+  const [collapsed, setCollapsed] = useState(false);
+
+  if (collapsed) {
+    return (
+      <Button 
+        variant="danger" 
+        size="sm" 
+        onClick={() => setCollapsed(false)}
+        className="fixed bottom-4 right-14 w-10 h-10 rounded-full z-[200] shadow-xl"
+        icon={<i className="fa-solid fa-terminal"></i>}
+      />
+    );
+  }
+
   return (
-    <div className="fixed top-4 right-4 bg-red-950/90 border border-red-500 p-6 rounded-2xl z-[200] w-64 shadow-2xl backdrop-blur-md">
-      <div className="flex justify-between items-center mb-6 border-b border-red-900 pb-2">
-        <h3 className="text-red-400 font-black italic uppercase text-sm">Dev Console</h3>
-        <button onClick={onClose} className="text-red-500 hover:text-white"><i className="fa-solid fa-xmark"></i></button>
+    <div className="fixed inset-y-0 right-0 md:inset-auto md:top-4 md:right-4 w-full md:w-64 bg-red-950/95 md:border md:border-red-500 md:rounded-2xl z-[200] shadow-2xl backdrop-blur-md flex flex-col md:max-h-[90vh] animate-in slide-in-from-right duration-300">
+      <div className="flex justify-between items-center p-4 md:p-6 border-b border-red-900 shrink-0">
+        <h3 className="text-red-400 font-black italic uppercase text-xs md:text-sm">{t.ui.dev_console}</h3>
+        <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={() => setCollapsed(true)} className="md:hidden" icon={<i className="fa-solid fa-minus"></i>} />
+            <Button variant="ghost" size="sm" onClick={onClose} icon={<i className="fa-solid fa-xmark text-xl"></i>} />
+        </div>
       </div>
 
-      <div className="space-y-6">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 custom-scrollbar">
         <div>
-          <p className="text-[10px] text-red-700 font-bold uppercase tracking-widest mb-2">Economy</p>
-          <button 
+          <p className="text-[10px] text-red-700 font-bold uppercase tracking-widest mb-3">Economy</p>
+          <Button 
+            variant="danger" 
+            size="full" 
             onClick={() => onAddGold(500)}
-            className="w-full py-2 bg-red-900 hover:bg-red-800 text-white text-[10px] font-bold rounded-lg transition"
           >
-            +500 Gold
-          </button>
+            +500 {t.ui.gold}
+          </Button>
         </div>
 
         <div>
-            <p className="text-[10px] text-red-700 font-bold uppercase tracking-widest mb-2">Spawn Species</p>
-            <div className="grid grid-cols-3 gap-2">
+            <p className="text-[10px] text-red-700 font-bold uppercase tracking-widest mb-3">Spawn Species</p>
+            <div className="grid grid-cols-4 md:grid-cols-3 gap-2">
                 {Object.values(MONSTER_DATA).map(m => (
                     <button 
                         key={m.id}
                         onClick={() => onAddMonster(m.id)}
-                        className="p-2 bg-slate-900 hover:bg-slate-800 border border-red-900 rounded-lg text-xl"
-                        title={m.name}
+                        className="p-2 bg-slate-900 hover:bg-slate-800 border border-red-900 rounded-lg text-2xl min-h-[50px] flex items-center justify-center transition active:scale-90"
+                        title={t.species[m.id as keyof typeof t.species] || m.name}
                     >
                         {m.icon}
                     </button>
@@ -43,12 +66,16 @@ const DebugPanel: React.FC<DebugPanelProps> = ({ onAddGold, onAddMonster, onClos
             </div>
         </div>
 
-        <button 
-            onClick={() => { localStorage.clear(); window.location.reload(); }}
-            className="w-full py-2 bg-black text-red-500 text-[10px] font-black uppercase tracking-widest rounded-lg border border-red-900 mt-4"
-        >
-            Reset All Progress
-        </button>
+        <div className="pt-4 border-t border-red-900">
+            <Button 
+                variant="outline" 
+                size="full" 
+                onClick={() => { localStorage.clear(); window.location.reload(); }}
+                className="!text-red-500 !border-red-900 hover:!bg-red-900/20"
+            >
+                {t.ui.reset_progress}
+            </Button>
+        </div>
       </div>
     </div>
   );

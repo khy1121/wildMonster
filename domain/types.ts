@@ -9,7 +9,16 @@ export enum ElementType {
   LIGHT = 'LIGHT'
 }
 
+export enum FactionType {
+  EMBER_CLAN = 'EMBER_CLAN',
+  TIDE_WATCHERS = 'TIDE_WATCHERS',
+  STORM_HERDERS = 'STORM_HERDERS',
+  GLOOM_STALKERS = 'GLOOM_STALKERS',
+  GLADE_KEEPERS = 'GLADE_KEEPERS'
+}
+
 export type Rarity = 'Common' | 'Uncommon' | 'Rare' | 'Legendary';
+export type Language = 'ko' | 'en';
 
 export interface Stats {
   hp: number;
@@ -83,6 +92,7 @@ export interface MonsterSpecies {
   id: string;
   name: string;
   type: ElementType;
+  faction: FactionType;
   baseStats: Stats;
   icon: string;
   rarity: Rarity;
@@ -132,7 +142,7 @@ export interface Tamer {
   inventory: InventoryItem[];
   unlockedPartySlots: number;
   unlockedSupportSkills: string[];
-  collection: string[]; // List of encountered species IDs
+  collection: string[];
 }
 
 export interface GameState {
@@ -143,6 +153,8 @@ export interface GameState {
   flags: Record<string, boolean | number | string>;
   gameTime: number;
   completedQuests: string[];
+  reputation: Record<FactionType, number>;
+  language: Language;
 }
 
 export type GameEvent = 
@@ -155,7 +167,8 @@ export type GameEvent =
   | { type: 'EVOLUTION_READY'; monsterUid: string; options: EvolutionOption[] }
   | { type: 'SKILL_UNLOCKED'; monsterUid: string; nodeId: string }
   | { type: 'TAMER_LEVEL_UP'; level: number }
-  | { type: 'QUEST_COMPLETED'; questId: string };
+  | { type: 'QUEST_COMPLETED'; questId: string }
+  | { type: 'REPUTATION_CHANGED'; faction: FactionType; delta: number; total: number };
 
 export interface BattleRewards {
   exp: number;

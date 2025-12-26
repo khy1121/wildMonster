@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import { transformMonster, checkEvolution, createMonsterInstance } from '../logic';
 import { MONSTER_DATA } from '../../data/monsters';
-import { GameState } from '../types';
+import { GameState, FactionType } from '../types';
 
 describe('Evolution System', () => {
   // Mock state with required items for Pyrocat evolutions
@@ -27,7 +27,19 @@ describe('Evolution System', () => {
     worldPosition: { x: 0, y: 0 },
     currentScene: 'BootScene',
     flags: {},
-    gameTime: 1200
+    gameTime: 1200,
+    // Fix: Added missing completedQuests property
+    completedQuests: [],
+    // Fix: Added missing language property
+    language: 'en',
+    // Fix: Added missing reputation property to satisfy GameState interface
+    reputation: {
+      [FactionType.EMBER_CLAN]: 0,
+      [FactionType.TIDE_WATCHERS]: 0,
+      [FactionType.STORM_HERDERS]: 0,
+      [FactionType.GLOOM_STALKERS]: 0,
+      [FactionType.GLADE_KEEPERS]: 0,
+    }
   };
 
   it('correctly identifies evolution readiness', () => {

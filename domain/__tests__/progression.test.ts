@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest';
 // Fixed: Using getTamerProgression instead of non-existent getTamerMaxPartySize
 import { calculateStats, addExpToMonster, getTamerProgression, addExpToTamer } from '../logic';
-import { Stats, MonsterInstance, ElementType, GameState } from '../types';
+import { Stats, MonsterInstance, ElementType, GameState, FactionType } from '../types';
 
 describe('Progression Logic', () => {
   const baseStats: Stats = { hp: 10, maxHp: 10, attack: 5, defense: 5, speed: 5 };
@@ -26,7 +26,19 @@ describe('Progression Logic', () => {
     worldPosition: { x: 0, y: 0 },
     currentScene: 'BootScene',
     flags: {},
-    gameTime: 1200
+    gameTime: 1200,
+    // Fix: Added missing completedQuests property
+    completedQuests: [],
+    // Fix: Added missing language property
+    language: 'en',
+    // Fix: Added missing reputation property to satisfy GameState interface
+    reputation: {
+      [FactionType.EMBER_CLAN]: 0,
+      [FactionType.TIDE_WATCHERS]: 0,
+      [FactionType.STORM_HERDERS]: 0,
+      [FactionType.GLOOM_STALKERS]: 0,
+      [FactionType.GLADE_KEEPERS]: 0,
+    }
   };
 
   it('calculates stats correctly based on level', () => {
