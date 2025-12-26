@@ -177,4 +177,22 @@ export class ThreeOverlayRenderer {
         this.camera = null;
         this.gem = null;
     }
+
+    /**
+     * Show the overlay
+     */
+    show() {
+        if (this.canvas) {
+            this.canvas.style.display = 'block';
+        }
+    }
+
+    /**
+     * Hide the overlay
+     */
+    hide() {
+        if (this.canvas) {
+            this.canvas.style.display = 'none';
+        }
+    }
 }

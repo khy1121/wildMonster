@@ -4,6 +4,7 @@ import { gameEvents } from '../EventBus';
 import { gameStateManager } from '../GameStateManager';
 import { getTranslation } from '../../localization/strings';
 import { ThreeOverlayRenderer } from '../ThreeOverlayRenderer';
+import { threeOverlayManager } from '../ThreeOverlayManager';
 
 export class MenuScene extends Phaser.Scene {
   public add!: Phaser.GameObjects.GameObjectFactory;
@@ -97,6 +98,8 @@ export class MenuScene extends Phaser.Scene {
       const width = this.cameras.main.width;
       const height = this.cameras.main.height;
       this.threeOverlay.setGemPosition(width / 2, height * 0.15);
+      this.threeOverlay.show(); // Ensure visible
+      threeOverlayManager.setOverlay(this.threeOverlay); // Register globally
     } else {
       console.warn('[3D] WebGL unavailable, using 2D fallback gem');
       this.threeOverlay = null;
@@ -231,14 +234,15 @@ export class MenuScene extends Phaser.Scene {
   shutdown() {
     this.scale.off('resize', this.onResize, this);
 
-    // Cleanup 3D overlay
+    // Hide 3D overlay when leaving menu
     if (this.threeOverlay) {
-      this.threeOverlay.destroy();
-      this.threeOverlay = null;
+      this.threeOverlay.hide();
     }
 
     // Cleanup particles
     this.buttonParticles.forEach(p => p.destroy());
     this.buttonParticles = [];
+
+    console.log('[MenuScene] 3D overlay hidden');
   }
 }
