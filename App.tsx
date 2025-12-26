@@ -9,6 +9,7 @@ import SkillTreeUI from './ui/SkillTreeUI';
 import ShopUI from './ui/ShopUI';
 import QuestLogUI from './ui/QuestLogUI';
 import DebugPanel from './ui/DebugPanel';
+import InventoryUI from './components/InventoryUI';
 import { FactionUI } from './ui/AppOverlays';
 import { MenuUI } from './ui/MenuUI';
 import { GameState, EvolutionOption, MonsterInstance } from './domain/types';
@@ -19,10 +20,10 @@ import { getTranslation } from './localization/strings';
 const App: React.FC = () => {
   const gameRef = useRef<Phaser.Game | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  
+
   const [gameState, setGameState] = useState<GameState>(gameStateManager.getState());
   const [evolutionData, setEvolutionData] = useState<{ monsterUid: string, options: EvolutionOption[] } | null>(null);
-  const [overlay, setOverlay] = useState<'NONE' | 'SKILLS' | 'SHOP' | 'QUESTS' | 'DEBUG' | 'FACTIONS' | 'MENU'>('NONE');
+  const [overlay, setOverlay] = useState<'NONE' | 'SKILLS' | 'SHOP' | 'QUESTS' | 'DEBUG' | 'FACTIONS' | 'MENU' | 'INVENTORY'>('NONE');
   const [activeMonsterUid, setActiveMonsterUid] = useState<string | null>(null);
 
   useEffect(() => {
@@ -83,15 +84,16 @@ const App: React.FC = () => {
       <div id="phaser-root" ref={containerRef} className="w-full h-full" />
       <div id="hud-root">
         {/* Primary HUD always visible */}
-        <HUD 
-          state={gameState} 
+        <HUD
+          state={gameState}
           onOpenSkills={(uid) => { setActiveMonsterUid(uid); setOverlay('SKILLS'); }}
-          onOpenMenu={() => setOverlay('MENU')} 
+          onOpenMenu={() => setOverlay('MENU')}
+          onOpenInventory={() => setOverlay('INVENTORY')}
         />
       </div>
 
       {/* Floating Debug Toggle - Shifted for mobile nav */}
-      <button 
+      <button
         onClick={() => setOverlay('DEBUG')}
         className={`absolute bottom-4 right-4 w-10 h-10 bg-red-950/50 hover:bg-red-900 border border-red-900 text-red-600 rounded-full flex items-center justify-center transition shadow-lg z-[50] active:scale-90 ${overlay !== 'NONE' && overlay !== 'DEBUG' ? 'mb-16 md:mb-0' : ''}`}
       >
@@ -100,8 +102,8 @@ const App: React.FC = () => {
 
       {/* Logic Overlays */}
       {evolutionData && gameState.tamer.party.find(m => m.uid === evolutionData.monsterUid) && (
-        <EvolutionChoice 
-          monster={gameState.tamer.party.find(m => m.uid === evolutionData.monsterUid)!} 
+        <EvolutionChoice
+          monster={gameState.tamer.party.find(m => m.uid === evolutionData.monsterUid)!}
           options={evolutionData.options}
           onChoose={handleChooseEvolution}
           onCancel={() => setEvolutionData(null)}
@@ -119,73 +121,80 @@ const App: React.FC = () => {
       )}
 
       {overlay === 'SHOP' || (gameState.flags['open_shop'] && (
-          <ShopUI 
-            state={gameState} 
-            onBuy={(id, q) => gameStateManager.buyItem(id, q)}
-            onClose={() => setOverlay('NONE')}
-          />
+        <ShopUI
+          state={gameState}
+          onBuy={(id, q) => gameStateManager.buyItem(id, q)}
+          onClose={() => setOverlay('NONE')}
+        />
       ))}
 
       {overlay === 'QUESTS' && (
-          <QuestLogUI 
-            state={gameState} 
-            onClose={() => setOverlay('NONE')}
-          />
+        <QuestLogUI
+          state={gameState}
+          onClose={() => setOverlay('NONE')}
+        />
       )}
 
       {overlay === 'FACTIONS' && (
-          <FactionUI 
-            state={gameState} 
-            onClose={() => setOverlay('NONE')}
-          />
+        <FactionUI
+          state={gameState}
+          onClose={() => setOverlay('NONE')}
+        />
       )}
 
       {overlay === 'MENU' && (
-          <MenuUI 
-            state={gameState} 
-            onClose={() => setOverlay('NONE')}
-          />
+        <MenuUI
+          state={gameState}
+          onClose={() => setOverlay('NONE')}
+        />
       )}
 
       {overlay === 'DEBUG' && (
-          <DebugPanel 
-            state={gameState}
-            onAddGold={(a) => gameStateManager.addGold(a)}
-            onAddMonster={(id) => gameStateManager.addDebugMonster(id)}
-            onClose={() => setOverlay('NONE')}
-          />
+        <DebugPanel
+          state={gameState}
+          onAddGold={(a) => gameStateManager.addGold(a)}
+          onAddMonster={(id) => gameStateManager.addDebugMonster(id)}
+          onClose={() => setOverlay('NONE')}
+        />
+      )}
+
+      {overlay === 'INVENTORY' && (
+        <InventoryUI
+          state={gameState}
+          onClose={() => setOverlay('NONE')}
+        />
       )}
 
       {/* Navigation Tabs - Mobile Optimized Bottom Bar */}
       {(overlay !== 'NONE' && overlay !== 'DEBUG' && overlay !== 'SKILLS') && (
-          <div className="fixed bottom-4 md:bottom-10 left-1/2 -translate-x-1/2 z-[200] bg-slate-900/90 border border-slate-700 p-1.5 md:p-2 rounded-full md:rounded-2xl flex gap-1 md:gap-2 shadow-2xl backdrop-blur-md">
-              <button 
-                onClick={() => setOverlay('QUESTS')} 
-                className={`px-4 md:px-6 py-2 md:py-2 rounded-full md:rounded-xl text-[10px] md:text-xs font-bold transition uppercase tracking-widest flex items-center gap-2 active:scale-95 ${overlay === 'QUESTS' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
-              >
-                <i className="fa-solid fa-scroll"></i> {t.ui.quests}
-              </button>
-              <button 
-                onClick={() => setOverlay('FACTIONS')} 
-                className={`px-4 md:px-6 py-2 md:py-2 rounded-full md:rounded-xl text-[10px] md:text-xs font-bold transition uppercase tracking-widest flex items-center gap-2 active:scale-95 ${overlay === 'FACTIONS' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
-              >
-                <i className="fa-solid fa-flag"></i> {t.ui.factions}
-              </button>
-              <button 
-                onClick={() => setOverlay('SHOP')} 
-                className={`px-4 md:px-6 py-2 md:py-2 rounded-full md:rounded-xl text-[10px] md:text-xs font-bold transition uppercase tracking-widest flex items-center gap-2 active:scale-95 ${overlay === 'SHOP' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
-              >
-                <i className="fa-solid fa-store"></i> {t.ui.shop}
-              </button>
-              <button 
-                onClick={() => setOverlay('MENU')} 
-                className={`px-4 md:px-6 py-2 md:py-2 rounded-full md:rounded-xl text-[10px] md:text-xs font-bold transition uppercase tracking-widest flex items-center gap-2 active:scale-95 ${overlay === 'MENU' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
-              >
-                <i className="fa-solid fa-cog"></i> {t.ui.settings}
-              </button>
-          </div>
+        <div className="fixed bottom-4 md:bottom-10 left-1/2 -translate-x-1/2 z-[200] bg-slate-900/90 border border-slate-700 p-1.5 md:p-2 rounded-full md:rounded-2xl flex gap-1 md:gap-2 shadow-2xl backdrop-blur-md">
+          <button
+            onClick={() => setOverlay('QUESTS')}
+            className={`px-4 md:px-6 py-2 md:py-2 rounded-full md:rounded-xl text-[10px] md:text-xs font-bold transition uppercase tracking-widest flex items-center gap-2 active:scale-95 ${overlay === 'QUESTS' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+          >
+            <i className="fa-solid fa-scroll"></i> {t.ui.quests}
+          </button>
+          <button
+            onClick={() => setOverlay('FACTIONS')}
+            className={`px-4 md:px-6 py-2 md:py-2 rounded-full md:rounded-xl text-[10px] md:text-xs font-bold transition uppercase tracking-widest flex items-center gap-2 active:scale-95 ${overlay === 'FACTIONS' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+          >
+            <i className="fa-solid fa-flag"></i> {t.ui.factions}
+          </button>
+          <button
+            onClick={() => setOverlay('SHOP')}
+            className={`px-4 md:px-6 py-2 md:py-2 rounded-full md:rounded-xl text-[10px] md:text-xs font-bold transition uppercase tracking-widest flex items-center gap-2 active:scale-95 ${overlay === 'SHOP' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+          >
+            <i className="fa-solid fa-store"></i> {t.ui.shop}
+          </button>
+          <button
+            onClick={() => setOverlay('MENU')}
+            className={`px-4 md:px-6 py-2 md:py-2 rounded-full md:rounded-xl text-[10px] md:text-xs font-bold transition uppercase tracking-widest flex items-center gap-2 active:scale-95 ${overlay === 'MENU' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+          >
+            <i className="fa-solid fa-cog"></i> {t.ui.settings}
+          </button>
+        </div>
       )}
-      
+
       <div className="absolute bottom-2 left-4 text-[7px] text-slate-600 font-mono pointer-events-none uppercase tracking-[0.2em] hidden md:block">
         EonTamers Alpha v0.12 • Built with Gemini Engine
       </div>

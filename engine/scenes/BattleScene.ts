@@ -25,7 +25,7 @@ export class BattleScene extends Phaser.Scene {
   private playerEntity!: CombatEntity;
   private enemyEntity!: CombatEntity;
   private enemySpeciesId!: string;
-  
+
   private playerHpBar!: Phaser.GameObjects.Rectangle;
   private enemyHpBar!: Phaser.GameObjects.Rectangle;
   private enemyVisual!: Phaser.GameObjects.Container;
@@ -36,6 +36,7 @@ export class BattleScene extends Phaser.Scene {
   private isBossBattle = false;
 
   private tamerCooldowns: Record<string, number> = {};
+  private particleTextureCreated = false;
 
   constructor() {
     super('BattleScene');
@@ -48,7 +49,7 @@ export class BattleScene extends Phaser.Scene {
     const { width, height } = this.cameras.main;
     this.battleEnded = false;
     this.tamerCooldowns = {};
-    
+
     this.skillButtons = [];
     this.tamerButtons = [];
 
@@ -59,20 +60,20 @@ export class BattleScene extends Phaser.Scene {
     this.add.circle(width / 2, height / 2, 250, 0x1e293b, 0.5).setStrokeStyle(2, 0x6366f1, 0.3);
 
     const activeMonster = state.tamer.party[0];
-    
+
     if (!activeMonster) {
-        this.scene.stop();
-        this.scene.resume('OverworldScene');
-        return;
+      this.scene.stop();
+      this.scene.resume('OverworldScene');
+      return;
     }
 
     const playerSpecies = MONSTER_DATA[activeMonster.speciesId];
     const enemySpecies = MONSTER_DATA[enemyId];
 
     if (!enemySpecies) {
-        this.scene.stop();
-        this.scene.resume('OverworldScene');
-        return;
+      this.scene.stop();
+      this.scene.resume('OverworldScene');
+      return;
     }
 
     const activeSkills = getAvailableSkillIds(activeMonster, playerSpecies);
@@ -91,7 +92,7 @@ export class BattleScene extends Phaser.Scene {
     const enemyBaseStats = enemySpecies.baseStats;
     const bossMult = isBoss ? 2.0 : 1.0;
     const enemyGrowth = (1 + (enemyLevel - 1) * 0.15) * bossMult;
-    
+
     this.enemyEntity = {
       uid: 'wild-enemy',
       name: t.species[enemyId as keyof typeof t.species] || enemySpecies.name,
@@ -115,11 +116,11 @@ export class BattleScene extends Phaser.Scene {
 
     this.enemyVisual = this.add.container(width * 0.75, height * 0.4);
     this.enemyVisual.add(this.add.text(0, 0, enemySpecies.icon, { fontSize: '100px' }).setOrigin(0.5));
-    
+
     if (isBoss) {
-        const bossAura = this.add.circle(0, 0, 60, 0xfacc15, 0.3);
-        this.enemyVisual.addAt(bossAura, 0);
-        this.tweens.add({ targets: bossAura, scale: 1.5, alpha: 0, duration: 800, loop: -1 });
+      const bossAura = this.add.circle(0, 0, 60, 0xfacc15, 0.3);
+      this.enemyVisual.addAt(bossAura, 0);
+      this.tweens.add({ targets: bossAura, scale: 1.5, alpha: 0, duration: 800, loop: -1 });
     }
 
     this.enemyHpBar = this.createHpBar(this.enemyVisual, 0, 80, isBoss ? `BOSS ${this.enemyEntity.name}` : `Wild ${this.enemyEntity.name}`);
@@ -136,6 +137,9 @@ export class BattleScene extends Phaser.Scene {
       callbackScope: this,
       loop: true
     });
+
+    // Create particle texture for VFX (do once)
+    this.createParticleTexture();
   }
 
   update(time: number, delta: number) {
@@ -144,7 +148,7 @@ export class BattleScene extends Phaser.Scene {
 
     this.playerEntity = updateCooldowns(this.playerEntity, delta);
     this.enemyEntity = updateCooldowns(this.enemyEntity, delta);
-    
+
     for (const key in this.tamerCooldowns) {
       this.tamerCooldowns[key] = Math.max(0, this.tamerCooldowns[key] - delta);
     }
@@ -176,7 +180,7 @@ export class BattleScene extends Phaser.Scene {
       const bg = this.add.rectangle(0, 0, 130, 50, 0x4338ca, 1).setInteractive({ useHandCursor: true });
       const label = this.add.text(0, -8, t.skills[sId] || skill.name, { fontSize: '14px', fontStyle: 'bold' }).setOrigin(0.5);
       const cdText = this.add.text(0, 12, 'READY', { fontSize: '10px' }).setOrigin(0.5);
-      
+
       btn.add([bg, label, cdText]);
       bg.on('pointerdown', () => this.useSkill(sId));
       this.skillButtons.push(btn);
@@ -198,7 +202,7 @@ export class BattleScene extends Phaser.Scene {
       const btn = this.add.container(startX + i * spacing, y);
       const bg = this.add.rectangle(0, 0, 110, 40, 0x312e81, 1).setInteractive({ useHandCursor: true });
       const label = this.add.text(0, 0, `${skill.icon} ${t.skills[sId] || skill.name}`, { fontSize: '12px', fontStyle: 'bold' }).setOrigin(0.5);
-      
+
       btn.add([bg, label]);
       bg.on('pointerdown', () => this.useTamerSkill(sId));
       this.tamerButtons.push(btn);
@@ -254,7 +258,7 @@ export class BattleScene extends Phaser.Scene {
     const text = this.add.text(0, 0, `🧿 ${t.ui.capture} (x${quantity})`, { fontSize: '12px', fontStyle: 'bold' }).setOrigin(0.5);
     this.captureButton.add([bg, text]);
     bg.on('pointerdown', () => this.useCaptureOrb());
-    
+
     if (quantity <= 0 || this.isBossBattle) {
       bg.setFillStyle(0x374151);
       this.captureButton.alpha = 0.5;
@@ -267,7 +271,7 @@ export class BattleScene extends Phaser.Scene {
 
     const pPct = Math.max(0, Math.min(1, this.playerEntity.hp / this.playerEntity.maxHp)) || 0;
     const ePct = Math.max(0, Math.min(1, this.enemyEntity.hp / this.enemyEntity.maxHp)) || 0;
-    
+
     this.playerHpBar.width = 160 * pPct;
     this.enemyHpBar.width = 160 * ePct;
     this.playerHpBar.setFillStyle(pPct > 0.5 ? 0x22c55e : pPct > 0.2 ? 0xeab308 : 0xef4444);
@@ -279,7 +283,7 @@ export class BattleScene extends Phaser.Scene {
       const cd = this.playerEntity.cooldowns[sId] || 0;
       const bg = btn.getAt(0) as Phaser.GameObjects.Rectangle;
       const cdText = btn.getAt(2) as Phaser.GameObjects.Text;
-      
+
       if (bg && bg.setFillStyle) {
         if (cd > 0) {
           bg.setFillStyle(0x312e81);
@@ -309,7 +313,47 @@ export class BattleScene extends Phaser.Scene {
     const damage = calculateDamage(this.playerEntity, this.enemyEntity, skillId);
     this.enemyEntity.hp = Math.max(0, this.enemyEntity.hp - damage);
     this.playerEntity.cooldowns[skillId] = SKILL_DATA[skillId].cooldown;
-    this.showVfx(this.cameras.main.width * 0.75, this.cameras.main.height * 0.4, `-${damage}`, 0xef4444);
+
+    const attackerX = this.cameras.main.width * 0.25;
+    const attackerY = this.cameras.main.height * 0.4;
+    const targetX = this.cameras.main.width * 0.75;
+    const targetY = this.cameras.main.height * 0.4;
+
+    // Trigger element-specific VFX
+    switch (skillId) {
+      case 'fire_blast':
+        this.playFireBlastVfx(attackerX, attackerY);
+        this.playHitFlash(targetX, targetY);
+        this.cameras.main.shake(200, 0.004); // Strong shake for ultimate
+        break;
+      case 'ember':
+        this.playEmberVfx(attackerX, attackerY);
+        this.playHitFlash(targetX, targetY);
+        this.cameras.main.shake(100, 0.002);
+        break;
+      case 'bubble':
+        this.playBubbleVfx(attackerX, attackerY);
+        break;
+      case 'scratch':
+        this.playScratchVfx(targetX, targetY);
+        this.cameras.main.shake(80, 0.0025);
+        break;
+      case 'tackle':
+        this.playTackleVfx(targetX, targetY);
+        this.cameras.main.shake(150, 0.003); // Heavy impact
+        break;
+      case 'dark_pulse':
+        this.playDarkPulseVfx(attackerX, attackerY);
+        this.cameras.main.shake(120, 0.0025);
+        break;
+      case 'ice_shard':
+        this.playIceShardVfx(attackerX, attackerY);
+        this.playHitFlash(targetX, targetY);
+        this.cameras.main.shake(100, 0.002);
+        break;
+    }
+
+    this.showVfx(targetX, targetY, `-${damage}`, 0xef4444);
     this.checkEndConditions();
   }
 
@@ -317,7 +361,7 @@ export class BattleScene extends Phaser.Scene {
     if (this.battleEnded || this.isBossBattle) return;
     const success = gameStateManager.attemptCapture(this.enemySpeciesId, this.enemyEntity.level, this.enemyEntity.hp, this.enemyEntity.maxHp);
     this.battleEnded = true;
-    
+
     const state = gameStateManager.getState();
     const t = getTranslation(state.language);
 
@@ -341,7 +385,7 @@ export class BattleScene extends Phaser.Scene {
     if (this.battleEnded || !this.enemyEntity || !this.playerEntity) return;
     const skillId = Phaser.Utils.Array.GetRandom(this.enemyEntity.skills);
     if (!skillId) return;
-    
+
     const damage = calculateDamage(this.enemyEntity, this.playerEntity, skillId);
     this.playerEntity.hp = Math.max(0, this.playerEntity.hp - damage);
     this.showVfx(this.cameras.main.width * 0.25, this.cameras.main.height * 0.4, `-${damage}`, 0xef4444);
@@ -353,6 +397,416 @@ export class BattleScene extends Phaser.Scene {
     this.tweens.add({ targets: vfx, y: y - 120, alpha: 0, duration: 800, onComplete: () => vfx.destroy() });
   }
 
+  /**
+   * Create procedural particle textures for all element effects
+   */
+  private createParticleTexture() {
+    if (this.particleTextureCreated) return;
+
+    const size = 8;
+
+    // Fire particle (yellow-orange-red)
+    if (!this.textures.exists('fireParticle')) {
+      const canvas = this.textures.createCanvas('fireParticle', size, size);
+      if (canvas) {
+        const ctx = canvas.context;
+        const gradient = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+        gradient.addColorStop(0, 'rgba(255, 200, 100, 1)');
+        gradient.addColorStop(0.4, 'rgba(255, 120, 50, 0.9)');
+        gradient.addColorStop(0.7, 'rgba(255, 50, 20, 0.6)');
+        gradient.addColorStop(1, 'rgba(100, 20, 10, 0)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, size, size);
+        canvas.refresh();
+      }
+    }
+
+    // Water particle (blue-cyan)
+    if (!this.textures.exists('waterParticle')) {
+      const canvas = this.textures.createCanvas('waterParticle', size, size);
+      if (canvas) {
+        const ctx = canvas.context;
+        const gradient = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+        gradient.addColorStop(0, 'rgba(100, 200, 255, 1)');
+        gradient.addColorStop(0.5, 'rgba(50, 150, 255, 0.8)');
+        gradient.addColorStop(1, 'rgba(20, 100, 200, 0)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, size, size);
+        canvas.refresh();
+      }
+    }
+
+    // Dark particle (purple-black)
+    if (!this.textures.exists('darkParticle')) {
+      const canvas = this.textures.createCanvas('darkParticle', size, size);
+      if (canvas) {
+        const ctx = canvas.context;
+        const gradient = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+        gradient.addColorStop(0, 'rgba(150, 100, 200, 1)');
+        gradient.addColorStop(0.5, 'rgba(100, 50, 150, 0.8)');
+        gradient.addColorStop(1, 'rgba(50, 20, 80, 0)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, size, size);
+        canvas.refresh();
+      }
+    }
+
+    // Ice particle (cyan-white)
+    if (!this.textures.exists('iceParticle')) {
+      const canvas = this.textures.createCanvas('iceParticle', size, size);
+      if (canvas) {
+        const ctx = canvas.context;
+        const gradient = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+        gradient.addColorStop(0, 'rgba(200, 255, 255, 1)');
+        gradient.addColorStop(0.5, 'rgba(150, 220, 255, 0.9)');
+        gradient.addColorStop(1, 'rgba(100, 180, 220, 0)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, size, size);
+        canvas.refresh();
+      }
+    }
+
+    // Impact particle (white-gray for physical attacks)
+    if (!this.textures.exists('impactParticle')) {
+      const canvas = this.textures.createCanvas('impactParticle', size, size);
+      if (canvas) {
+        const ctx = canvas.context;
+        const gradient = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+        gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+        gradient.addColorStop(0.5, 'rgba(200, 200, 200, 0.7)');
+        gradient.addColorStop(1, 'rgba(150, 150, 150, 0)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, size, size);
+        canvas.refresh();
+      }
+    }
+
+    this.particleTextureCreated = true;
+  }
+
+  /**
+   * Play fire blast particle VFX at origin position - ACTION RPG STYLE
+   */
+  private playFireBlastVfx(x: number, y: number) {
+    if (!this.textures.exists('fireParticle')) return;
+
+    // Layer 1: Central explosion (bright core)
+    const coreParticles = this.add.particles(x, y, 'fireParticle', {
+      speed: { min: 100, max: 200 },
+      angle: { min: 0, max: 360 },
+      scale: { start: 2.0, end: 0 },
+      alpha: { start: 1, end: 0 },
+      lifespan: 500,
+      gravityY: 0,
+      quantity: 30,
+      blendMode: Phaser.BlendModes.ADD,
+      emitting: false
+    });
+
+    // Layer 2: Upward flames
+    const flameParticles = this.add.particles(x, y, 'fireParticle', {
+      speed: { min: 80, max: 160 },
+      angle: { min: 240, max: 300 },
+      scale: { start: 1.5, end: 0 },
+      alpha: { start: 1, end: 0 },
+      lifespan: 600,
+      gravityY: -100,
+      quantity: 25,
+      blendMode: Phaser.BlendModes.ADD,
+      emitting: false
+    });
+
+    // Explosion ring
+    const ring1 = this.add.circle(x, y, 30, 0xff6600, 0.8);
+    const ring2 = this.add.circle(x, y, 30, 0xffaa00, 0.6);
+
+    coreParticles.explode();
+    this.time.delayedCall(50, () => flameParticles.explode());
+
+    this.tweens.add({
+      targets: [ring1, ring2],
+      scale: 4,
+      alpha: 0,
+      duration: 400,
+      ease: 'Power2',
+      onComplete: () => { ring1.destroy(); ring2.destroy(); }
+    });
+
+    // Fullscreen flash
+    const flash = this.add.rectangle(this.cameras.main.centerX, this.cameras.main.centerY,
+      this.cameras.main.width, this.cameras.main.height, 0xff4400, 0.3);
+    this.tweens.add({
+      targets: flash,
+      alpha: 0,
+      duration: 150,
+      onComplete: () => flash.destroy()
+    });
+
+    this.time.delayedCall(650, () => {
+      coreParticles.destroy();
+      flameParticles.destroy();
+    });
+  }
+
+  /**
+   * Play white flash effect on hit
+   */
+  private playHitFlash(x: number, y: number) {
+    const flash = this.add.circle(x, y, 60, 0xffffff, 0.8);
+    this.tweens.add({
+      targets: flash,
+      scale: 1.5,
+      alpha: 0,
+      duration: 120,
+      ease: 'Power2',
+      onComplete: () => flash.destroy()
+    });
+  }
+
+  /** Ember: Small fire sparks - ENHANCED */
+  private playEmberVfx(x: number, y: number) {
+    if (!this.textures.exists('fireParticle')) return;
+
+    // Main sparks
+    const particles = this.add.particles(x, y, 'fireParticle', {
+      speed: { min: 60, max: 120 },
+      angle: { min: 240, max: 300 },
+      scale: { start: 1.2, end: 0 },
+      alpha: { start: 1, end: 0 },
+      lifespan: 450,
+      gravityY: -80,
+      quantity: 15,
+      blendMode: Phaser.BlendModes.ADD,
+      emitting: false
+    });
+
+    // Trail sparks
+    const trail = this.add.particles(x, y - 20, 'fireParticle', {
+      speed: { min: 20, max: 50 },
+      angle: { min: 250, max: 290 },
+      scale: { start: 0.6, end: 0 },
+      alpha: { start: 0.8, end: 0 },
+      lifespan: 300,
+      gravityY: -40,
+      quantity: 8,
+      blendMode: Phaser.BlendModes.ADD,
+      emitting: false
+    });
+
+    particles.explode();
+    this.time.delayedCall(100, () => trail.explode());
+    this.time.delayedCall(500, () => { particles.destroy(); trail.destroy(); });
+  }
+
+  /** Bubble: Water bubbles - ENHANCED */
+  private playBubbleVfx(x: number, y: number) {
+    if (!this.textures.exists('waterParticle')) return;
+
+    // Main bubbles
+    const bubbles = this.add.particles(x, y, 'waterParticle', {
+      speed: { min: 40, max: 90 },
+      angle: { min: 250, max: 290 },
+      scale: { start: 1.3, end: 0.4 },
+      alpha: { start: 1, end: 0 },
+      lifespan: 600,
+      gravityY: -50,
+      quantity: 18,
+      blendMode: Phaser.BlendModes.NORMAL,
+      emitting: false
+    });
+
+    // Splash wave
+    const wave = this.add.circle(x, y, 15, 0x3b82f6, 0.5);
+    this.tweens.add({
+      targets: wave,
+      scaleX: 4,
+      scaleY: 2,
+      alpha: 0,
+      duration: 350,
+      onComplete: () => wave.destroy()
+    });
+
+    bubbles.explode();
+    this.time.delayedCall(650, () => bubbles.destroy());
+  }
+
+  /** Scratch: Quick slash - ENHANCED */
+  private playScratchVfx(x: number, y: number) {
+    if (!this.textures.exists('impactParticle')) return;
+
+    // Slash line graphic
+    const slash = this.add.rectangle(x - 40, y, 80, 4, 0xffffff, 1);
+    slash.setRotation(-0.3);
+    this.tweens.add({
+      targets: slash,
+      scaleX: 0,
+      alpha: 0,
+      duration: 150,
+      ease: 'Power2',
+      onComplete: () => slash.destroy()
+    });
+
+    // Impact particles
+    const particles = this.add.particles(x, y, 'impactParticle', {
+      speed: { min: 120, max: 200 },
+      angle: { min: -30, max: 30 },
+      scale: { start: 0.8, end: 0 },
+      alpha: { start: 1, end: 0 },
+      lifespan: 250,
+      gravityY: 0,
+      quantity: 12,
+      blendMode: Phaser.BlendModes.ADD,
+      emitting: false
+    });
+
+    particles.explode();
+    this.time.delayedCall(300, () => particles.destroy());
+  }
+
+  /** Tackle: Impact shockwave - ENHANCED */
+  private playTackleVfx(x: number, y: number) {
+    if (!this.textures.exists('impactParticle')) return;
+
+    // Central burst
+    const particles = this.add.particles(x, y, 'impactParticle', {
+      speed: { min: 150, max: 250 },
+      angle: { min: 0, max: 360 },
+      scale: { start: 1.5, end: 0 },
+      alpha: { start: 1, end: 0 },
+      lifespan: 300,
+      gravityY: 0,
+      quantity: 25,
+      blendMode: Phaser.BlendModes.ADD,
+      emitting: false
+    });
+
+    // Triple ring shockwave
+    const ring1 = this.add.circle(x, y, 25, 0xffffff, 0.8);
+    const ring2 = this.add.circle(x, y, 20, 0xeeeeee, 0.6);
+    const ring3 = this.add.circle(x, y, 15, 0xdddddd, 0.4);
+
+    particles.explode();
+
+    this.tweens.add({
+      targets: ring1,
+      scale: 5,
+      alpha: 0,
+      duration: 300,
+      onComplete: () => ring1.destroy()
+    });
+
+    this.tweens.add({
+      targets: ring2,
+      scale: 4,
+      alpha: 0,
+      duration: 250,
+      delay: 50,
+      onComplete: () => ring2.destroy()
+    });
+
+    this.tweens.add({
+      targets: ring3,
+      scale: 3,
+      alpha: 0,
+      duration: 200,
+      delay: 100,
+      onComplete: () => ring3.destroy()
+    });
+
+    this.time.delayedCall(350, () => particles.destroy());
+  }
+
+  /** Dark Pulse: Shadow wave - ENHANCED */
+  private playDarkPulseVfx(x: number, y: number) {
+    if (!this.textures.exists('darkParticle')) return;
+
+    // Central dark core
+    const core = this.add.particles(x, y, 'darkParticle', {
+      speed: { min: 0, max: 30 },
+      angle: { min: 0, max: 360 },
+      scale: { start: 2.0, end: 0 },
+      alpha: { start: 1, end: 0 },
+      lifespan: 400,
+      gravityY: 0,
+      quantity: 20,
+      blendMode: Phaser.BlendModes.ADD,
+      emitting: false
+    });
+
+    // Expanding wave
+    const wave = this.add.particles(x, y, 'darkParticle', {
+      speed: { min: 80, max: 150 },
+      angle: { min: 0, max: 360 },
+      scale: { start: 1.5, end: 0 },
+      alpha: { start: 1, end: 0 },
+      lifespan: 500,
+      gravityY: 0,
+      quantity: 20,
+      blendMode: Phaser.BlendModes.ADD,
+      emitting: false
+    });
+
+    // Dark ring pulse
+    const ring = this.add.circle(x, y, 30, 0x6b21a8, 0.7);
+    this.tweens.add({
+      targets: ring,
+      scale: 4,
+      alpha: 0,
+      duration: 450,
+      ease: 'Power2',
+      onComplete: () => ring.destroy()
+    });
+
+    core.explode();
+    this.time.delayedCall(100, () => wave.explode());
+    this.time.delayedCall(550, () => { core.destroy(); wave.destroy(); });
+  }
+
+  /** Ice Shard: Frozen crystals - ENHANCED */
+  private playIceShardVfx(x: number, y: number) {
+    if (!this.textures.exists('iceParticle')) return;
+
+    // Main ice shards
+    const shards = this.add.particles(x, y, 'iceParticle', {
+      speed: { min: 100, max: 180 },
+      angle: { min: 240, max: 300 },
+      scale: { start: 1.4, end: 0 },
+      alpha: { start: 1, end: 0 },
+      lifespan: 500,
+      gravityY: -60,
+      quantity: 18,
+      blendMode: Phaser.BlendModes.ADD,
+      emitting: false
+    });
+
+    // Ice crystals burst
+    const crystals = this.add.particles(x, y, 'iceParticle', {
+      speed: { min: 40, max: 80 },
+      angle: { min: 0, max: 360 },
+      scale: { start: 0.8, end: 0 },
+      alpha: { start: 0.9, end: 0 },
+      lifespan: 400,
+      gravityY: 20,
+      quantity: 12,
+      blendMode: Phaser.BlendModes.ADD,
+      emitting: false
+    });
+
+    // Ice flash
+    const flash = this.add.circle(x, y, 40, 0x60a5fa, 0.6);
+    this.tweens.add({
+      targets: flash,
+      scale: 2,
+      alpha: 0,
+      duration: 300,
+      onComplete: () => flash.destroy()
+    });
+
+    shards.explode();
+    this.time.delayedCall(150, () => crystals.explode());
+    this.time.delayedCall(550, () => { shards.destroy(); crystals.destroy(); });
+  }
+
   checkEndConditions() {
     if (this.enemyEntity.hp <= 0) this.endBattle('PLAYER');
     else if (this.playerEntity.hp <= 0) this.endBattle('ENEMY');
@@ -362,17 +816,17 @@ export class BattleScene extends Phaser.Scene {
     if (this.battleEnded) return;
     this.battleEnded = true;
     const { width, height } = this.cameras.main;
-    
+
     const state = gameStateManager.getState();
     const t = getTranslation(state.language);
 
     const msg = winner === 'PLAYER' ? t.ui.victory : t.ui.defeated;
     const color = winner === 'PLAYER' ? '#22c55e' : '#ef4444';
     this.add.text(width / 2, height / 2, msg, { fontSize: '80px', color, fontStyle: 'bold' }).setOrigin(0.5);
-    
+
     if (state.tamer.party.length > 0 && this.playerEntity) {
-        const idx = state.tamer.party.findIndex(m => m.uid === this.playerEntity.uid);
-        if (idx !== -1) state.tamer.party[idx].currentHp = this.playerEntity.hp;
+      const idx = state.tamer.party.findIndex(m => m.uid === this.playerEntity.uid);
+      if (idx !== -1) state.tamer.party[idx].currentHp = this.playerEntity.hp;
     }
 
     this.time.delayedCall(2000, () => {

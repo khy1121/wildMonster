@@ -8,9 +8,10 @@ interface HUDProps {
   state: GameState;
   onOpenSkills: (uid: string) => void;
   onOpenMenu: () => void;
+  onOpenInventory: () => void;
 }
 
-const HUD: React.FC<HUDProps> = ({ state, onOpenSkills, onOpenMenu }) => {
+const HUD: React.FC<HUDProps> = ({ state, onOpenSkills, onOpenMenu, onOpenInventory }) => {
   const { tamer, language, reputation } = state;
   const t = getTranslation(language);
   const activeMonster = tamer.party[0];
@@ -36,31 +37,39 @@ const HUD: React.FC<HUDProps> = ({ state, onOpenSkills, onOpenMenu }) => {
               </p>
             </div>
           </div>
-          
-          <button 
+
+          <button
             onClick={onOpenMenu}
             className="btn-primary flex items-center justify-center gap-2 text-[9px] md:text-[10px] min-h-[40px] pointer-events-auto"
             aria-label="Open Main Menu"
           >
             <i className="fa-solid fa-bars"></i> <span className="hidden sm:inline">{t.ui.main_menu}</span>
           </button>
+
+          <button
+            onClick={onOpenInventory}
+            className="btn-primary flex items-center justify-center gap-2 text-[9px] md:text-[10px] min-h-[40px] pointer-events-auto bg-yellow-600 hover:bg-yellow-500 border-yellow-500"
+            aria-label="Open Inventory"
+          >
+            <i className="fa-solid fa-briefcase"></i> <span className="hidden sm:inline">{t.ui.inventory}</span>
+          </button>
         </div>
 
         {/* Reputation Summary */}
         <div className="hidden lg:flex flex-col gap-1 pointer-events-auto">
-           {leadFaction && (
-             <div className="bg-slate-900/80 border border-slate-700 px-3 py-1.5 rounded-lg backdrop-blur-md shadow-xl">
-               <span className="text-[10px] text-slate-500 uppercase font-black tracking-widest block">{t.factions[leadFaction]}</span>
-               <span className={`text-[11px] font-bold ${leadRep >= 0 ? 'text-indigo-400' : 'text-red-400'}`}>
-                 {getReputationTier(leadRep, language)} ({leadRep})
-               </span>
-             </div>
-           )}
+          {leadFaction && (
+            <div className="bg-slate-900/80 border border-slate-700 px-3 py-1.5 rounded-lg backdrop-blur-md shadow-xl">
+              <span className="text-[10px] text-slate-500 uppercase font-black tracking-widest block">{t.factions[leadFaction]}</span>
+              <span className={`text-[11px] font-bold ${leadRep >= 0 ? 'text-indigo-400' : 'text-red-400'}`}>
+                {getReputationTier(leadRep, language)} ({leadRep})
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Active Monster Info - Compact for Mobile */}
         {activeMonster && species && (
-          <div 
+          <div
             className="hud-card border border-slate-700 pointer-events-auto flex items-center gap-2 md:gap-4 cursor-pointer hover:border-indigo-500 group transition"
             onClick={() => onOpenSkills(activeMonster.uid)}
           >
@@ -76,7 +85,7 @@ const HUD: React.FC<HUDProps> = ({ state, onOpenSkills, onOpenMenu }) => {
                 <span>LV.{activeMonster.level}</span>
               </div>
               <div className="w-full h-1.5 md:h-2 bg-slate-800 rounded-full overflow-hidden border border-slate-700">
-                <div 
+                <div
                   className="h-full bg-green-500 transition-all duration-300"
                   style={{ width: `${(activeMonster.currentHp / activeMonster.currentStats.maxHp) * 100}%` }}
                 />

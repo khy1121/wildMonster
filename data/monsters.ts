@@ -17,17 +17,17 @@ export const MONSTER_DATA: Record<string, MonsterSpecies> = {
     ],
     lootTable: [{ itemId: 'potion', chance: 0.3, minQuantity: 1, maxQuantity: 1 }],
     evolutions: [
-      { 
-        targetSpeciesId: 'flarelion', 
-        levelThreshold: 10, 
+      {
+        targetSpeciesId: 'flarelion',
+        levelThreshold: 10,
         requiredNodeId: 'p_fire_special',
         requiredItemId: 'sun_stone',
         description: 'Requires Sun Stone and Solar Core node.',
         previewSkills: ['ember', 'fire_blast']
       },
-      { 
-        targetSpeciesId: 'shadowcat', 
-        levelThreshold: 10, 
+      {
+        targetSpeciesId: 'shadowcat',
+        levelThreshold: 10,
         requiredNodeId: 'p_dark_special',
         requiredItemId: 'moon_stone',
         description: 'Requires Moon Stone and Lunar Shroud node.',
@@ -69,7 +69,7 @@ export const MONSTER_DATA: Record<string, MonsterSpecies> = {
       { level: 1, skillId: 'scratch' },
       { level: 6, skillId: 'spark' },
       { level: 20, skillId: 'dark_pulse' }
-    ], 
+    ],
     spawnConditions: [
       { type: 'LEVEL_MIN', value: 10 }
     ],
@@ -119,9 +119,9 @@ export const MONSTER_DATA: Record<string, MonsterSpecies> = {
     ],
     lootTable: [{ itemId: 'potion', chance: 0.4, minQuantity: 1, maxQuantity: 1 }],
     evolutions: [
-      { 
-        targetSpeciesId: 'mistlynx', 
-        levelThreshold: 12, 
+      {
+        targetSpeciesId: 'mistlynx',
+        levelThreshold: 12,
         requiredNodeId: 'd_mist',
         description: 'Graceful hunter of the fog.',
         previewSkills: ['bubble', 'ice_shard']
@@ -139,6 +139,40 @@ export const MONSTER_DATA: Record<string, MonsterSpecies> = {
     learnableSkills: [
       { level: 1, skillId: 'bubble' },
       { level: 10, skillId: 'ice_shard' }
+    ],
+    evolutions: []
+  },
+  /**
+   * Design Note: Puffle (푸플)
+   * - Silhouette: Round, fluffy cloud shape with tiny leaf sprout on top
+   * - Style: Ultra-cute Digimon aesthetic - soft edges, big sparkling eyes, stubby limbs
+   * - Personality: Gentle and playful, bounces around happily
+   * - Icon: Emoji placeholder 🌿 (suggests small plant/nature theme)
+   * - Intended for: Early-game Nature/Grass starter alternative
+   * - Color palette: Soft pastel green with cream/white fluff
+   */
+  'puffle': {
+    id: 'puffle',
+    name: 'Puffle', // English fallback
+    type: ElementType.GRASS,
+    faction: FactionType.GLADE_KEEPERS,
+    icon: '🌿',
+    rarity: 'Common',
+    baseStats: {
+      hp: 55,      // Slightly tankier than pyrocat
+      maxHp: 55,
+      attack: 9,   // Lower attack, more defensive
+      defense: 14, // High defense for early game
+      speed: 7     // Slow but sturdy
+    },
+    learnableSkills: [
+      { level: 1, skillId: 'tackle' },      // Basic move everyone can learn
+      { level: 5, skillId: 'bubble' },      // Defensive water move (nature uses water)
+      { level: 10, skillId: 'scratch' },    // Mid-game physical option
+      { level: 18, skillId: 'ice_shard' }   // Late signature move (nature + ice synergy)
+    ],
+    lootTable: [
+      { itemId: 'potion', chance: 0.35, minQuantity: 1, maxQuantity: 2 }
     ],
     evolutions: []
   }

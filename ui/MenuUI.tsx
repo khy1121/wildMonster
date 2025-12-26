@@ -17,10 +17,29 @@ export const MenuUI: React.FC<MenuUIProps> = ({ state, onClose }) => {
   const [message, setMessage] = useState<string | null>(null);
 
   const handleSave = () => {
-    gameStateManager.manualSave();
-    setMessage(t.ui.save_success);
+    const result = gameStateManager.manualSave();
     setConfirmAction(null);
-    setTimeout(() => setMessage(null), 2000);
+
+    if (result.ok) {
+      setMessage(t.ui.save_success);
+      setTimeout(() => setMessage(null), 2000);
+    } else {
+      // Handle specific error cases
+      let errorMessage = t.ui.save_failed;
+
+      if ('reason' in result) {
+        if (result.reason === 'quota_exceeded') {
+          errorMessage = t.ui.quota_exceeded;
+        } else if (result.reason === 'storage_unavailable') {
+          errorMessage = t.ui.storage_unavailable;
+        } else {
+          errorMessage = `${t.ui.save_failed}: ${result.reason}`;
+        }
+      }
+
+      setMessage(errorMessage);
+      setTimeout(() => setMessage(null), 4000); // Longer for error messages
+    }
   };
 
   const handleLoad = () => {
@@ -28,8 +47,8 @@ export const MenuUI: React.FC<MenuUIProps> = ({ state, onClose }) => {
     if (success) {
       setMessage(t.ui.load_success);
       setTimeout(() => {
-          setMessage(null);
-          onClose();
+        setMessage(null);
+        onClose();
       }, 1500);
     } else {
       setMessage(t.ui.no_save);
@@ -43,40 +62,43 @@ export const MenuUI: React.FC<MenuUIProps> = ({ state, onClose }) => {
   };
 
   return (
-    <Modal 
+    <Modal
       title={<>{t.ui.main_menu} <span className="text-indigo-500">{t.ui.settings}</span></>}
       onClose={onClose}
       maxWidth="max-w-md"
     >
       <div className="p-6 space-y-6">
         {message && (
-          <div className="bg-indigo-900/50 border border-indigo-500 p-3 rounded-xl text-center text-indigo-200 font-bold animate-in fade-in slide-in-from-top-2">
+          <div className={`p-3 rounded-xl text-center font-bold animate-in fade-in slide-in-from-top-2 ${message.includes(t.ui.save_failed) || message.includes(t.ui.quota_exceeded) || message.includes(t.ui.storage_unavailable)
+              ? 'bg-red-900/50 border border-red-500 text-red-200'
+              : 'bg-indigo-900/50 border border-indigo-500 text-indigo-200'
+            }`}>
             {message}
           </div>
         )}
 
         <div className="space-y-3">
-          <Button 
-            variant="outline" 
-            size="full" 
+          <Button
+            variant="outline"
+            size="full"
             onClick={() => toggleLanguage()}
             icon={<i className="fa-solid fa-globe"></i>}
           >
             {t.ui.language}: {state.language.toUpperCase()}
           </Button>
 
-          <Button 
-            variant="primary" 
-            size="full" 
+          <Button
+            variant="primary"
+            size="full"
             onClick={() => setConfirmAction('SAVE')}
             icon={<i className="fa-solid fa-floppy-disk"></i>}
           >
             {t.ui.save_game}
           </Button>
 
-          <Button 
-            variant="secondary" 
-            size="full" 
+          <Button
+            variant="secondary"
+            size="full"
             disabled={!gameStateManager.hasSave()}
             onClick={() => setConfirmAction('LOAD')}
             icon={<i className="fa-solid fa-folder-open"></i>}
@@ -91,9 +113,9 @@ export const MenuUI: React.FC<MenuUIProps> = ({ state, onClose }) => {
               {confirmAction === 'SAVE' ? t.ui.confirm_save : t.ui.confirm_load}
             </p>
             <div className="flex gap-2">
-              <Button 
-                variant={confirmAction === 'SAVE' ? 'primary' : 'danger'} 
-                size="full" 
+              <Button
+                variant={confirmAction === 'SAVE' ? 'primary' : 'danger'}
+                size="full"
                 onClick={confirmAction === 'SAVE' ? handleSave : handleLoad}
               >
                 {t.ui.active}
@@ -106,10 +128,10 @@ export const MenuUI: React.FC<MenuUIProps> = ({ state, onClose }) => {
         )}
 
         <div className="pt-4 border-t border-slate-800">
-           <Button 
-            variant="danger" 
-            size="full" 
-            onClick={() => { if(window.confirm(t.ui.reset_progress)) { localStorage.clear(); window.location.reload(); } }}
+          <Button
+            variant="danger"
+            size="full"
+            onClick={() => { if (window.confirm(t.ui.reset_progress)) { localStorage.clear(); window.location.reload(); } }}
           >
             {t.ui.reset_progress}
           </Button>
