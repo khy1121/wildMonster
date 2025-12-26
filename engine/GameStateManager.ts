@@ -1,7 +1,8 @@
 
-import { GameState, Tamer, MonsterInstance, BattleRewards, InventoryItem, Language, FactionType } from '../domain/types';
+import { GameState, Tamer, MonsterInstance, BattleRewards, InventoryItem, Language, FactionType, EvolutionOption } from '../domain/types';
 import { MONSTER_DATA } from '../data/monsters';
 import { ITEM_DATA } from '../data/items';
+import { CHARACTER_DATA } from '../data/characters';
 import { QUEST_DATA } from '../data/quests';
 import { gameEvents as bus } from './EventBus';
 import { addExpToMonster, addExpToTamer, createMonsterInstance, addToInventory, rollLoot, calculateCaptureChance, checkEvolution, transformMonster, unlockNode, consumeItem } from '../domain/logic';
@@ -15,17 +16,15 @@ const INITIAL_STATE: GameState = {
     name: 'Tamer Zero',
     level: 1,
     exp: 0,
-    party: [
-      createMonsterInstance('pyrocat', 5)
-    ],
+    party: [],
     storage: [],
     gold: 150,
     inventory: [
       { itemId: 'capture_orb', quantity: 5 }
     ],
-    unlockedPartySlots: 1,
+    unlockedPartySlots: 6,
     unlockedSupportSkills: ['cheer'],
-    collection: ['pyrocat']
+    collection: []
   },
   worldPosition: { x: 400, y: 300 },
   currentScene: 'BootScene',
@@ -54,12 +53,10 @@ class GameStateManager {
     if (!this.state.language) {
       this.state.language = (navigator.language.startsWith('ko') ? 'ko' : 'en') as Language;
     }
-    // Migration for reputation field
     if (!this.state.reputation) {
       this.state.reputation = { ...INITIAL_STATE.reputation };
     }
 
-    // Shop stock initialization
     if (!this.state.shopStock || !this.state.shopNextRefresh) {
       this.refreshShopStock();
     } else {
@@ -70,16 +67,13 @@ class GameStateManager {
   refreshShopStock() {
     const allItems = Object.keys(ITEM_DATA).filter(id => {
       const item = ITEM_DATA[id];
-      // Exclude materials from random shop to make them feel more like hunt-only drops
-      // or include them? The user said "4 random items". Let's include everything except maybe Quest items if we had any.
       return item.category !== 'Material';
     });
 
-    // Pick 4 random items
     const shuffled = [...allItems].sort(() => 0.5 - Math.random());
     const selected = shuffled.slice(0, 4);
 
-    const refreshInterval = 4 * 60 * 60 * 1000; // 4 hours
+    const refreshInterval = 4 * 60 * 60 * 1000;
     this.state.shopStock = selected;
     this.state.shopNextRefresh = Date.now() + refreshInterval;
     this.updateState({});
@@ -127,7 +121,6 @@ class GameStateManager {
     Object.values(this.state.reputation).forEach(val => {
       maxDiscount = Math.max(maxDiscount, getFactionDiscount(val));
     });
-
     return Math.floor(item.price * (1 - maxDiscount));
   }
 
@@ -135,13 +128,11 @@ class GameStateManager {
     const item = ITEM_DATA[itemId];
     if (!item) return false;
 
-    // 1. Faction Lock Check
     if (item.factionLock) {
       const rep = this.state.reputation[item.factionLock] || 0;
-      if (rep < 100) return false; // Basic "Friendly" requirement for faction items
+      if (rep < 100) return false;
     }
 
-    // 2. Materials Check
     if (item.requiredMaterials) {
       for (const mat of item.requiredMaterials) {
         const invMat = this.state.tamer.inventory.find(i => i.itemId === mat.itemId);
@@ -149,11 +140,9 @@ class GameStateManager {
       }
     }
 
-    // 3. Gold Check
     const totalCost = this.getEffectivePrice(itemId) * quantity;
     if (this.state.tamer.gold < totalCost) return false;
 
-    // Deduct Gold and Materials
     this.state.tamer.gold -= totalCost;
     if (item.requiredMaterials) {
       item.requiredMaterials.forEach(mat => {
@@ -161,100 +150,30 @@ class GameStateManager {
       });
     }
 
-    // Add Item to Inventory
     this.state.tamer.inventory = addToInventory(this.state.tamer.inventory, itemId, quantity);
     this.updateState({});
     return true;
   }
 
-  sellItem(itemId: string, quantity: number): boolean {
+  useItem(itemId: string): { success: boolean, message: string } {
     const item = ITEM_DATA[itemId];
+    if (!item) return { success: false, message: 'Item not found' };
+
     const invItem = this.state.tamer.inventory.find(i => i.itemId === itemId);
-    if (!invItem || invItem.quantity < quantity) return false;
+    if (!invItem || invItem.quantity <= 0) return { success: false, message: 'No more items' };
 
-    this.state.tamer.gold += Math.floor(item.price * 0.5) * quantity;
-    this.state.tamer.inventory = consumeItem(this.state.tamer.inventory, itemId, quantity);
-    this.updateState({});
-    return true;
-  }
+    if (item.category === 'Healing') {
+      const activeMonster = this.state.tamer.party[0];
+      if (!activeMonster) return { success: false, message: 'No monster to heal' };
+      if (activeMonster.currentHp >= activeMonster.currentStats.maxHp) return { success: false, message: 'HP is already full' };
 
-  checkQuests() {
-    QUEST_DATA.forEach(quest => {
-      if (this.state.completedQuests.includes(quest.id)) return;
-
-      let satisfied = true;
-      if (quest.requiredLevel && this.state.tamer.level < quest.requiredLevel) satisfied = false;
-      if (quest.requiredFlag && !this.state.flags[quest.requiredFlag]) satisfied = false;
-
-      if (quest.id === 'first_capture' && this.state.tamer.collection.length < 2) satisfied = false;
-      if (quest.id === 'collector_beginner' && this.state.tamer.collection.length < 3) satisfied = false;
-      if (quest.id === 'gold_saver' && this.state.tamer.gold < 1000) satisfied = false;
-
-      if (satisfied) {
-        this.completeQuest(quest.id);
-      }
-    });
-  }
-
-  completeQuest(questId: string) {
-    const quest = QUEST_DATA.find(q => q.id === questId);
-    if (!quest || this.state.completedQuests.includes(questId)) return;
-
-    this.state.completedQuests.push(questId);
-    this.state.tamer.gold += quest.rewardGold;
-    const { tamer } = addExpToTamer(this.state.tamer, quest.rewardExp);
-    this.state.tamer = tamer;
-
-    if (quest.rewardItems) {
-      quest.rewardItems.forEach(ri => {
-        this.state.tamer.inventory = addToInventory(this.state.tamer.inventory, ri.itemId, ri.quantity);
-      });
-    }
-
-    bus.emitEvent({ type: 'QUEST_COMPLETED', questId });
-    bus.emitEvent({ type: 'STATE_UPDATED', state: this.state });
-  }
-
-  unlockSkillNode(monsterUid: string, nodeId: string) {
-    const partyIndex = this.state.tamer.party.findIndex(m => m.uid === monsterUid);
-    if (partyIndex !== -1) {
-      const monster = this.state.tamer.party[partyIndex];
-      const updated = unlockNode(monster, nodeId);
-      if (updated !== monster) {
-        const newParty = [...this.state.tamer.party];
-        newParty[partyIndex] = updated;
-        this.state.tamer = { ...this.state.tamer, party: newParty };
-        this.autoSave();
-        bus.emitEvent({ type: 'STATE_UPDATED', state: this.state });
-        bus.emitEvent({ type: 'SKILL_UNLOCKED', monsterUid, nodeId });
-      }
-    }
-  }
-
-  evolveMonster(monsterUid: string, targetSpeciesId: string) {
-    const partyIndex = this.state.tamer.party.findIndex(m => m.uid === monsterUid);
-    if (partyIndex !== -1) {
-      const monster = this.state.tamer.party[partyIndex];
-      const species = MONSTER_DATA[monster.speciesId];
-      const evolution = species.evolutions?.find(ev => ev.targetSpeciesId === targetSpeciesId);
-
-      if (evolution?.requiredItemId) {
-        this.state.tamer.inventory = consumeItem(this.state.tamer.inventory, evolution.requiredItemId, 1);
-      }
-
-      const evolved = transformMonster(monster, targetSpeciesId);
-      const newParty = [...this.state.tamer.party];
-      newParty[partyIndex] = evolved;
-      this.state.tamer = { ...this.state.tamer, party: newParty };
-
-      if (!this.state.tamer.collection.includes(targetSpeciesId)) {
-        this.state.tamer.collection.push(targetSpeciesId);
-      }
-
-      this.state.flags['evolved_once'] = true;
-      this.autoSave();
+      activeMonster.currentHp = Math.min(activeMonster.currentStats.maxHp, activeMonster.currentHp + (item.stats?.hp || 20));
+      this.state.tamer.inventory = consumeItem(this.state.tamer.inventory, itemId, 1);
       this.updateState({});
+      return { success: true, message: `${item.name} used!` };
     }
+
+    return { success: false, message: 'Cannot use this item here' };
   }
 
   attemptCapture(enemySpeciesId: string, enemyLevel: number, currentHp: number, maxHp: number): boolean {
@@ -262,9 +181,7 @@ class GameStateManager {
     const orbIndex = inv.findIndex(i => i.itemId === 'capture_orb');
     if (orbIndex === -1 || inv[orbIndex].quantity <= 0) return false;
 
-    const newInventory = [...inv];
-    newInventory[orbIndex] = { ...newInventory[orbIndex], quantity: newInventory[orbIndex].quantity - 1 };
-    this.state.tamer.inventory = newInventory.filter(i => i.quantity > 0);
+    this.state.tamer.inventory = consumeItem(this.state.tamer.inventory, 'capture_orb', 1);
 
     const chance = calculateCaptureChance(enemySpeciesId, currentHp, maxHp);
     const success = gameRNG.chance(chance);
@@ -285,36 +202,72 @@ class GameStateManager {
       if (enemyData) {
         this.updateReputation(enemyData.faction, 5);
       }
-
-      bus.emitEvent({ type: 'MONSTER_CAPTURED', monster });
     }
 
-    this.autoSave();
     this.updateState({});
     return success;
+  }
+
+  startNewGame(characterId: string, starterSpeciesId: string): void {
+    const char = CHARACTER_DATA[characterId];
+    if (!char) return;
+
+    this.state.tamer = {
+      name: char.name,
+      level: 1,
+      exp: 0,
+      gold: 200,
+      characterId: characterId,
+      party: [],
+      storage: [],
+      inventory: [
+        { itemId: 'potion', quantity: 3 },
+        { itemId: 'capture_orb', quantity: 5 }
+      ],
+      unlockedPartySlots: 6,
+      unlockedSupportSkills: ['cheer'],
+      collection: [starterSpeciesId]
+    };
+
+    const monster = createMonsterInstance(starterSpeciesId, 5);
+    this.state.tamer.party.push(monster);
+
+    this.state.flags['game_started'] = true;
+    this.state.worldPosition = { x: 400, y: 300 };
+
+    this.save();
+    bus.emitEvent({ type: 'STATE_UPDATED', state: this.state });
+  }
+
+  checkQuests() {
+    QUEST_DATA.forEach(quest => {
+      if (this.state.completedQuests.includes(quest.id)) return;
+      let satisfied = true;
+      if (quest.requiredLevel && this.state.tamer.level < quest.requiredLevel) satisfied = false;
+      if (quest.requiredFlag && !this.state.flags[quest.requiredFlag]) satisfied = false;
+      if (satisfied) this.completeQuest(quest.id);
+    });
+  }
+
+  completeQuest(questId: string) {
+    const quest = QUEST_DATA.find(q => q.id === questId);
+    if (!quest || this.state.completedQuests.includes(questId)) return;
+    this.state.completedQuests.push(questId);
+    this.state.tamer.gold += quest.rewardGold;
+    const { tamer } = addExpToTamer(this.state.tamer, quest.rewardExp);
+    this.state.tamer = tamer;
+    if (quest.rewardItems) {
+      quest.rewardItems.forEach(ri => {
+        this.state.tamer.inventory = addToInventory(this.state.tamer.inventory, ri.itemId, ri.quantity);
+      });
+    }
+    bus.emitEvent({ type: 'QUEST_COMPLETED', questId });
+    this.updateState({});
   }
 
   grantRewards(enemySpeciesId: string, enemyLevel: number, isBoss: boolean = false) {
     const rewards = rollLoot(enemySpeciesId, gameRNG);
     const enemyData = MONSTER_DATA[enemySpeciesId];
-
-    if (isBoss) {
-      rewards.exp *= 5;
-      rewards.gold *= 10;
-      this.state.flags[`boss_${enemySpeciesId}_defeated`] = true;
-      if (this.state.tamer.party[0]) {
-        const leadFaction = MONSTER_DATA[this.state.tamer.party[0].speciesId]?.faction;
-        if (leadFaction) this.updateReputation(leadFaction, 20);
-      }
-    } else {
-      if (enemyData) {
-        this.updateReputation(enemyData.faction, -1);
-      }
-      if (this.state.tamer.party[0]) {
-        const leadFaction = MONSTER_DATA[this.state.tamer.party[0].speciesId]?.faction;
-        if (leadFaction) this.updateReputation(leadFaction, 1);
-      }
-    }
 
     const levelMult = 1 + (enemyLevel - 1) * 0.1;
     rewards.exp = Math.floor(rewards.exp * levelMult);
@@ -333,34 +286,46 @@ class GameStateManager {
     }
     newTamer.inventory = updatedInventory;
 
-    if (enemySpeciesId === 'lunacat') {
-      this.state.flags['lunacat_defeated'] = true;
-    }
-
     this.state.tamer = newTamer;
     this.updateState({});
-
     bus.emitEvent({ type: 'REWARD_EARNED', rewards });
-    if (leveledUp) {
-      bus.emitEvent({ type: 'TAMER_LEVEL_UP', level: newTamer.level });
-    }
   }
 
   grantExp(monsterUid: string, amount: number) {
     const partyIndex = this.state.tamer.party.findIndex(m => m.uid === monsterUid);
     if (partyIndex !== -1) {
       const { monster, leveledUp } = addExpToMonster(this.state.tamer.party[partyIndex], amount, this.state);
-      const newParty = [...this.state.tamer.party];
-      newParty[partyIndex] = monster;
-      this.state.tamer = { ...this.state.tamer, party: newParty };
+      this.state.tamer.party[partyIndex] = monster;
       if (leveledUp) {
-        const evolutionOptions = checkEvolution(monster, this.state);
-        if (evolutionOptions.length > 0) {
-          bus.emitEvent({ type: 'EVOLUTION_READY', monsterUid, options: evolutionOptions });
+        const options = checkEvolution(monster, this.state);
+        if (options.length > 0) {
+          bus.emitEvent({ type: 'EVOLUTION_READY', monsterUid, options });
         }
       }
-      this.autoSave();
-      bus.emitEvent({ type: 'STATE_UPDATED', state: this.state });
+      this.updateState({});
+    }
+  }
+
+  evolveMonster(monsterUid: string, targetSpeciesId: string) {
+    const partyIndex = this.state.tamer.party.findIndex(m => m.uid === monsterUid);
+    if (partyIndex !== -1) {
+      const monster = this.state.tamer.party[partyIndex];
+      const evolved = transformMonster(monster, targetSpeciesId);
+      this.state.tamer.party[partyIndex] = evolved;
+      if (!this.state.tamer.collection.includes(targetSpeciesId)) {
+        this.state.tamer.collection.push(targetSpeciesId);
+      }
+      this.updateState({});
+    }
+  }
+
+  unlockSkillNode(monsterUid: string, nodeId: string) {
+    const partyIndex = this.state.tamer.party.findIndex(m => m.uid === monsterUid);
+    if (partyIndex !== -1) {
+      const monster = this.state.tamer.party[partyIndex];
+      const updated = unlockNode(monster, nodeId);
+      this.state.tamer.party[partyIndex] = updated;
+      this.updateState({});
     }
   }
 
@@ -371,7 +336,11 @@ class GameStateManager {
 
   addDebugMonster(speciesId: string) {
     const monster = createMonsterInstance(speciesId, 10);
-    this.state.tamer.party.push(monster);
+    if (this.state.tamer.party.length < this.state.tamer.unlockedPartySlots) {
+      this.state.tamer.party.push(monster);
+    } else {
+      this.state.tamer.storage.push(monster);
+    }
     if (!this.state.tamer.collection.includes(speciesId)) {
       this.state.tamer.collection.push(speciesId);
     }
@@ -379,94 +348,35 @@ class GameStateManager {
   }
 
   autoSave() {
-    const result = SaveManager.save(this.state);
-    if (!result.ok && 'reason' in result) {
-      console.warn(`[GameStateManager] Auto-save failed: ${result.reason}`);
-    }
+    SaveManager.save(this.state);
   }
 
-  manualSave(): SaveResult {
+  save(): SaveResult {
     return SaveManager.save(this.state);
   }
 
+  manualSave(): SaveResult {
+    return this.save();
+  }
+
   manualLoad(): boolean {
-    const loadResult = SaveManager.load();
-    if (loadResult.ok) {
-      this.state = loadResult.state;
-      bus.emitEvent({ type: 'STATE_UPDATED', state: this.state });
+    const result = SaveManager.load();
+    if (result.ok) {
+      this.state = result.state;
+      this.updateState({});
       return true;
     }
     return false;
   }
 
   hasSave(): boolean {
-    return localStorage.getItem('eontamers_save_v1') !== null;
+    return SaveManager.hasSave();
   }
 
-  useItem(itemId: string, targetMonsterUid?: string): { success: boolean; message: string; healed?: number } {
-    const itemDef = ITEM_DATA[itemId];
-    if (!itemDef) {
-      return { success: false, message: 'Unknown item' };
-    }
-
-    // Check inventory
-    const invItem = this.state.tamer.inventory.find(i => i.itemId === itemId);
-    if (!invItem || invItem.quantity < 1) {
-      return { success: false, message: 'No items remaining' };
-    }
-
-    // Handle Healing items
-    if (itemDef.category === 'Healing') {
-      // Find target monster (default to first party member)
-      const targetUid = targetMonsterUid || (this.state.tamer.party[0]?.uid);
-      const partyIndex = this.state.tamer.party.findIndex(m => m.uid === targetUid);
-
-      if (partyIndex === -1) {
-        return { success: false, message: 'No monster available' };
-      }
-
-      const monster = this.state.tamer.party[partyIndex];
-      const maxHp = monster.currentStats.maxHp;
-
-      // Check if HP is already full
-      if (monster.currentHp >= maxHp) {
-        return { success: false, message: 'HP is already full' };
-      }
-
-      // Calculate heal amount
-      const healAmount = itemDef.power;
-      const newHp = Math.min(maxHp, monster.currentHp + healAmount);
-      const actualHealed = newHp - monster.currentHp;
-
-      // Update monster HP
-      const newParty = [...this.state.tamer.party];
-      newParty[partyIndex] = { ...monster, currentHp: newHp };
-
-      // Consume item
-      this.state.tamer.inventory = consumeItem(this.state.tamer.inventory, itemId, 1);
-      this.state.tamer = { ...this.state.tamer, party: newParty };
-
-      // Trigger state update
-      this.updateState({});
-
-      // Debug logging
-      console.log(`[useItem] Used ${itemDef.name} on monster, healed ${Math.round(actualHealed)} HP (${Math.round(monster.currentHp)} → ${Math.round(newHp)})`);
-
-      return {
-        success: true,
-        message: `Restored ${Math.round(actualHealed)} HP!`,
-        healed: actualHealed
-      };
-    }
-
-    // Other item types can be added here
-    return { success: false, message: 'Item cannot be used here' };
-  }
-
-  healParty() {
-    this.state.tamer.party.forEach(m => { m.currentHp = m.currentStats.maxHp; });
-    this.autoSave();
-    bus.emitEvent({ type: 'STATE_UPDATED', state: this.state });
+  returnToTitle() {
+    // We emit an event that scenes can listen to, or we can just reload for simplicity
+    // But let's emit an event for a smoother transition
+    bus.emitEvent({ type: 'RETURN_TO_TITLE' });
   }
 }
 

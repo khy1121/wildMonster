@@ -2,6 +2,113 @@
 import { MonsterSpecies, ElementType, FactionType } from '../domain/types';
 
 export const MONSTER_DATA: Record<string, MonsterSpecies> = {
+  // --- STARTERS & THEIR EVOLUTIONS ---
+  ignis: {
+    id: 'ignis',
+    name: 'Ignis',
+    type: ElementType.FIRE,
+    faction: FactionType.EMBER_CLAN,
+    baseStats: { hp: 50, maxHp: 50, attack: 14, defense: 10, speed: 12 },
+    icon: '🦖',
+    rarity: 'Rare',
+    learnableSkills: [{ level: 1, skillId: 'ember' }, { level: 5, skillId: 'scratch' }],
+    evolutions: [
+      { targetSpeciesId: 'flarehide', levelThreshold: 10, description: 'Focus on physical power.', previewSkills: ['tackle'] },
+      { targetSpeciesId: 'volcadragon', levelThreshold: 20, description: 'Direct path to volcano lord.', previewSkills: ['fire_blast'] }
+    ]
+  },
+  flarehide: {
+    id: 'flarehide',
+    name: 'Flarehide',
+    type: ElementType.FIRE,
+    faction: FactionType.EMBER_CLAN,
+    baseStats: { hp: 120, maxHp: 120, attack: 35, defense: 25, speed: 30 },
+    icon: '🐉',
+    rarity: 'Uncommon',
+    learnableSkills: [{ level: 12, skillId: 'fire_blast' }],
+    evolutions: [{ targetSpeciesId: 'volcadragon', levelThreshold: 25, description: 'Ultimate fire master.', previewSkills: ['rally'] }]
+  },
+  volcadragon: {
+    id: 'volcadragon',
+    name: 'Volcadragon',
+    type: ElementType.FIRE,
+    faction: FactionType.EMBER_CLAN,
+    baseStats: { hp: 350, maxHp: 350, attack: 95, defense: 75, speed: 80 },
+    icon: '🔥🐉',
+    rarity: 'Legendary',
+    learnableSkills: [{ level: 30, skillId: 'fire_blast' }]
+  },
+
+  aqualo: {
+    id: 'aqualo',
+    name: 'Aqualo',
+    type: ElementType.WATER,
+    faction: FactionType.TIDE_WATCHERS,
+    baseStats: { hp: 60, maxHp: 60, attack: 10, defense: 12, speed: 10 },
+    icon: '🐡',
+    rarity: 'Rare',
+    learnableSkills: [{ level: 1, skillId: 'bubble' }, { level: 5, skillId: 'first_aid' }],
+    evolutions: [
+      { targetSpeciesId: 'serpentform', levelThreshold: 10, description: 'Graceful sea serpent.', previewSkills: ['ice_shard'] },
+      { targetSpeciesId: 'krakenwhale', levelThreshold: 25, description: 'Ocean titan.', previewSkills: ['water_blast'] }
+    ]
+  },
+  serpentform: {
+    id: 'serpentform',
+    name: 'Serpentform',
+    type: ElementType.WATER,
+    faction: FactionType.TIDE_WATCHERS,
+    baseStats: { hp: 140, maxHp: 140, attack: 32, defense: 28, speed: 35 },
+    icon: '🐍',
+    rarity: 'Uncommon',
+    learnableSkills: [{ level: 12, skillId: 'ice_shard' }],
+    evolutions: [{ targetSpeciesId: 'krakenwhale', levelThreshold: 25, description: 'Ruler of the deep ocean.', previewSkills: ['water_blast'] }]
+  },
+  krakenwhale: {
+    id: 'krakenwhale',
+    name: 'Krakenwhale',
+    type: ElementType.WATER,
+    faction: FactionType.TIDE_WATCHERS,
+    baseStats: { hp: 450, maxHp: 450, attack: 85, defense: 95, speed: 65 },
+    icon: '🐋',
+    rarity: 'Legendary'
+  },
+
+  voltwing: {
+    id: 'voltwing',
+    name: 'Voltwing',
+    type: ElementType.ELECTRIC,
+    faction: FactionType.STORM_HERDERS,
+    baseStats: { hp: 45, maxHp: 45, attack: 12, defense: 8, speed: 16 },
+    icon: '🐥',
+    rarity: 'Rare',
+    learnableSkills: [{ level: 1, skillId: 'scratch' }, { level: 5, skillId: 'ember' }],
+    evolutions: [
+      { targetSpeciesId: 'stormhawk', levelThreshold: 10, description: 'Lightning fast raptor.', previewSkills: ['tackle'] },
+      { targetSpeciesId: 'thundernebula', levelThreshold: 25, description: 'Electric avatar.', previewSkills: ['rally'] }
+    ]
+  },
+  stormhawk: {
+    id: 'stormhawk',
+    name: 'Stormhawk',
+    type: ElementType.ELECTRIC,
+    faction: FactionType.STORM_HERDERS,
+    baseStats: { hp: 110, maxHp: 110, attack: 40, defense: 20, speed: 45 },
+    icon: '🦅',
+    rarity: 'Uncommon',
+    evolutions: [{ targetSpeciesId: 'thundernebula', levelThreshold: 25, description: 'Avatar of the electric storm.', previewSkills: ['rally'] }]
+  },
+  thundernebula: {
+    id: 'thundernebula',
+    name: 'Thundernebula',
+    type: ElementType.ELECTRIC,
+    faction: FactionType.STORM_HERDERS,
+    baseStats: { hp: 320, maxHp: 320, attack: 105, defense: 60, speed: 110 },
+    icon: '🌩️🦅',
+    rarity: 'Legendary'
+  },
+
+  // --- EXISTING MONSTERS ---
   'pyrocat': {
     id: 'pyrocat',
     name: 'Pyrocat',
@@ -15,27 +122,12 @@ export const MONSTER_DATA: Record<string, MonsterSpecies> = {
       { level: 5, skillId: 'ember' },
       { level: 15, skillId: 'fire_blast' }
     ],
-    lootTable: [
-      { itemId: 'potion', chance: 0.2, minQuantity: 1, maxQuantity: 1 },
-      { itemId: 'hardened_bone', chance: 0.4, minQuantity: 1, maxQuantity: 2 },
-      { itemId: 'monster_core', chance: 0.05, minQuantity: 1, maxQuantity: 1 }
-    ],
     evolutions: [
       {
         targetSpeciesId: 'flarelion',
         levelThreshold: 10,
-        requiredNodeId: 'p_fire_special',
-        requiredItemId: 'sun_stone',
-        description: 'Requires Sun Stone and Solar Core node.',
+        description: 'Evolution into Flarelion.',
         previewSkills: ['ember', 'fire_blast']
-      },
-      {
-        targetSpeciesId: 'shadowcat',
-        levelThreshold: 10,
-        requiredNodeId: 'p_dark_special',
-        requiredItemId: 'moon_stone',
-        description: 'Requires Moon Stone and Lunar Shroud node.',
-        previewSkills: ['scratch', 'dark_pulse']
       }
     ]
   },
@@ -47,20 +139,10 @@ export const MONSTER_DATA: Record<string, MonsterSpecies> = {
     icon: '🐈',
     rarity: 'Rare',
     isSpecial: true,
-    auraColor: 0x818cf8,
     baseStats: { hp: 70, maxHp: 70, attack: 18, defense: 10, speed: 25 },
     learnableSkills: [
       { level: 1, skillId: 'scratch' },
-      { level: 8, skillId: 'dark_pulse' },
-      { level: 22, skillId: 'dark_pulse' }
-    ],
-    spawnConditions: [
-      { type: 'TIME_OF_DAY', value: 'NIGHT' }
-    ],
-    lootTable: [
-      { itemId: 'moon_stone', chance: 0.15, minQuantity: 1, maxQuantity: 1 },
-      { itemId: 'spirit_essence', chance: 0.2, minQuantity: 1, maxQuantity: 1 },
-      { itemId: 'monster_core', chance: 0.3, minQuantity: 1, maxQuantity: 1 }
+      { level: 8, skillId: 'dark_pulse' }
     ]
   },
   'thunderhoof': {
@@ -71,21 +153,10 @@ export const MONSTER_DATA: Record<string, MonsterSpecies> = {
     icon: '🦌',
     rarity: 'Legendary',
     isSpecial: true,
-    auraColor: 0xfacc15,
     baseStats: { hp: 150, maxHp: 150, attack: 35, defense: 20, speed: 30 },
     learnableSkills: [
       { level: 1, skillId: 'scratch' },
-      { level: 6, skillId: 'spark' },
-      { level: 20, skillId: 'dark_pulse' }
-    ],
-    spawnConditions: [
-      { type: 'LEVEL_MIN', value: 10 }
-    ],
-    lootTable: [
-      { itemId: 'capture_orb', chance: 1.0, minQuantity: 2, maxQuantity: 4 },
-      { itemId: 'mystic_powder', chance: 0.8, minQuantity: 5, maxQuantity: 10 },
-      { itemId: 'monster_core', chance: 0.5, minQuantity: 1, maxQuantity: 2 },
-      { itemId: 'ancient_scrap', chance: 0.4, minQuantity: 1, maxQuantity: 3 }
+      { level: 6, skillId: 'spark' }
     ]
   },
   'flarelion': {
@@ -98,24 +169,8 @@ export const MONSTER_DATA: Record<string, MonsterSpecies> = {
     baseStats: { hp: 100, maxHp: 100, attack: 28, defense: 15, speed: 18 },
     learnableSkills: [
       { level: 1, skillId: 'ember' },
-      { level: 12, skillId: 'fire_blast' },
-      { level: 28, skillId: 'fire_blast' }
-    ],
-    evolutions: []
-  },
-  'shadowcat': {
-    id: 'shadowcat',
-    name: 'Shadowcat',
-    type: ElementType.DARK,
-    faction: FactionType.GLOOM_STALKERS,
-    icon: '🐈‍⬛',
-    rarity: 'Uncommon',
-    baseStats: { hp: 80, maxHp: 80, attack: 22, defense: 12, speed: 30 },
-    learnableSkills: [
-      { level: 1, skillId: 'scratch' },
-      { level: 10, skillId: 'dark_pulse' }
-    ],
-    evolutions: []
+      { level: 12, skillId: 'fire_blast' }
+    ]
   },
   'droplet': {
     id: 'droplet',
@@ -127,19 +182,12 @@ export const MONSTER_DATA: Record<string, MonsterSpecies> = {
     baseStats: { hp: 60, maxHp: 60, attack: 8, defense: 12, speed: 8 },
     learnableSkills: [
       { level: 1, skillId: 'tackle' },
-      { level: 5, skillId: 'bubble' },
-      { level: 14, skillId: 'ice_shard' }
-    ],
-    lootTable: [
-      { itemId: 'potion', chance: 0.4, minQuantity: 1, maxQuantity: 1 },
-      { itemId: 'mystic_powder', chance: 0.3, minQuantity: 1, maxQuantity: 3 },
-      { itemId: 'monster_core', chance: 0.05, minQuantity: 1, maxQuantity: 1 }
+      { level: 5, skillId: 'bubble' }
     ],
     evolutions: [
       {
         targetSpeciesId: 'mistlynx',
         levelThreshold: 12,
-        requiredNodeId: 'd_mist',
         description: 'Graceful hunter of the fog.',
         previewSkills: ['bubble', 'ice_shard']
       }
@@ -156,45 +204,25 @@ export const MONSTER_DATA: Record<string, MonsterSpecies> = {
     learnableSkills: [
       { level: 1, skillId: 'bubble' },
       { level: 10, skillId: 'ice_shard' }
-    ],
-    lootTable: [
-      { itemId: 'mystic_powder', chance: 0.6, minQuantity: 2, maxQuantity: 5 },
-      { itemId: 'ancient_scrap', chance: 0.2, minQuantity: 1, maxQuantity: 1 }
-    ],
+    ]
   },
-  /**
-   * Design Note: Puffle (푸플)
-   * - Silhouette: Round, fluffy cloud shape with tiny leaf sprout on top
-   * - Style: Ultra-cute Digimon aesthetic - soft edges, big sparkling eyes, stubby limbs
-   * - Personality: Gentle and playful, bounces around happily
-   * - Icon: Emoji placeholder 🌿 (suggests small plant/nature theme)
-   * - Intended for: Early-game Nature/Grass starter alternative
-   * - Color palette: Soft pastel green with cream/white fluff
-   */
   'puffle': {
     id: 'puffle',
-    name: 'Puffle', // English fallback
+    name: 'Puffle',
     type: ElementType.GRASS,
     faction: FactionType.GLADE_KEEPERS,
     icon: '🌿',
     rarity: 'Common',
     baseStats: {
-      hp: 55,      // Slightly tankier than pyrocat
+      hp: 55,
       maxHp: 55,
-      attack: 9,   // Lower attack, more defensive
-      defense: 14, // High defense for early game
-      speed: 7     // Slow but sturdy
+      attack: 9,
+      defense: 14,
+      speed: 7
     },
     learnableSkills: [
-      { level: 1, skillId: 'tackle' },      // Basic move everyone can learn
-      { level: 5, skillId: 'bubble' },      // Defensive water move (nature uses water)
-      { level: 10, skillId: 'scratch' },    // Mid-game physical option
-      { level: 18, skillId: 'ice_shard' }   // Late signature move (nature + ice synergy)
-    ],
-    lootTable: [
-      { itemId: 'potion', chance: 0.35, minQuantity: 1, maxQuantity: 2 },
-      { itemId: 'hardened_bone', chance: 0.25, minQuantity: 1, maxQuantity: 1 }
-    ],
-    evolutions: []
+      { level: 1, skillId: 'tackle' },
+      { level: 5, skillId: 'bubble' }
+    ]
   }
 };

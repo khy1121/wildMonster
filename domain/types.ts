@@ -138,10 +138,20 @@ export interface Quest {
   requiredLevel?: number;
 }
 
+export interface Character {
+  id: string;
+  name: string;
+  role: string;
+  description: string;
+  image: string;
+  startingBonus?: Partial<Stats>;
+}
+
 export interface Tamer {
   name: string;
   level: number;
   exp: number;
+  characterId?: string;
   party: MonsterInstance[];
   storage: MonsterInstance[];
   gold: number;
@@ -176,7 +186,8 @@ export type GameEvent =
   | { type: 'SKILL_UNLOCKED'; monsterUid: string; nodeId: string }
   | { type: 'TAMER_LEVEL_UP'; level: number }
   | { type: 'QUEST_COMPLETED'; questId: string }
-  | { type: 'REPUTATION_CHANGED'; faction: FactionType; delta: number; total: number };
+  | { type: 'REPUTATION_CHANGED'; faction: FactionType; delta: number; total: number }
+  | { type: 'RETURN_TO_TITLE' };
 
 export interface BattleRewards {
   exp: number;

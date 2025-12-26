@@ -50,6 +50,12 @@ export class BattleScene extends Phaser.Scene {
     this.battleEnded = false;
     this.tamerCooldowns = {};
 
+    gameEvents.emitEvent({ type: 'SCENE_CHANGED', sceneKey: 'BattleScene' });
+
+    gameEvents.onEvent('RETURN_TO_TITLE', () => {
+      this.scene.stop();
+    });
+
     this.skillButtons = [];
     this.tamerButtons = [];
 

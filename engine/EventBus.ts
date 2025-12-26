@@ -14,6 +14,11 @@ export class EventBus extends Phaser.Events.EventEmitter {
   onEvent(type: GameEvent['type'], callback: (event: any) => void) {
     this.on(type, callback);
   }
+
+  subscribe(type: GameEvent['type'], callback: (event: any) => void) {
+    this.on(type, callback);
+    return () => this.off(type, callback);
+  }
 }
 
 export const gameEvents = new EventBus();

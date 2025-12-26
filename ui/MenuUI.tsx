@@ -127,7 +127,19 @@ export const MenuUI: React.FC<MenuUIProps> = ({ state, onClose }) => {
           </div>
         )}
 
-        <div className="pt-4 border-t border-slate-800">
+        <div className="pt-4 border-t border-slate-800 space-y-2">
+          <Button
+            variant="ghost"
+            size="full"
+            onClick={() => {
+              gameStateManager.returnToTitle();
+              onClose();
+            }}
+            icon={<i className="fa-solid fa-house"></i>}
+          >
+            {t.ui.back_to_lobby || 'Return to Lobby'}
+          </Button>
+
           <Button
             variant="danger"
             size="full"

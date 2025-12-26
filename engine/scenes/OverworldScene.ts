@@ -101,6 +101,12 @@ export class OverworldScene extends Phaser.Scene {
       callbackScope: this,
       loop: true
     });
+
+    gameEvents.onEvent('RETURN_TO_TITLE', () => {
+      this.scene.stop();
+      this.scene.start('MenuScene');
+      gameEvents.emitEvent({ type: 'SCENE_CHANGED', sceneKey: 'MenuScene' });
+    });
   }
 
   onResize(gameSize: Phaser.Structs.Size) {
