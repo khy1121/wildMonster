@@ -4,7 +4,6 @@ import { gameEvents } from '../EventBus';
 import { gameStateManager } from '../GameStateManager';
 import { getTranslation } from '../../localization/strings';
 import { ThreeOverlayRenderer } from '../ThreeOverlayRenderer';
-import { threeOverlayManager } from '../ThreeOverlayManager';
 
 export class MenuScene extends Phaser.Scene {
   public add!: Phaser.GameObjects.GameObjectFactory;
@@ -55,6 +54,8 @@ export class MenuScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true })
       .on('pointerdown', () => {
+        // Stop current scene to trigger shutdown and cleanup 3D overlay
+        this.scene.stop();
         this.scene.start('OverworldScene');
         gameEvents.emitEvent({ type: 'SCENE_CHANGED', sceneKey: 'OverworldScene' });
       });
@@ -91,15 +92,19 @@ export class MenuScene extends Phaser.Scene {
     }
 
     this.threeOverlay = new ThreeOverlayRenderer();
-    const success = this.threeOverlay.init(gameContainer);
+    const success = this.threeOverlay.init(gameContainer, 'menu');
 
     if (success) {
       // Position gem at center-top
       const width = this.cameras.main.width;
       const height = this.cameras.main.height;
       this.threeOverlay.setGemPosition(width / 2, height * 0.15);
-      this.threeOverlay.show(); // Ensure visible
-      threeOverlayManager.setOverlay(this.threeOverlay); // Register globally
+
+      // Add walking monsters at bottom (monster theme!)
+      this.threeOverlay.addWalkingMonsters(4);
+
+      this.threeOverlay.show();
+      console.log('[Menu] 3D overlay with gem and 4 monsters');
     } else {
       console.warn('[3D] WebGL unavailable, using 2D fallback gem');
       this.threeOverlay = null;
@@ -234,15 +239,16 @@ export class MenuScene extends Phaser.Scene {
   shutdown() {
     this.scale.off('resize', this.onResize, this);
 
-    // Hide 3D overlay when leaving menu
+    // Destroy 3D overlay completely
     if (this.threeOverlay) {
-      this.threeOverlay.hide();
+      this.threeOverlay.destroy();
+      this.threeOverlay = null;
     }
 
     // Cleanup particles
     this.buttonParticles.forEach(p => p.destroy());
     this.buttonParticles = [];
 
-    console.log('[MenuScene] 3D overlay hidden');
+    console.log('[MenuScene] Cleaned up 3D overlay');
   }
 }

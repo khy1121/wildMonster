@@ -324,7 +324,7 @@ export class BattleScene extends Phaser.Scene {
       case 'fire_blast':
         this.playFireBlastVfx(attackerX, attackerY);
         this.playHitFlash(targetX, targetY);
-        this.cameras.main.shake(200, 0.004); // Strong shake for ultimate
+        this.cameras.main.shake(200, 0.004);
         break;
       case 'ember':
         this.playEmberVfx(attackerX, attackerY);
@@ -340,7 +340,7 @@ export class BattleScene extends Phaser.Scene {
         break;
       case 'tackle':
         this.playTackleVfx(targetX, targetY);
-        this.cameras.main.shake(150, 0.003); // Heavy impact
+        this.cameras.main.shake(150, 0.003);
         break;
       case 'dark_pulse':
         this.playDarkPulseVfx(attackerX, attackerY);
@@ -354,7 +354,11 @@ export class BattleScene extends Phaser.Scene {
     }
 
     this.showVfx(targetX, targetY, `-${damage}`, 0xef4444);
-    this.checkEndConditions();
+
+    // Delay end condition check to allow HP UI to update first
+    this.time.delayedCall(50, () => {
+      this.checkEndConditions();
+    });
   }
 
   useCaptureOrb() {
@@ -389,7 +393,11 @@ export class BattleScene extends Phaser.Scene {
     const damage = calculateDamage(this.enemyEntity, this.playerEntity, skillId);
     this.playerEntity.hp = Math.max(0, this.playerEntity.hp - damage);
     this.showVfx(this.cameras.main.width * 0.25, this.cameras.main.height * 0.4, `-${damage}`, 0xef4444);
-    this.checkEndConditions();
+
+    // Delay end condition check to allow HP UI to update first
+    this.time.delayedCall(50, () => {
+      this.checkEndConditions();
+    });
   }
 
   showVfx(x: number, y: number, text: string, color: number) {
@@ -481,6 +489,50 @@ export class BattleScene extends Phaser.Scene {
       }
     }
 
+    // Glow particle (soft white edge)
+    if (!this.textures.exists('glowParticle')) {
+      const canvas = this.textures.createCanvas('glowParticle', 16, 16);
+      if (canvas) {
+        const ctx = canvas.context;
+        const gradient = ctx.createRadialGradient(8, 8, 0, 8, 8, 8);
+        gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+        gradient.addColorStop(0.4, 'rgba(255, 255, 255, 0.4)');
+        gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 16, 16);
+        canvas.refresh();
+      }
+    }
+
+    // Smoke particle (gray-translucent)
+    if (!this.textures.exists('smokeParticle')) {
+      const canvas = this.textures.createCanvas('smokeParticle', 16, 16);
+      if (canvas) {
+        const ctx = canvas.context;
+        const gradient = ctx.createRadialGradient(8, 8, 0, 8, 8, 8);
+        gradient.addColorStop(0, 'rgba(100, 100, 100, 0.6)');
+        gradient.addColorStop(1, 'rgba(50, 50, 50, 0)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 16, 16);
+        canvas.refresh();
+      }
+    }
+
+    // Spark particle (long thin white line)
+    if (!this.textures.exists('sparkParticle')) {
+      const canvas = this.textures.createCanvas('sparkParticle', 4, 12);
+      if (canvas) {
+        const ctx = canvas.context;
+        const gradient = ctx.createLinearGradient(0, 0, 0, 12);
+        gradient.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
+        gradient.addColorStop(0.5, 'rgba(255, 255, 255, 1)');
+        gradient.addColorStop(1, 'rgba(255, 255, 255, 0.8)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 4, 12);
+        canvas.refresh();
+      }
+    }
+
     this.particleTextureCreated = true;
   }
 
@@ -490,61 +542,75 @@ export class BattleScene extends Phaser.Scene {
   private playFireBlastVfx(x: number, y: number) {
     if (!this.textures.exists('fireParticle')) return;
 
-    // Layer 1: Central explosion (bright core)
-    const coreParticles = this.add.particles(x, y, 'fireParticle', {
-      speed: { min: 100, max: 200 },
-      angle: { min: 0, max: 360 },
-      scale: { start: 2.0, end: 0 },
+    // Layer 1: Core Explosion (Bright White/Yellow)
+    const core = this.add.particles(x, y, 'glowParticle', {
+      scale: { start: 0.5, end: 2.5 },
       alpha: { start: 1, end: 0 },
-      lifespan: 500,
-      gravityY: 0,
-      quantity: 30,
-      blendMode: Phaser.BlendModes.ADD,
+      tint: 0xffffff,
+      lifespan: 300,
+      quantity: 1,
       emitting: false
     });
 
-    // Layer 2: Upward flames
-    const flameParticles = this.add.particles(x, y, 'fireParticle', {
-      speed: { min: 80, max: 160 },
-      angle: { min: 240, max: 300 },
-      scale: { start: 1.5, end: 0 },
+    // Layer 2: Main Fire Burst (Orange/Red)
+    const burst = this.add.particles(x, y, 'fireParticle', {
+      speed: { min: 150, max: 350 },
+      angle: { min: 0, max: 360 },
+      scale: { start: 2.0, end: 0.5 },
       alpha: { start: 1, end: 0 },
       lifespan: 600,
-      gravityY: -100,
-      quantity: 25,
+      quantity: 40,
       blendMode: Phaser.BlendModes.ADD,
       emitting: false
     });
 
-    // Explosion ring
-    const ring1 = this.add.circle(x, y, 30, 0xff6600, 0.8);
-    const ring2 = this.add.circle(x, y, 30, 0xffaa00, 0.6);
-
-    coreParticles.explode();
-    this.time.delayedCall(50, () => flameParticles.explode());
-
-    this.tweens.add({
-      targets: [ring1, ring2],
-      scale: 4,
-      alpha: 0,
-      duration: 400,
-      ease: 'Power2',
-      onComplete: () => { ring1.destroy(); ring2.destroy(); }
+    // Layer 3: Smoke (Dark Gray)
+    const smoke = this.add.particles(x, y, 'smokeParticle', {
+      speed: { min: 20, max: 80 },
+      angle: { min: 0, max: 360 },
+      scale: { start: 1, end: 3 },
+      alpha: { start: 0.5, end: 0 },
+      lifespan: 800,
+      quantity: 15,
+      emitting: false
     });
 
-    // Fullscreen flash
-    const flash = this.add.rectangle(this.cameras.main.centerX, this.cameras.main.centerY,
-      this.cameras.main.width, this.cameras.main.height, 0xff4400, 0.3);
-    this.tweens.add({
-      targets: flash,
-      alpha: 0,
-      duration: 150,
-      onComplete: () => flash.destroy()
+    // Layer 4: Distant Sparks
+    const sparks = this.add.particles(x, y, 'sparkParticle', {
+      speed: { min: 200, max: 500 },
+      angle: { min: 0, max: 360 },
+      scale: { start: 0.5, end: 0 },
+      alpha: { start: 1, end: 0 },
+      lifespan: 400,
+      quantity: 20,
+      rotate: { min: 0, max: 360 },
+      blendMode: Phaser.BlendModes.ADD,
+      emitting: false
     });
 
-    this.time.delayedCall(650, () => {
-      coreParticles.destroy();
-      flameParticles.destroy();
+    core.explode();
+    burst.explode();
+    smoke.explode();
+    sparks.explode();
+
+    // Shockwave ring
+    const ring = this.add.circle(x, y, 10, 0xffaa00, 0.4);
+    this.tweens.add({
+      targets: ring,
+      scale: 15,
+      alpha: 0,
+      duration: 500,
+      ease: 'Expo.out',
+      onComplete: () => ring.destroy()
+    });
+
+    this.cameras.main.flash(150, 255, 100, 0, true);
+
+    this.time.delayedCall(800, () => {
+      core.destroy();
+      burst.destroy();
+      smoke.destroy();
+      sparks.destroy();
     });
   }
 
@@ -552,259 +618,291 @@ export class BattleScene extends Phaser.Scene {
    * Play white flash effect on hit
    */
   private playHitFlash(x: number, y: number) {
-    const flash = this.add.circle(x, y, 60, 0xffffff, 0.8);
+    // Sharp white bloom
+    const flash = this.add.circle(x, y, 10, 0xffffff, 1);
     this.tweens.add({
       targets: flash,
-      scale: 1.5,
+      scale: 12,
       alpha: 0,
-      duration: 120,
-      ease: 'Power2',
+      duration: 150,
+      ease: 'Expo.out',
       onComplete: () => flash.destroy()
     });
+
+    // Radial sparks on hit
+    if (this.textures.exists('sparkParticle')) {
+      const sparks = this.add.particles(x, y, 'sparkParticle', {
+        speed: { min: 300, max: 600 },
+        angle: { min: 0, max: 360 },
+        scale: { start: 0.8, end: 0 },
+        alpha: { start: 1, end: 0 },
+        lifespan: 300,
+        quantity: 15,
+        rotate: { min: 0, max: 360 },
+        blendMode: Phaser.BlendModes.ADD,
+        emitting: false
+      });
+      sparks.explode();
+      this.time.delayedCall(400, () => sparks.destroy());
+    }
   }
 
   /** Ember: Small fire sparks - ENHANCED */
   private playEmberVfx(x: number, y: number) {
     if (!this.textures.exists('fireParticle')) return;
 
-    // Main sparks
+    // Small popping sparks
     const particles = this.add.particles(x, y, 'fireParticle', {
-      speed: { min: 60, max: 120 },
-      angle: { min: 240, max: 300 },
-      scale: { start: 1.2, end: 0 },
+      speed: { min: 40, max: 180 },
+      angle: { min: 0, max: 360 },
+      scale: { start: 1, end: 0 },
       alpha: { start: 1, end: 0 },
-      lifespan: 450,
-      gravityY: -80,
-      quantity: 15,
+      lifespan: { min: 300, max: 600 },
+      gravityY: -40,
+      quantity: 20,
       blendMode: Phaser.BlendModes.ADD,
       emitting: false
     });
 
-    // Trail sparks
-    const trail = this.add.particles(x, y - 20, 'fireParticle', {
-      speed: { min: 20, max: 50 },
-      angle: { min: 250, max: 290 },
-      scale: { start: 0.6, end: 0 },
-      alpha: { start: 0.8, end: 0 },
-      lifespan: 300,
-      gravityY: -40,
-      quantity: 8,
-      blendMode: Phaser.BlendModes.ADD,
+    // Heat glow
+    const glow = this.add.particles(x, y, 'glowParticle', {
+      scale: { start: 1, end: 2 },
+      alpha: { start: 0.5, end: 0 },
+      tint: 0xffaa00,
+      lifespan: 400,
+      quantity: 2,
       emitting: false
     });
 
     particles.explode();
-    this.time.delayedCall(100, () => trail.explode());
-    this.time.delayedCall(500, () => { particles.destroy(); trail.destroy(); });
+    glow.explode();
+
+    this.time.delayedCall(600, () => {
+      particles.destroy();
+      glow.destroy();
+    });
   }
 
   /** Bubble: Water bubbles - ENHANCED */
   private playBubbleVfx(x: number, y: number) {
     if (!this.textures.exists('waterParticle')) return;
 
-    // Main bubbles
+    // Layer 1: Bubbles rising (various sizes)
     const bubbles = this.add.particles(x, y, 'waterParticle', {
-      speed: { min: 40, max: 90 },
-      angle: { min: 250, max: 290 },
-      scale: { start: 1.3, end: 0.4 },
-      alpha: { start: 1, end: 0 },
-      lifespan: 600,
-      gravityY: -50,
-      quantity: 18,
-      blendMode: Phaser.BlendModes.NORMAL,
+      speed: { min: 50, max: 150 },
+      angle: { min: 240, max: 300 },
+      scale: { start: 1, end: 2 },
+      alpha: { start: 0.8, end: 0 },
+      lifespan: 800,
+      gravityY: -100,
+      quantity: 30,
       emitting: false
     });
 
-    // Splash wave
-    const wave = this.add.circle(x, y, 15, 0x3b82f6, 0.5);
+    // Layer 2: Splash (lateral)
+    const splash = this.add.particles(x, y, 'waterParticle', {
+      speed: { min: 100, max: 250 },
+      angle: { min: 0, max: 360 },
+      scale: { start: 1.5, end: 0 },
+      alpha: { start: 1, end: 0 },
+      lifespan: 400,
+      quantity: 20,
+      emitting: false
+    });
+
+    // Layer 3: Ring pulse (Blue)
+    const ring = this.add.circle(x, y, 10, 0x60a5fa, 0.5);
     this.tweens.add({
-      targets: wave,
-      scaleX: 4,
-      scaleY: 2,
+      targets: ring,
+      scale: 10,
       alpha: 0,
-      duration: 350,
-      onComplete: () => wave.destroy()
+      duration: 400,
+      ease: 'Cubic.out',
+      onComplete: () => ring.destroy()
     });
 
     bubbles.explode();
-    this.time.delayedCall(650, () => bubbles.destroy());
+    splash.explode();
+
+    this.time.delayedCall(1000, () => {
+      bubbles.destroy();
+      splash.destroy();
+    });
   }
 
   /** Scratch: Quick slash - ENHANCED */
   private playScratchVfx(x: number, y: number) {
     if (!this.textures.exists('impactParticle')) return;
 
-    // Slash line graphic
-    const slash = this.add.rectangle(x - 40, y, 80, 4, 0xffffff, 1);
-    slash.setRotation(-0.3);
-    this.tweens.add({
-      targets: slash,
-      scaleX: 0,
-      alpha: 0,
-      duration: 150,
-      ease: 'Power2',
-      onComplete: () => slash.destroy()
-    });
+    // Layer 1: Triple slashes
+    for (let i = -1; i <= 1; i++) {
+      const offset = i * 20;
+      const slash = this.add.rectangle(x + offset, y, 4, 120, 0xffffff, 1);
+      slash.setRotation(0.5);
+      this.tweens.add({
+        targets: slash,
+        scaleY: 0,
+        alpha: 0,
+        duration: 200,
+        delay: Math.abs(i) * 50,
+        ease: 'Power2',
+        onComplete: () => slash.destroy()
+      });
+    }
 
-    // Impact particles
-    const particles = this.add.particles(x, y, 'impactParticle', {
-      speed: { min: 120, max: 200 },
-      angle: { min: -30, max: 30 },
-      scale: { start: 0.8, end: 0 },
+    // Layer 2: White streaks
+    const streaks = this.add.particles(x, y, 'impactParticle', {
+      speed: { min: 200, max: 400 },
+      angle: { min: -45, max: 45 },
+      scale: { start: 1, end: 0 },
       alpha: { start: 1, end: 0 },
-      lifespan: 250,
-      gravityY: 0,
-      quantity: 12,
-      blendMode: Phaser.BlendModes.ADD,
+      lifespan: 300,
+      quantity: 15,
       emitting: false
     });
 
-    particles.explode();
-    this.time.delayedCall(300, () => particles.destroy());
+    streaks.explode();
+    this.time.delayedCall(400, () => streaks.destroy());
   }
 
   /** Tackle: Impact shockwave - ENHANCED */
   private playTackleVfx(x: number, y: number) {
     if (!this.textures.exists('impactParticle')) return;
 
-    // Central burst
-    const particles = this.add.particles(x, y, 'impactParticle', {
-      speed: { min: 150, max: 250 },
+    // Intense impact shockwave
+    const burst = this.add.particles(x, y, 'impactParticle', {
+      speed: { min: 200, max: 500 },
       angle: { min: 0, max: 360 },
-      scale: { start: 1.5, end: 0 },
+      scale: { start: 2, end: 0 },
       alpha: { start: 1, end: 0 },
-      lifespan: 300,
-      gravityY: 0,
-      quantity: 25,
+      lifespan: 400,
+      quantity: 40,
       blendMode: Phaser.BlendModes.ADD,
       emitting: false
     });
 
-    // Triple ring shockwave
-    const ring1 = this.add.circle(x, y, 25, 0xffffff, 0.8);
-    const ring2 = this.add.circle(x, y, 20, 0xeeeeee, 0.6);
-    const ring3 = this.add.circle(x, y, 15, 0xdddddd, 0.4);
-
-    particles.explode();
-
-    this.tweens.add({
-      targets: ring1,
-      scale: 5,
-      alpha: 0,
-      duration: 300,
-      onComplete: () => ring1.destroy()
+    // Dust/Shock smoke
+    const smoke = this.add.particles(x, y, 'smokeParticle', {
+      speed: { min: 30, max: 100 },
+      angle: { min: 0, max: 360 },
+      scale: { start: 2, end: 4 },
+      alpha: { start: 0.6, end: 0 },
+      lifespan: 700,
+      quantity: 20,
+      emitting: false
     });
 
-    this.tweens.add({
-      targets: ring2,
-      scale: 4,
-      alpha: 0,
-      duration: 250,
-      delay: 50,
-      onComplete: () => ring2.destroy()
-    });
+    burst.explode();
+    smoke.explode();
 
-    this.tweens.add({
-      targets: ring3,
-      scale: 3,
-      alpha: 0,
-      duration: 200,
-      delay: 100,
-      onComplete: () => ring3.destroy()
-    });
+    this.cameras.main.flash(100, 255, 255, 255, true);
 
-    this.time.delayedCall(350, () => particles.destroy());
+    this.time.delayedCall(800, () => {
+      burst.destroy();
+      smoke.destroy();
+    });
   }
 
   /** Dark Pulse: Shadow wave - ENHANCED */
   private playDarkPulseVfx(x: number, y: number) {
     if (!this.textures.exists('darkParticle')) return;
 
-    // Central dark core
-    const core = this.add.particles(x, y, 'darkParticle', {
-      speed: { min: 0, max: 30 },
+    // Layer 1: Concentric rings (Dark purple)
+    for (let i = 0; i < 3; i++) {
+      this.time.delayedCall(i * 100, () => {
+        const ring = this.add.circle(x, y, 20, 0x4c1d95, 0.6);
+        this.tweens.add({
+          targets: ring,
+          scale: 15,
+          alpha: 0,
+          duration: 600,
+          ease: 'Sine.Out',
+          onComplete: () => ring.destroy()
+        });
+      });
+    }
+
+    // Layer 2: Swirling dark particles
+    const swirl = this.add.particles(x, y, 'darkParticle', {
+      speed: { min: 100, max: 200 },
       angle: { min: 0, max: 360 },
-      scale: { start: 2.0, end: 0 },
+      scale: { start: 2, end: 0 },
       alpha: { start: 1, end: 0 },
-      lifespan: 400,
-      gravityY: 0,
-      quantity: 20,
-      blendMode: Phaser.BlendModes.ADD,
+      rotate: { min: 0, max: 360 },
+      lifespan: 800,
+      quantity: 40,
       emitting: false
     });
 
-    // Expanding wave
-    const wave = this.add.particles(x, y, 'darkParticle', {
-      speed: { min: 80, max: 150 },
-      angle: { min: 0, max: 360 },
-      scale: { start: 1.5, end: 0 },
+    // Layer 3: Central void (Black/Purple glow)
+    const voidGlow = this.add.particles(x, y, 'glowParticle', {
+      scale: { start: 0.5, end: 3.0 },
       alpha: { start: 1, end: 0 },
+      tint: 0x2e1065,
       lifespan: 500,
-      gravityY: 0,
-      quantity: 20,
-      blendMode: Phaser.BlendModes.ADD,
+      quantity: 2,
       emitting: false
     });
 
-    // Dark ring pulse
-    const ring = this.add.circle(x, y, 30, 0x6b21a8, 0.7);
-    this.tweens.add({
-      targets: ring,
-      scale: 4,
-      alpha: 0,
-      duration: 450,
-      ease: 'Power2',
-      onComplete: () => ring.destroy()
-    });
+    swirl.explode();
+    voidGlow.explode();
 
-    core.explode();
-    this.time.delayedCall(100, () => wave.explode());
-    this.time.delayedCall(550, () => { core.destroy(); wave.destroy(); });
+    this.cameras.main.flash(200, 50, 0, 100, true);
+
+    this.time.delayedCall(1000, () => {
+      swirl.destroy();
+      voidGlow.destroy();
+    });
   }
 
   /** Ice Shard: Frozen crystals - ENHANCED */
   private playIceShardVfx(x: number, y: number) {
     if (!this.textures.exists('iceParticle')) return;
 
-    // Main ice shards
+    // Layer 1: Crystalline shards (Cyan/White)
     const shards = this.add.particles(x, y, 'iceParticle', {
-      speed: { min: 100, max: 180 },
-      angle: { min: 240, max: 300 },
-      scale: { start: 1.4, end: 0 },
+      speed: { min: 150, max: 300 },
+      angle: { min: 0, max: 360 },
+      scale: { start: 1.5, end: 0 },
       alpha: { start: 1, end: 0 },
       lifespan: 500,
-      gravityY: -60,
-      quantity: 18,
+      quantity: 30,
+      rotate: { min: 0, max: 360 },
       blendMode: Phaser.BlendModes.ADD,
       emitting: false
     });
 
-    // Ice crystals burst
-    const crystals = this.add.particles(x, y, 'iceParticle', {
-      speed: { min: 40, max: 80 },
-      angle: { min: 0, max: 360 },
-      scale: { start: 0.8, end: 0 },
-      alpha: { start: 0.9, end: 0 },
-      lifespan: 400,
-      gravityY: 20,
-      quantity: 12,
-      blendMode: Phaser.BlendModes.ADD,
+    // Layer 2: Frozen Mist
+    const mist = this.add.particles(x, y, 'glowParticle', {
+      speed: { min: 20, max: 60 },
+      scale: { start: 1, end: 4 },
+      alpha: { start: 0.4, end: 0 },
+      tint: 0xdcfce7,
+      lifespan: 1000,
+      quantity: 15,
       emitting: false
     });
 
-    // Ice flash
-    const flash = this.add.circle(x, y, 40, 0x60a5fa, 0.6);
+    // Layer 3: Frost expansion (Ring)
+    const ring = this.add.circle(x, y, 5, 0xffffff, 0.3);
     this.tweens.add({
-      targets: flash,
-      scale: 2,
+      targets: ring,
+      scale: 12,
       alpha: 0,
-      duration: 300,
-      onComplete: () => flash.destroy()
+      duration: 500,
+      ease: 'Expo.Out',
+      onComplete: () => ring.destroy()
     });
 
     shards.explode();
-    this.time.delayedCall(150, () => crystals.explode());
-    this.time.delayedCall(550, () => { shards.destroy(); crystals.destroy(); });
+    mist.explode();
+
+    this.cameras.main.flash(100, 200, 240, 255, true);
+
+    this.time.delayedCall(1200, () => {
+      shards.destroy();
+      mist.destroy();
+    });
   }
 
   checkEndConditions() {
@@ -834,6 +932,7 @@ export class BattleScene extends Phaser.Scene {
         gameStateManager.grantRewards(this.enemySpeciesId, this.enemyEntity.level, this.isBossBattle);
       }
       gameEvents.emitEvent({ type: 'BATTLE_END', winner });
+
       this.scene.stop();
       this.scene.resume('OverworldScene');
     });

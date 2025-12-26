@@ -6,7 +6,7 @@ import { WORLD_ZONES } from '../../data/zones';
 import { MONSTER_DATA } from '../../data/monsters';
 import { validateSpawn } from '../../domain/logic';
 import { getTranslation } from '../../localization/strings';
-import { threeOverlayManager } from '../ThreeOverlayManager';
+import { ThreeOverlayRenderer } from '../ThreeOverlayRenderer';
 
 export class OverworldScene extends Phaser.Scene {
   public physics!: Phaser.Physics.Arcade.ArcadePhysics;
@@ -31,8 +31,8 @@ export class OverworldScene extends Phaser.Scene {
   }
 
   create() {
-    // Hide 3D menu overlay (important!)
-    threeOverlayManager.hideAll();
+    // Force cleanup any stray 3D overlays from previous scenes
+    ThreeOverlayRenderer.forceCleanup('game-root');
 
     this.scale.on('resize', this.onResize, this);
     const worldWidth = 3200;
