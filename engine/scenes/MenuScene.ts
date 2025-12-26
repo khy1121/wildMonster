@@ -10,11 +10,20 @@ export class MenuScene extends Phaser.Scene {
   public scene!: Phaser.Scenes.ScenePlugin;
   public input!: Phaser.Input.InputPlugin;
 
+  private title?: Phaser.GameObjects.Text;
+  private startBtn?: Phaser.GameObjects.Text;
+  private langBtn?: Phaser.GameObjects.Text;
+
   constructor() {
     super('MenuScene');
   }
 
   create() {
+    this.createUI();
+    this.scale.on('resize', this.onResize, this);
+  }
+
+  createUI() {
     const mainCamera = this.cameras.main;
     const width = mainCamera.width;
     const height = mainCamera.height;
@@ -22,13 +31,13 @@ export class MenuScene extends Phaser.Scene {
     const state = gameStateManager.getState();
     let t = getTranslation(state.language);
 
-    const title = this.add.text(width / 2, height / 3, 'EONTAMERS', {
+    this.title = this.add.text(width / 2, height / 3, 'EONTAMERS', {
       fontSize: '64px',
       color: '#6366f1',
       fontStyle: 'bold italic'
     }).setOrigin(0.5);
 
-    const startBtn = this.add.text(width / 2, height / 2 + 50, t.ui.start_game, {
+    this.startBtn = this.add.text(width / 2, height / 2 + 50, t.ui.start_game, {
       fontSize: '32px',
       color: '#ffffff',
       backgroundColor: '#4338ca',
@@ -41,11 +50,11 @@ export class MenuScene extends Phaser.Scene {
       gameEvents.emitEvent({ type: 'SCENE_CHANGED', sceneKey: 'OverworldScene' });
     });
 
-    startBtn.on('pointerover', () => startBtn.setStyle({ backgroundColor: '#4f46e5' }));
-    startBtn.on('pointerout', () => startBtn.setStyle({ backgroundColor: '#4338ca' }));
+    this.startBtn.on('pointerover', () => this.startBtn?.setStyle({ backgroundColor: '#4f46e5' }));
+    this.startBtn.on('pointerout', () => this.startBtn?.setStyle({ backgroundColor: '#4338ca' }));
 
     // Language Toggle
-    const langBtn = this.add.text(width / 2, height / 2 + 130, `${t.ui.language}: ${state.language.toUpperCase()}`, {
+    this.langBtn = this.add.text(width / 2, height / 2 + 130, `${t.ui.language}: ${state.language.toUpperCase()}`, {
         fontSize: '16px',
         color: '#94a3b8',
         backgroundColor: '#1e293b',
@@ -59,5 +68,18 @@ export class MenuScene extends Phaser.Scene {
         // Refresh scene
         this.scene.restart();
     });
+  }
+
+  onResize(gameSize: Phaser.Structs.Size) {
+    const width = gameSize.width;
+    const height = gameSize.height;
+    this.cameras.main.setSize(width, height);
+    if (this.title) this.title.setPosition(width / 2, height / 3);
+    if (this.startBtn) this.startBtn.setPosition(width / 2, height / 2 + 50);
+    if (this.langBtn) this.langBtn.setPosition(width / 2, height / 2 + 130);
+  }
+
+  shutdown() {
+    this.scale.off('resize', this.onResize, this);
   }
 }

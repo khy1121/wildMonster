@@ -228,3 +228,32 @@ export function createMonsterInstance(speciesId: string, level: number = 1): Mon
     unlockedNodes: []
   };
 }
+
+export function getAvailableSkillIds(
+  monster: MonsterInstance | { level: number; unlockedNodes?: string[] },
+  species: MonsterSpecies
+): string[] {
+  if (!species) return [];
+  const level = (monster as any).level || 1;
+  const unlocked = (monster as any).unlockedNodes || [];
+
+  const learnables = species.learnableSkills || [];
+
+  const baseSkills = learnables.filter(ls => ls.level === 1).map(ls => ls.skillId);
+  const learnedSkills = learnables
+    .filter(ls => ls.level > 1 && level >= ls.level)
+    .sort((a, b) => a.level - b.level)
+    .map(ls => ls.skillId);
+
+  const tree = SKILL_TREES[species.id];
+  const treeSkills = unlocked.flatMap(nodeId => {
+    if (!tree) return [] as string[];
+    const node = tree.nodes.find(n => n.id === nodeId);
+    if (node && node.effect.type === 'skill') return [node.effect.value as string];
+    return [] as string[];
+  });
+
+  // Preserve order: base, learned (by level), then tree-unlocked; remove duplicates
+  const combined = [...baseSkills, ...learnedSkills, ...treeSkills];
+  return Array.from(new Set(combined));
+}

@@ -2,6 +2,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Phaser from 'phaser';
 import { createGameConfig } from './engine/GameConfig';
+import { SafeArea } from './engine/SafeArea';
 import HUD from './ui/HUD';
 import EvolutionChoice from './ui/EvolutionChoice';
 import SkillTreeUI from './ui/SkillTreeUI';
@@ -25,6 +26,7 @@ const App: React.FC = () => {
   const [activeMonsterUid, setActiveMonsterUid] = useState<string | null>(null);
 
   useEffect(() => {
+    console.log('APP MOUNTED');
     gameEvents.onEvent('STATE_UPDATED', (event: any) => {
       setGameState({ ...event.state });
     });
@@ -33,14 +35,32 @@ const App: React.FC = () => {
       setEvolutionData({ monsterUid: event.monsterUid, options: event.options });
     });
 
+    // Initialize safe area probe for notch insets
+    SafeArea.init();
+
+    // Prevent double Phaser creation in StrictMode by using a window guard
+    const win = window as any;
     if (!gameRef.current && containerRef.current) {
-      const config = createGameConfig('game-container');
-      gameRef.current = new Phaser.Game(config);
+      if (win.__PHASER__ && win.__PHASER__ instanceof Phaser.Game) {
+        gameRef.current = win.__PHASER__;
+      } else {
+        const config = createGameConfig('phaser-root');
+        try {
+          gameRef.current = new Phaser.Game(config);
+          win.__PHASER__ = gameRef.current;
+          console.log('PHASER CREATED', { parent: config.parent });
+        } catch (err) {
+          console.error('PHASER CREATE ERROR', err);
+        }
+      }
     }
 
     return () => {
-      if (gameRef.current) {
+      SafeArea.dispose();
+      const win = window as any;
+      if (gameRef.current && (!win.__PHASER_KEEP_ALIVE__)) {
         gameRef.current.destroy(true);
+        if (win.__PHASER__ === gameRef.current) delete win.__PHASER__;
         gameRef.current = null;
       }
     };
@@ -59,15 +79,16 @@ const App: React.FC = () => {
     : null;
 
   return (
-    <div className="relative w-full h-full bg-black overflow-hidden font-sans select-none">
-      <div id="game-container" ref={containerRef} className="w-full h-full" />
-
-      {/* Primary HUD always visible */}
-      <HUD 
-        state={gameState} 
-        onOpenSkills={(uid) => { setActiveMonsterUid(uid); setOverlay('SKILLS'); }}
-        onOpenMenu={() => setOverlay('MENU')} 
-      />
+    <div id="game-root" className="relative w-full h-full bg-black overflow-hidden font-sans select-none">
+      <div id="phaser-root" ref={containerRef} className="w-full h-full" />
+      <div id="hud-root">
+        {/* Primary HUD always visible */}
+        <HUD 
+          state={gameState} 
+          onOpenSkills={(uid) => { setActiveMonsterUid(uid); setOverlay('SKILLS'); }}
+          onOpenMenu={() => setOverlay('MENU')} 
+        />
+      </div>
 
       {/* Floating Debug Toggle - Shifted for mobile nav */}
       <button 

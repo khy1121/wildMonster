@@ -1,7 +1,7 @@
 
-import { MonsterSpecies, Skill, ElementType, Item } from './types';
+import { ElementType } from './domain/types';
 
-export const SKILLS: Record<string, Skill> = {
+export const SKILLS: Record<string, any> = {
   'scratch': {
     id: 'scratch',
     name: 'Scratch',
@@ -49,7 +49,7 @@ export const SKILLS: Record<string, Skill> = {
   }
 };
 
-export const MONSTERS: Record<string, MonsterSpecies> = {
+export const MONSTERS: Record<string, any> = {
   'pyrocat': {
     id: 'pyrocat',
     name: 'Pyrocat',
@@ -115,7 +115,7 @@ export const MONSTERS: Record<string, MonsterSpecies> = {
   }
 };
 
-export const ITEMS: Record<string, Item> = {
+export const ITEMS: Record<string, any> = {
   'potion': {
     id: 'potion',
     name: 'Small Potion',

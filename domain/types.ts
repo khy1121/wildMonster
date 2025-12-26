@@ -96,7 +96,7 @@ export interface MonsterSpecies {
   baseStats: Stats;
   icon: string;
   rarity: Rarity;
-  learnableSkills?: string[];
+  learnableSkills?: { level: number; skillId: string }[];
   lootTable?: LootEntry[];
   evolutions?: EvolutionOption[];
   isSpecial?: boolean;

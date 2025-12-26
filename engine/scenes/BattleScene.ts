@@ -6,6 +6,7 @@ import { MONSTER_DATA } from '../../data/monsters';
 import { SKILL_DATA, SKILL_TREES } from '../../data/skills';
 import { SUPPORT_SKILLS } from '../../data/tamer';
 import { CombatEntity, calculateDamage, updateCooldowns } from '../../domain/combat';
+import { getAvailableSkillIds } from '../../domain/logic';
 import { getTranslation } from '../../localization/strings';
 
 export interface BattleInitData {
@@ -74,16 +75,7 @@ export class BattleScene extends Phaser.Scene {
         return;
     }
 
-    const activeSkills = [...(playerSpecies.learnableSkills || [])];
-    const tree = SKILL_TREES[activeMonster.speciesId];
-    if (tree) {
-      activeMonster.unlockedNodes.forEach(nodeId => {
-        const node = tree.nodes.find(n => n.id === nodeId);
-        if (node && node.effect.type === 'skill') {
-          activeSkills.push(node.effect.value as string);
-        }
-      });
-    }
+    const activeSkills = getAvailableSkillIds(activeMonster, playerSpecies);
 
     this.playerEntity = {
       uid: activeMonster.uid,
@@ -113,7 +105,7 @@ export class BattleScene extends Phaser.Scene {
         defense: Math.floor(enemyBaseStats.defense * enemyGrowth),
         speed: Math.floor(enemyBaseStats.speed * enemyGrowth),
       },
-      skills: enemySpecies.learnableSkills || [],
+      skills: getAvailableSkillIds({ level: enemyLevel, unlockedNodes: [] }, enemySpecies),
       cooldowns: {}
     };
 
@@ -131,10 +123,12 @@ export class BattleScene extends Phaser.Scene {
     }
 
     this.enemyHpBar = this.createHpBar(this.enemyVisual, 0, 80, isBoss ? `BOSS ${this.enemyEntity.name}` : `Wild ${this.enemyEntity.name}`);
-
     this.createMonsterSkillButtons(width / 2, height - 160, t);
     this.createTamerCommandBar(width / 2, height - 80, t);
     this.createCaptureButton(width / 2, height - 25, t);
+
+    // handle resize events so UI reflows
+    this.scale.on('resize', this.onResize, this);
 
     this.time.addEvent({
       delay: isBoss ? 1500 : 2000,
@@ -170,6 +164,9 @@ export class BattleScene extends Phaser.Scene {
     const skills = this.playerEntity.skills;
     const spacing = 140;
     const startX = centerX - ((skills.length - 1) * spacing) / 2;
+    // clear any previous buttons
+    this.skillButtons.forEach(b => b.destroy());
+    this.skillButtons = [];
 
     skills.forEach((sId, i) => {
       const skill = SKILL_DATA[sId];
@@ -206,6 +203,23 @@ export class BattleScene extends Phaser.Scene {
       bg.on('pointerdown', () => this.useTamerSkill(sId));
       this.tamerButtons.push(btn);
     });
+  }
+
+  onResize(gameSize: Phaser.Structs.Size) {
+    const width = gameSize.width;
+    const height = gameSize.height;
+    this.cameras.main.setSize(width, height);
+    // Recreate skill buttons and reposition UI
+    const t = getTranslation(gameStateManager.getState().language);
+    this.createMonsterSkillButtons(width / 2, height - 160, t);
+    this.createTamerCommandBar(width / 2, height - 80, t);
+    this.createCaptureButton(width / 2, height - 25, t);
+    // reposition player/enemy visuals
+    // player visual positions are anchored relative to camera center in create
+  }
+
+  shutdown() {
+    this.scale.off('resize', this.onResize, this);
   }
 
   useTamerSkill(skillId: string) {

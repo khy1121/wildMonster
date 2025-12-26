@@ -25,7 +25,7 @@ const HUD: React.FC<HUDProps> = ({ state, onOpenSkills, onOpenMenu }) => {
       <div className="flex justify-between items-start w-full">
         {/* Tamer Info - Compact for Mobile */}
         <div className="flex flex-col gap-2 pointer-events-auto">
-          <div className="bg-slate-900/90 border border-slate-700 p-2 md:p-3 rounded-xl flex items-center gap-2 md:gap-4 shadow-2xl backdrop-blur-md">
+          <div className="hud-card border border-slate-700 flex items-center gap-2 md:gap-4">
             <div className="w-8 h-8 md:w-12 md:h-12 bg-indigo-600 rounded-full flex items-center justify-center text-lg md:text-2xl border-2 border-indigo-400 shrink-0">
               👤
             </div>
@@ -39,7 +39,8 @@ const HUD: React.FC<HUDProps> = ({ state, onOpenSkills, onOpenMenu }) => {
           
           <button 
             onClick={onOpenMenu}
-            className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-3 py-2 md:px-4 md:py-2 rounded-lg shadow-lg transition uppercase tracking-widest text-[9px] md:text-[10px] flex items-center justify-center gap-2 active:scale-95 min-h-[40px]"
+            className="btn-primary flex items-center justify-center gap-2 text-[9px] md:text-[10px] min-h-[40px] pointer-events-auto"
+            aria-label="Open Main Menu"
           >
             <i className="fa-solid fa-bars"></i> <span className="hidden sm:inline">{t.ui.main_menu}</span>
           </button>
@@ -60,7 +61,7 @@ const HUD: React.FC<HUDProps> = ({ state, onOpenSkills, onOpenMenu }) => {
         {/* Active Monster Info - Compact for Mobile */}
         {activeMonster && species && (
           <div 
-            className="bg-slate-900/90 border border-slate-700 p-2 md:p-3 rounded-xl pointer-events-auto flex items-center gap-2 md:gap-4 shadow-2xl cursor-pointer hover:border-indigo-500 group transition backdrop-blur-md active:scale-95"
+            className="hud-card border border-slate-700 pointer-events-auto flex items-center gap-2 md:gap-4 cursor-pointer hover:border-indigo-500 group transition"
             onClick={() => onOpenSkills(activeMonster.uid)}
           >
             <div className="text-2xl md:text-4xl relative shrink-0">

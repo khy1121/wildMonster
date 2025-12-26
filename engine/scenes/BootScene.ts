@@ -29,6 +29,13 @@ export class BootScene extends Phaser.Scene {
       style: { font: '20px monospace', color: '#ffffff' }
     }).setOrigin(0.5, 0.5);
 
+    this.scale.on('resize', () => {
+      if (!this.cameras || !this.cameras.main) return;
+      const w = this.cameras.main.width;
+      const h = this.cameras.main.height;
+      if (loadingText && loadingText.active) loadingText.setPosition(w / 2, h / 2 - 50);
+    });
+
     this.load.on('complete', () => {
       loadingText.destroy();
     });

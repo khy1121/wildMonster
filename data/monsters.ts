@@ -10,7 +10,11 @@ export const MONSTER_DATA: Record<string, MonsterSpecies> = {
     icon: '🔥',
     rarity: 'Common',
     baseStats: { hp: 50, maxHp: 50, attack: 12, defense: 8, speed: 10 },
-    learnableSkills: ['scratch', 'ember'],
+    learnableSkills: [
+      { level: 1, skillId: 'scratch' },
+      { level: 5, skillId: 'ember' },
+      { level: 15, skillId: 'fire_blast' }
+    ],
     lootTable: [{ itemId: 'potion', chance: 0.3, minQuantity: 1, maxQuantity: 1 }],
     evolutions: [
       { 
@@ -41,7 +45,11 @@ export const MONSTER_DATA: Record<string, MonsterSpecies> = {
     isSpecial: true,
     auraColor: 0x818cf8,
     baseStats: { hp: 70, maxHp: 70, attack: 18, defense: 10, speed: 25 },
-    learnableSkills: ['scratch', 'dark_pulse'],
+    learnableSkills: [
+      { level: 1, skillId: 'scratch' },
+      { level: 8, skillId: 'dark_pulse' },
+      { level: 22, skillId: 'dark_pulse' }
+    ],
     spawnConditions: [
       { type: 'TIME_OF_DAY', value: 'NIGHT' }
     ],
@@ -57,7 +65,11 @@ export const MONSTER_DATA: Record<string, MonsterSpecies> = {
     isSpecial: true,
     auraColor: 0xfacc15,
     baseStats: { hp: 150, maxHp: 150, attack: 35, defense: 20, speed: 30 },
-    learnableSkills: ['scratch', 'ember'], 
+    learnableSkills: [
+      { level: 1, skillId: 'scratch' },
+      { level: 6, skillId: 'spark' },
+      { level: 20, skillId: 'dark_pulse' }
+    ], 
     spawnConditions: [
       { type: 'LEVEL_MIN', value: 10 }
     ],
@@ -71,7 +83,11 @@ export const MONSTER_DATA: Record<string, MonsterSpecies> = {
     icon: '🦁',
     rarity: 'Uncommon',
     baseStats: { hp: 100, maxHp: 100, attack: 28, defense: 15, speed: 18 },
-    learnableSkills: ['ember', 'fire_blast'],
+    learnableSkills: [
+      { level: 1, skillId: 'ember' },
+      { level: 12, skillId: 'fire_blast' },
+      { level: 28, skillId: 'fire_blast' }
+    ],
     evolutions: []
   },
   'shadowcat': {
@@ -82,7 +98,10 @@ export const MONSTER_DATA: Record<string, MonsterSpecies> = {
     icon: '🐈‍⬛',
     rarity: 'Uncommon',
     baseStats: { hp: 80, maxHp: 80, attack: 22, defense: 12, speed: 30 },
-    learnableSkills: ['scratch', 'dark_pulse'],
+    learnableSkills: [
+      { level: 1, skillId: 'scratch' },
+      { level: 10, skillId: 'dark_pulse' }
+    ],
     evolutions: []
   },
   'droplet': {
@@ -93,7 +112,11 @@ export const MONSTER_DATA: Record<string, MonsterSpecies> = {
     icon: '💧',
     rarity: 'Common',
     baseStats: { hp: 60, maxHp: 60, attack: 8, defense: 12, speed: 8 },
-    learnableSkills: ['tackle', 'bubble'],
+    learnableSkills: [
+      { level: 1, skillId: 'tackle' },
+      { level: 5, skillId: 'bubble' },
+      { level: 14, skillId: 'ice_shard' }
+    ],
     lootTable: [{ itemId: 'potion', chance: 0.4, minQuantity: 1, maxQuantity: 1 }],
     evolutions: [
       { 
@@ -113,7 +136,10 @@ export const MONSTER_DATA: Record<string, MonsterSpecies> = {
     icon: '🐆',
     rarity: 'Uncommon',
     baseStats: { hp: 95, maxHp: 95, attack: 24, defense: 18, speed: 22 },
-    learnableSkills: ['bubble', 'ice_shard'],
+    learnableSkills: [
+      { level: 1, skillId: 'bubble' },
+      { level: 10, skillId: 'ice_shard' }
+    ],
     evolutions: []
   }
 };

@@ -30,6 +30,7 @@ export class OverworldScene extends Phaser.Scene {
   }
 
   create() {
+    this.scale.on('resize', this.onResize, this);
     const worldWidth = 3200;
     const worldHeight = 3200;
 
@@ -96,6 +97,20 @@ export class OverworldScene extends Phaser.Scene {
       callbackScope: this,
       loop: true
     });
+  }
+
+  onResize(gameSize: Phaser.Structs.Size) {
+    const width = gameSize.width;
+    const height = gameSize.height;
+    this.cameras.main.setSize(width, height);
+    // ensure camera follow still valid
+    if (this.cameras.main.followOffset) {
+      // keep follow as-is, camera will adapt
+    }
+  }
+
+  shutdown() {
+    this.scale.off('resize', this.onResize, this);
   }
 
   update(time: number, delta: number) {

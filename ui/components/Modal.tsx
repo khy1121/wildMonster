@@ -24,7 +24,7 @@ export const Modal: React.FC<ModalProps> = ({
       <div className={`w-full h-full md:h-auto md:max-h-[90vh] ${maxWidth} bg-slate-900 md:border md:border-slate-800 md:rounded-3xl overflow-hidden shadow-2xl flex flex-col ${className}`}>
         {/* Header */}
         <div className="p-4 md:p-6 border-b border-slate-800 flex justify-between items-center bg-slate-900/50 shrink-0">
-          <h2 className="text-xl md:text-3xl font-black italic text-white uppercase tracking-tighter">
+          <h2 className="text-xl md:text-3xl font-black italic uppercase tracking-tighter heading-gradient">
             {title}
           </h2>
           <Button variant="ghost" size="sm" onClick={onClose} icon={<i className="fa-solid fa-xmark text-xl"></i>} />

@@ -9,8 +9,6 @@ export const createGameConfig = (containerId: string): Phaser.Types.Core.GameCon
   return {
     type: Phaser.AUTO,
     parent: containerId,
-    width: '100%',
-    height: '100%',
     physics: {
       default: 'arcade',
       arcade: {
@@ -21,7 +19,8 @@ export const createGameConfig = (containerId: string): Phaser.Types.Core.GameCon
     scene: [BootScene, MenuScene, OverworldScene, BattleScene],
     scale: {
       mode: Phaser.Scale.RESIZE,
-      autoCenter: Phaser.Scale.CENTER_BOTH
+      autoCenter: Phaser.Scale.CENTER_BOTH,
+      parent: containerId
     },
     backgroundColor: '#0f172a'
   };
