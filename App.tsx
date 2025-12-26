@@ -87,7 +87,10 @@ const App: React.FC = () => {
         <HUD
           state={gameState}
           onOpenSkills={(uid) => { setActiveMonsterUid(uid); setOverlay('SKILLS'); }}
-          onOpenMenu={() => setOverlay('MENU')}
+          onOpenQuests={() => setOverlay('QUESTS')}
+          onOpenFactions={() => setOverlay('FACTIONS')}
+          onOpenShop={() => setOverlay('SHOP')}
+          onOpenSettings={() => setOverlay('MENU')}
           onOpenInventory={() => setOverlay('INVENTORY')}
         />
       </div>

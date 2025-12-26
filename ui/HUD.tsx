@@ -7,11 +7,14 @@ import { getTranslation, getReputationTier } from '../localization/strings';
 interface HUDProps {
   state: GameState;
   onOpenSkills: (uid: string) => void;
-  onOpenMenu: () => void;
+  onOpenQuests: () => void;
+  onOpenFactions: () => void;
+  onOpenShop: () => void;
+  onOpenSettings: () => void;
   onOpenInventory: () => void;
 }
 
-const HUD: React.FC<HUDProps> = ({ state, onOpenSkills, onOpenMenu, onOpenInventory }) => {
+const HUD: React.FC<HUDProps> = ({ state, onOpenSkills, onOpenQuests, onOpenFactions, onOpenShop, onOpenSettings, onOpenInventory }) => {
   const { tamer, language, reputation } = state;
   const t = getTranslation(language);
   const activeMonster = tamer.party[0];
@@ -38,21 +41,47 @@ const HUD: React.FC<HUDProps> = ({ state, onOpenSkills, onOpenMenu, onOpenInvent
             </div>
           </div>
 
-          <button
-            onClick={onOpenMenu}
-            className="btn-primary flex items-center justify-center gap-2 text-[9px] md:text-[10px] min-h-[40px] pointer-events-auto"
-            aria-label="Open Main Menu"
-          >
-            <i className="fa-solid fa-bars"></i> <span className="hidden sm:inline">{t.ui.main_menu}</span>
-          </button>
+          <div className="grid grid-cols-2 gap-2 pointer-events-auto">
+            <button
+              onClick={onOpenQuests}
+              className="btn-primary flex items-center justify-center gap-2 text-[9px] md:text-[10px] min-h-[40px]"
+              aria-label="Open Quests"
+            >
+              <i className="fa-solid fa-scroll"></i> <span className="hidden sm:inline">{t.ui.quests}</span>
+            </button>
 
-          <button
-            onClick={onOpenInventory}
-            className="btn-primary flex items-center justify-center gap-2 text-[9px] md:text-[10px] min-h-[40px] pointer-events-auto bg-yellow-600 hover:bg-yellow-500 border-yellow-500"
-            aria-label="Open Inventory"
-          >
-            <i className="fa-solid fa-briefcase"></i> <span className="hidden sm:inline">{t.ui.inventory}</span>
-          </button>
+            <button
+              onClick={onOpenFactions}
+              className="btn-primary flex items-center justify-center gap-2 text-[9px] md:text-[10px] min-h-[40px]"
+              aria-label="Open Factions"
+            >
+              <i className="fa-solid fa-flag"></i> <span className="hidden sm:inline">{t.ui.factions}</span>
+            </button>
+
+            <button
+              onClick={onOpenShop}
+              className="btn-primary flex items-center justify-center gap-2 text-[9px] md:text-[10px] min-h-[40px]"
+              aria-label="Open Shop"
+            >
+              <i className="fa-solid fa-store"></i> <span className="hidden sm:inline">{t.ui.shop}</span>
+            </button>
+
+            <button
+              onClick={onOpenSettings}
+              className="btn-primary flex items-center justify-center gap-2 text-[9px] md:text-[10px] min-h-[40px]"
+              aria-label="Open Settings"
+            >
+              <i className="fa-solid fa-cog"></i> <span className="hidden sm:inline">{t.ui.settings}</span>
+            </button>
+
+            <button
+              onClick={onOpenInventory}
+              className="btn-primary col-span-2 flex items-center justify-center gap-2 text-[9px] md:text-[10px] min-h-[40px] bg-yellow-600 hover:bg-yellow-500 border-yellow-500"
+              aria-label="Open Inventory"
+            >
+              <i className="fa-solid fa-briefcase"></i> <span className="hidden sm:inline">{t.ui.inventory}</span>
+            </button>
+          </div>
         </div>
 
         {/* Reputation Summary */}

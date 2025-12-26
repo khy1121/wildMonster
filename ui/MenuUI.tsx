@@ -63,15 +63,15 @@ export const MenuUI: React.FC<MenuUIProps> = ({ state, onClose }) => {
 
   return (
     <Modal
-      title={<>{t.ui.main_menu} <span className="text-indigo-500">{t.ui.settings}</span></>}
+      title={<span className="text-indigo-500">{t.ui.settings}</span>}
       onClose={onClose}
       maxWidth="max-w-md"
     >
       <div className="p-6 space-y-6">
         {message && (
           <div className={`p-3 rounded-xl text-center font-bold animate-in fade-in slide-in-from-top-2 ${message.includes(t.ui.save_failed) || message.includes(t.ui.quota_exceeded) || message.includes(t.ui.storage_unavailable)
-              ? 'bg-red-900/50 border border-red-500 text-red-200'
-              : 'bg-indigo-900/50 border border-indigo-500 text-indigo-200'
+            ? 'bg-red-900/50 border border-red-500 text-red-200'
+            : 'bg-indigo-900/50 border border-indigo-500 text-indigo-200'
             }`}>
             {message}
           </div>
