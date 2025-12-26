@@ -120,13 +120,18 @@ const App: React.FC = () => {
         />
       )}
 
-      {overlay === 'SHOP' || (gameState.flags['open_shop'] && (
+      {(overlay === 'SHOP' || gameState.flags['open_shop']) && (
         <ShopUI
           state={gameState}
           onBuy={(id, q) => gameStateManager.buyItem(id, q)}
-          onClose={() => setOverlay('NONE')}
+          onClose={() => {
+            setOverlay('NONE');
+            if (gameState.flags['open_shop']) {
+              gameStateManager.updateState({ flags: { ...gameState.flags, open_shop: false } });
+            }
+          }}
         />
-      ))}
+      )}
 
       {overlay === 'QUESTS' && (
         <QuestLogUI

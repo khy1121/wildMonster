@@ -15,7 +15,11 @@ export const MONSTER_DATA: Record<string, MonsterSpecies> = {
       { level: 5, skillId: 'ember' },
       { level: 15, skillId: 'fire_blast' }
     ],
-    lootTable: [{ itemId: 'potion', chance: 0.3, minQuantity: 1, maxQuantity: 1 }],
+    lootTable: [
+      { itemId: 'potion', chance: 0.2, minQuantity: 1, maxQuantity: 1 },
+      { itemId: 'hardened_bone', chance: 0.4, minQuantity: 1, maxQuantity: 2 },
+      { itemId: 'monster_core', chance: 0.05, minQuantity: 1, maxQuantity: 1 }
+    ],
     evolutions: [
       {
         targetSpeciesId: 'flarelion',
@@ -53,7 +57,11 @@ export const MONSTER_DATA: Record<string, MonsterSpecies> = {
     spawnConditions: [
       { type: 'TIME_OF_DAY', value: 'NIGHT' }
     ],
-    lootTable: [{ itemId: 'moon_stone', chance: 0.2, minQuantity: 1, maxQuantity: 1 }]
+    lootTable: [
+      { itemId: 'moon_stone', chance: 0.15, minQuantity: 1, maxQuantity: 1 },
+      { itemId: 'spirit_essence', chance: 0.2, minQuantity: 1, maxQuantity: 1 },
+      { itemId: 'monster_core', chance: 0.3, minQuantity: 1, maxQuantity: 1 }
+    ]
   },
   'thunderhoof': {
     id: 'thunderhoof',
@@ -73,7 +81,12 @@ export const MONSTER_DATA: Record<string, MonsterSpecies> = {
     spawnConditions: [
       { type: 'LEVEL_MIN', value: 10 }
     ],
-    lootTable: [{ itemId: 'capture_orb', chance: 1.0, minQuantity: 3, maxQuantity: 5 }]
+    lootTable: [
+      { itemId: 'capture_orb', chance: 1.0, minQuantity: 2, maxQuantity: 4 },
+      { itemId: 'mystic_powder', chance: 0.8, minQuantity: 5, maxQuantity: 10 },
+      { itemId: 'monster_core', chance: 0.5, minQuantity: 1, maxQuantity: 2 },
+      { itemId: 'ancient_scrap', chance: 0.4, minQuantity: 1, maxQuantity: 3 }
+    ]
   },
   'flarelion': {
     id: 'flarelion',
@@ -117,7 +130,11 @@ export const MONSTER_DATA: Record<string, MonsterSpecies> = {
       { level: 5, skillId: 'bubble' },
       { level: 14, skillId: 'ice_shard' }
     ],
-    lootTable: [{ itemId: 'potion', chance: 0.4, minQuantity: 1, maxQuantity: 1 }],
+    lootTable: [
+      { itemId: 'potion', chance: 0.4, minQuantity: 1, maxQuantity: 1 },
+      { itemId: 'mystic_powder', chance: 0.3, minQuantity: 1, maxQuantity: 3 },
+      { itemId: 'monster_core', chance: 0.05, minQuantity: 1, maxQuantity: 1 }
+    ],
     evolutions: [
       {
         targetSpeciesId: 'mistlynx',
@@ -140,7 +157,10 @@ export const MONSTER_DATA: Record<string, MonsterSpecies> = {
       { level: 1, skillId: 'bubble' },
       { level: 10, skillId: 'ice_shard' }
     ],
-    evolutions: []
+    lootTable: [
+      { itemId: 'mystic_powder', chance: 0.6, minQuantity: 2, maxQuantity: 5 },
+      { itemId: 'ancient_scrap', chance: 0.2, minQuantity: 1, maxQuantity: 1 }
+    ],
   },
   /**
    * Design Note: Puffle (푸플)
@@ -172,7 +192,8 @@ export const MONSTER_DATA: Record<string, MonsterSpecies> = {
       { level: 18, skillId: 'ice_shard' }   // Late signature move (nature + ice synergy)
     ],
     lootTable: [
-      { itemId: 'potion', chance: 0.35, minQuantity: 1, maxQuantity: 2 }
+      { itemId: 'potion', chance: 0.35, minQuantity: 1, maxQuantity: 2 },
+      { itemId: 'hardened_bone', chance: 0.25, minQuantity: 1, maxQuantity: 1 }
     ],
     evolutions: []
   }

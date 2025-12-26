@@ -33,9 +33,15 @@ export interface Item {
   name: string;
   description: string;
   icon: string;
-  category: 'Healing' | 'Capture' | 'Evolution' | 'Misc';
+  category: 'Healing' | 'Capture' | 'Evolution' | 'Weapon' | 'Armor' | 'Accessory' | 'Material' | 'Misc';
+  tier?: 'D' | 'C' | 'B' | 'A' | 'S';
   power: number;
   price: number;
+  stats?: Partial<Stats>;
+  requiredMaterials?: InventoryItem[];
+  allowedTypes?: ElementType[];
+  flavorText?: string;
+  factionLock?: FactionType;
 }
 
 export interface SkillNode {
@@ -155,9 +161,11 @@ export interface GameState {
   completedQuests: string[];
   reputation: Record<FactionType, number>;
   language: Language;
+  shopStock?: string[];
+  shopNextRefresh?: number;
 }
 
-export type GameEvent = 
+export type GameEvent =
   | { type: 'BATTLE_START'; enemySpeciesId: string }
   | { type: 'BATTLE_END'; winner: 'PLAYER' | 'ENEMY' | 'CAPTURED' }
   | { type: 'STATE_UPDATED'; state: GameState }

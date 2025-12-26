@@ -58,6 +58,37 @@ class GameStateManager {
     if (!this.state.reputation) {
       this.state.reputation = { ...INITIAL_STATE.reputation };
     }
+
+    // Shop stock initialization
+    if (!this.state.shopStock || !this.state.shopNextRefresh) {
+      this.refreshShopStock();
+    } else {
+      this.checkShopRefresh();
+    }
+  }
+
+  refreshShopStock() {
+    const allItems = Object.keys(ITEM_DATA).filter(id => {
+      const item = ITEM_DATA[id];
+      // Exclude materials from random shop to make them feel more like hunt-only drops
+      // or include them? The user said "4 random items". Let's include everything except maybe Quest items if we had any.
+      return item.category !== 'Material';
+    });
+
+    // Pick 4 random items
+    const shuffled = [...allItems].sort(() => 0.5 - Math.random());
+    const selected = shuffled.slice(0, 4);
+
+    const refreshInterval = 4 * 60 * 60 * 1000; // 4 hours
+    this.state.shopStock = selected;
+    this.state.shopNextRefresh = Date.now() + refreshInterval;
+    this.updateState({});
+  }
+
+  checkShopRefresh() {
+    if (this.state.shopNextRefresh && Date.now() > this.state.shopNextRefresh) {
+      this.refreshShopStock();
+    }
   }
 
   getState() {
@@ -101,10 +132,36 @@ class GameStateManager {
   }
 
   buyItem(itemId: string, quantity: number): boolean {
+    const item = ITEM_DATA[itemId];
+    if (!item) return false;
+
+    // 1. Faction Lock Check
+    if (item.factionLock) {
+      const rep = this.state.reputation[item.factionLock] || 0;
+      if (rep < 100) return false; // Basic "Friendly" requirement for faction items
+    }
+
+    // 2. Materials Check
+    if (item.requiredMaterials) {
+      for (const mat of item.requiredMaterials) {
+        const invMat = this.state.tamer.inventory.find(i => i.itemId === mat.itemId);
+        if (!invMat || invMat.quantity < mat.quantity * quantity) return false;
+      }
+    }
+
+    // 3. Gold Check
     const totalCost = this.getEffectivePrice(itemId) * quantity;
     if (this.state.tamer.gold < totalCost) return false;
 
+    // Deduct Gold and Materials
     this.state.tamer.gold -= totalCost;
+    if (item.requiredMaterials) {
+      item.requiredMaterials.forEach(mat => {
+        this.state.tamer.inventory = consumeItem(this.state.tamer.inventory, mat.itemId, mat.quantity * quantity);
+      });
+    }
+
+    // Add Item to Inventory
     this.state.tamer.inventory = addToInventory(this.state.tamer.inventory, itemId, quantity);
     this.updateState({});
     return true;
