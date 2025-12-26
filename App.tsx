@@ -110,7 +110,7 @@ const App: React.FC = () => {
         <StarterSelectionUI onSelect={handleStarterSelect} />
       )}
 
-      {selectionStep === 'NONE' && activeScene === 'OverworldScene' && (
+      {selectionStep === 'NONE' && (activeScene === 'OverworldScene' || activeScene === 'MenuScene') && (
         <>
           <HUD
             state={gameState}

@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { MONSTER_DATA } from '../data/monsters';
-import { useTranslation } from '../localization/useTranslation';
+import { useTranslation } from '@/localization/useTranslation';
 import { MonsterSpecies, ElementType } from '../domain/types';
 
 interface StarterSelectionUIProps {

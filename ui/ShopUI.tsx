@@ -22,9 +22,12 @@ const ShopUI: React.FC<ShopUIProps> = ({ state, onBuy, onClose }) => {
   }, []);
 
   let maxDiscount = 0;
-  Object.values(state.reputation).forEach(val => {
-    maxDiscount = Math.max(maxDiscount, getFactionDiscount(val));
-  });
+  if (state.reputation) {
+    const repValues: number[] = Object.values(state.reputation);
+    repValues.forEach(val => {
+      maxDiscount = Math.max(maxDiscount, getFactionDiscount(val));
+    });
+  }
 
   const [selectedItemId, setSelectedItemId] = useState<string>(Object.keys(ITEM_DATA)[0]);
   const selectedItem = ITEM_DATA[selectedItemId];

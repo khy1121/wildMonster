@@ -34,6 +34,8 @@ export class OverworldScene extends Phaser.Scene {
     // Force cleanup any stray 3D overlays from previous scenes
     ThreeOverlayRenderer.forceCleanup('game-root');
 
+    gameEvents.emitEvent({ type: 'SCENE_CHANGED', sceneKey: 'OverworldScene' });
+
     this.scale.on('resize', this.onResize, this);
     const worldWidth = 3200;
     const worldHeight = 3200;

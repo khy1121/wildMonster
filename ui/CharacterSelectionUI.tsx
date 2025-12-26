@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { CHARACTER_DATA } from '../data/characters';
-import { useTranslation } from '../localization/useTranslation';
+import { useTranslation } from '@/localization/useTranslation';
 import { Character } from '../domain/types';
 
 interface CharacterSelectionUIProps {
