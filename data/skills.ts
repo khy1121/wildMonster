@@ -5,19 +5,40 @@ export interface Skill {
   id: string;
   name: string;
   type: ElementType;
+  category: 'BASIC' | 'SPECIAL' | 'ULTIMATE';
   power: number;
   cooldown: number; // in milliseconds
   description: string;
 }
 
 export const SKILL_DATA: Record<string, Skill> = {
-  'tackle': { id: 'tackle', name: 'Tackle', type: ElementType.NEUTRAL, power: 10, cooldown: 1500, description: 'A basic physical charge.' },
-  'ember': { id: 'ember', name: 'Ember', type: ElementType.FIRE, power: 25, cooldown: 4000, description: 'A small burst of flame.' },
-  'bubble': { id: 'bubble', name: 'Bubble', type: ElementType.WATER, power: 22, cooldown: 3500, description: 'Shoots a spray of bubbles.' },
-  'scratch': { id: 'scratch', name: 'Scratch', type: ElementType.NEUTRAL, power: 12, cooldown: 1200, description: 'Quick claws attack.' },
-  'fire_blast': { id: 'fire_blast', name: 'Fire Blast', type: ElementType.FIRE, power: 45, cooldown: 8000, description: 'A devastating inferno wave.' },
-  'dark_pulse': { id: 'dark_pulse', name: 'Dark Pulse', type: ElementType.DARK, power: 35, cooldown: 6000, description: 'Releases a wave of shadow energy.' },
-  'ice_shard': { id: 'ice_shard', name: 'Ice Shard', type: ElementType.WATER, power: 30, cooldown: 5000, description: 'Rapidly fire freezing shards.' }
+  // --- BASIC ---
+  'scratch': { id: 'scratch', name: 'Scratch', type: ElementType.NEUTRAL, category: 'BASIC', power: 15, cooldown: 1000, description: 'Quick claws attack.' },
+  'tackle': { id: 'tackle', name: 'Tackle', type: ElementType.NEUTRAL, category: 'BASIC', power: 18, cooldown: 1200, description: 'Basic physical charge.' },
+  'sonic_blade': { id: 'sonic_blade', name: 'Sonic Blade', type: ElementType.ELECTRIC, category: 'BASIC', power: 30, cooldown: 1000, description: 'Speed-based slash.' },
+  'blazing_strike': { id: 'blazing_strike', name: 'Blazing Strike', type: ElementType.FIRE, category: 'BASIC', power: 35, cooldown: 1200, description: 'Fiery impact.' },
+  'ocean_slash': { id: 'ocean_slash', name: 'Ocean Slash', type: ElementType.WATER, category: 'BASIC', power: 32, cooldown: 1100, description: 'Fluid sword strike.' },
+
+  // --- SPECIAL ---
+  'ember': { id: 'ember', name: 'Ember', type: ElementType.FIRE, category: 'SPECIAL', power: 45, cooldown: 4000, description: 'Small burst of flame.' },
+  'bubble': { id: 'bubble', name: 'Bubble', type: ElementType.WATER, category: 'SPECIAL', power: 42, cooldown: 3500, description: 'Spray of bubbles.' },
+  'spark': { id: 'spark', name: 'Spark', type: ElementType.ELECTRIC, category: 'SPECIAL', power: 40, cooldown: 3000, description: 'Quick electric jolt.' },
+  'fire_blast': { id: 'fire_blast', name: 'Fire Blast', type: ElementType.FIRE, category: 'SPECIAL', power: 110, cooldown: 8000, description: 'Devastating inferno wave.' },
+  'ice_shard': { id: 'ice_shard', name: 'Ice Shard', type: ElementType.WATER, category: 'SPECIAL', power: 85, cooldown: 6000, description: 'Freezing shards.' },
+  'dark_pulse': { id: 'dark_pulse', name: 'Dark Pulse', type: ElementType.DARK, category: 'SPECIAL', power: 100, cooldown: 7000, description: 'Shadow energy wave.' },
+  'lightning_storm': { id: 'lightning_storm', name: 'Lightning Storm', type: ElementType.ELECTRIC, category: 'SPECIAL', power: 120, cooldown: 9000, description: 'Calls down thunder.' },
+  'tidal_wave': { id: 'tidal_wave', name: 'Tidal Wave', type: ElementType.WATER, category: 'SPECIAL', power: 115, cooldown: 8500, description: 'Massive water surge.' },
+
+  // --- ULTIMATE ---
+  'magma_surge': { id: 'magma_surge', name: 'Magma Surge', type: ElementType.FIRE, category: 'ULTIMATE', power: 250, cooldown: 25000, description: 'Erupts the battlefield.' },
+  'kraken_wrath': { id: 'kraken_wrath', name: 'Kraken Wrath', type: ElementType.WATER, category: 'ULTIMATE', power: 280, cooldown: 30000, description: 'Crushes with depth power.' },
+  'volt_overload': { id: 'volt_overload', name: 'Volt Overload', type: ElementType.ELECTRIC, category: 'ULTIMATE', power: 260, cooldown: 28000, description: 'Blinding electric discharge.' },
+  'inferno_doom': { id: 'inferno_doom', name: 'Inferno Doom', type: ElementType.FIRE, category: 'ULTIMATE', power: 400, cooldown: 45000, description: 'Total fire annihilation.' },
+  'abyssal_surge': { id: 'abyssal_surge', name: 'Abyssal Surge', type: ElementType.WATER, category: 'ULTIMATE', power: 420, cooldown: 45000, description: 'Swallows all in the abyss.' },
+  'divine_thunder': { id: 'divine_thunder', name: 'Divine Thunder', type: ElementType.ELECTRIC, category: 'ULTIMATE', power: 450, cooldown: 45000, description: 'Judgment from the skies.' },
+  'world_on_fire': { id: 'world_on_fire', name: 'World on Fire', type: ElementType.FIRE, category: 'ULTIMATE', power: 600, cooldown: 60000, description: 'Ultimate stage 4 apocalypse.' },
+  'deluge_end': { id: 'deluge_end', name: 'Deluge of the End', type: ElementType.WATER, category: 'ULTIMATE', power: 650, cooldown: 60000, description: 'Ultimate stage 4 ocean wrath.' },
+  'eternal_spark': { id: 'eternal_spark', name: 'Eternal Spark', type: ElementType.ELECTRIC, category: 'ULTIMATE', power: 700, cooldown: 60000, description: 'Ultimate stage 4 electric flare.' }
 };
 
 export const SKILL_TREES: Record<string, SkillTree> = {

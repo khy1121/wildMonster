@@ -62,6 +62,28 @@ class GameStateManager {
     } else {
       this.checkShopRefresh();
     }
+
+    this.normalizeState();
+  }
+
+  normalizeState() {
+    // Ensure all monster instances have the latest stat fields (specialAttack, skillResistance)
+    const normalizeMonster = (m: MonsterInstance) => {
+      if (m.currentStats.specialAttack === undefined || m.currentStats.skillResistance === undefined) {
+        const species = MONSTER_DATA[m.speciesId];
+        if (species) {
+          m.currentStats.specialAttack = m.currentStats.specialAttack ?? species.baseStats.specialAttack;
+          m.currentStats.skillResistance = m.currentStats.skillResistance ?? species.baseStats.skillResistance;
+        } else {
+          m.currentStats.specialAttack = m.currentStats.specialAttack ?? 10;
+          m.currentStats.skillResistance = m.currentStats.skillResistance ?? 10;
+        }
+      }
+    };
+
+    this.state.tamer.party.forEach(normalizeMonster);
+    this.state.tamer.storage.forEach(normalizeMonster);
+    this.updateState({});
   }
 
   refreshShopStock() {

@@ -12,6 +12,8 @@ export function calculateStats(base: Stats, level: number, unlockedNodes: string
     maxHp: Math.floor(base.maxHp * growthFactor),
     attack: Math.floor(base.attack * growthFactor),
     defense: Math.floor(base.defense * growthFactor),
+    specialAttack: Math.floor(base.specialAttack * growthFactor),
+    skillResistance: Math.floor(base.skillResistance * growthFactor),
     speed: Math.floor(base.speed * growthFactor),
   };
 
@@ -23,6 +25,8 @@ export function calculateStats(base: Stats, level: number, unlockedNodes: string
         const mod = node.effect.value as Partial<Stats>;
         if (mod.attack) stats.attack += mod.attack;
         if (mod.defense) stats.defense += mod.defense;
+        if (mod.specialAttack) stats.specialAttack += mod.specialAttack;
+        if (mod.skillResistance) stats.skillResistance += mod.skillResistance;
         if (mod.speed) stats.speed += mod.speed;
         if (mod.maxHp) {
           stats.maxHp += mod.maxHp;
@@ -75,7 +79,7 @@ export function transformMonster(monster: MonsterInstance, targetSpeciesId: stri
   if (!targetSpecies) return monster;
 
   const newStats = calculateStats(targetSpecies.baseStats, monster.level, [], targetSpeciesId);
-  
+
   return {
     ...monster,
     speciesId: targetSpeciesId,
@@ -93,11 +97,16 @@ export function addExpToMonster(monster: MonsterInstance, amount: number, state:
   let newSkillPoints = monster.skillPoints;
   const expToLevel = 100;
 
-  while (newExp >= expToLevel) {
+  while (newExp >= expToLevel && newLevel < 80) {
     newExp -= expToLevel;
     newLevel++;
     leveledUp = true;
     if (newLevel % 2 === 0) newSkillPoints++;
+  }
+
+  if (newLevel >= 80) {
+    newLevel = 80;
+    newExp = 0;
   }
 
   const species = MONSTER_DATA[monster.speciesId];
@@ -138,14 +147,20 @@ export function unlockNode(monster: MonsterInstance, nodeId: string): MonsterIns
   };
 }
 
-export function getTamerProgression(level: number): { partySlots: number; supportSkills: string[] } {
+export function getTamerProgression(level: number, characterId?: string): { partySlots: number; supportSkills: string[] } {
   let partySlots = 1;
   const supportSkills: string[] = [];
 
   TAMER_MILESTONES.forEach(m => {
     if (level >= m.level) {
       if (m.partySlots) partySlots = m.partySlots;
-      if (m.unlockSkill) supportSkills.push(m.unlockSkill);
+      if (m.unlockSkill) {
+        if (typeof m.unlockSkill === 'string') {
+          supportSkills.push(m.unlockSkill);
+        } else if (characterId && (m.unlockSkill as Record<string, string>)[characterId]) {
+          supportSkills.push((m.unlockSkill as Record<string, string>)[characterId]);
+        }
+      }
     }
   });
 
@@ -158,13 +173,18 @@ export function addExpToTamer(tamer: Tamer, amount: number): { tamer: Tamer; lev
   let leveledUp = false;
   const expToLevel = 500;
 
-  while (newExp >= expToLevel) {
+  while (newExp >= expToLevel && newLevel < 50) {
     newExp -= expToLevel;
     newLevel++;
     leveledUp = true;
   }
 
-  const progression = getTamerProgression(newLevel);
+  if (newLevel >= 50) {
+    newLevel = 50;
+    newExp = 0;
+  }
+
+  const progression = getTamerProgression(newLevel, tamer.characterId);
 
   return {
     leveledUp,

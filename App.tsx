@@ -51,6 +51,10 @@ const App: React.FC = () => {
       setActiveScene(event.sceneKey);
     });
 
+    gameEvents.on('BATTLE_END', () => {
+      setActiveScene('OverworldScene');
+    });
+
     SafeArea.init();
 
     if (!gameStateManager.getState().flags['game_started']) {

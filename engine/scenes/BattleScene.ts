@@ -5,7 +5,7 @@ import { gameStateManager } from '../GameStateManager';
 import { MONSTER_DATA } from '../../data/monsters';
 import { SKILL_DATA, SKILL_TREES } from '../../data/skills';
 import { SUPPORT_SKILLS } from '../../data/tamer';
-import { CombatEntity, calculateDamage, updateCooldowns } from '../../domain/combat';
+import { CombatEntity, calculateDamage, updateCombatState } from '../../domain/combat';
 import { getAvailableSkillIds } from '../../domain/logic';
 import { getTranslation } from '../../localization/strings';
 
@@ -28,6 +28,8 @@ export class BattleScene extends Phaser.Scene {
 
   private playerHpBar!: Phaser.GameObjects.Rectangle;
   private enemyHpBar!: Phaser.GameObjects.Rectangle;
+  private playerBuffArea!: Phaser.GameObjects.Container;
+  private enemyBuffArea!: Phaser.GameObjects.Container;
   private enemyVisual!: Phaser.GameObjects.Container;
   private skillButtons: Phaser.GameObjects.Container[] = [];
   private tamerButtons: Phaser.GameObjects.Container[] = [];
@@ -82,17 +84,22 @@ export class BattleScene extends Phaser.Scene {
       return;
     }
 
-    const activeSkills = getAvailableSkillIds(activeMonster, playerSpecies);
+    const playerSkills: string[] = [playerSpecies.skills.basic, playerSpecies.skills.special];
+    if (playerSpecies.skills.ultimate && activeMonster.level >= 30) {
+      playerSkills.push(playerSpecies.skills.ultimate);
+    }
 
     this.playerEntity = {
       uid: activeMonster.uid,
       name: t.species[activeMonster.speciesId as keyof typeof t.species] || playerSpecies.name,
+      speciesId: activeMonster.speciesId,
       level: activeMonster.level,
       hp: activeMonster.currentHp,
       maxHp: activeMonster.currentStats.maxHp,
       stats: activeMonster.currentStats,
-      skills: activeSkills,
-      cooldowns: {}
+      skills: playerSkills,
+      cooldowns: {},
+      buffs: []
     };
 
     const enemyBaseStats = enemySpecies.baseStats;
@@ -102,6 +109,7 @@ export class BattleScene extends Phaser.Scene {
     this.enemyEntity = {
       uid: 'wild-enemy',
       name: t.species[enemyId as keyof typeof t.species] || enemySpecies.name,
+      speciesId: enemyId,
       level: enemyLevel,
       hp: Math.floor(enemyBaseStats.hp * enemyGrowth),
       maxHp: Math.floor(enemyBaseStats.maxHp * enemyGrowth),
@@ -109,16 +117,25 @@ export class BattleScene extends Phaser.Scene {
         hp: Math.floor(enemyBaseStats.hp * enemyGrowth),
         maxHp: Math.floor(enemyBaseStats.maxHp * enemyGrowth),
         attack: Math.floor(enemyBaseStats.attack * enemyGrowth),
+        specialAttack: Math.floor(enemyBaseStats.specialAttack * enemyGrowth),
         defense: Math.floor(enemyBaseStats.defense * enemyGrowth),
+        skillResistance: Math.floor(enemyBaseStats.skillResistance * enemyGrowth),
         speed: Math.floor(enemyBaseStats.speed * enemyGrowth),
       },
-      skills: getAvailableSkillIds({ level: enemyLevel, unlockedNodes: [] }, enemySpecies),
-      cooldowns: {}
+      skills: [enemySpecies.skills.basic, enemySpecies.skills.special],
+      cooldowns: {},
+      buffs: []
     };
+
+    if (enemySpecies.skills.ultimate && enemyLevel >= 30) {
+      this.enemyEntity.skills.push(enemySpecies.skills.ultimate);
+    }
 
     const pContainer = this.add.container(width * 0.25, height * 0.4);
     pContainer.add(this.add.text(0, 0, playerSpecies.icon, { fontSize: '100px' }).setOrigin(0.5));
-    this.playerHpBar = this.createHpBar(pContainer, 0, 80, this.playerEntity.name);
+    const pBarInfo = this.createHpBar(pContainer, 0, 80, this.playerEntity.name);
+    this.playerHpBar = pBarInfo.bar;
+    this.playerBuffArea = pBarInfo.buffContainer;
 
     this.enemyVisual = this.add.container(width * 0.75, height * 0.4);
     this.enemyVisual.add(this.add.text(0, 0, enemySpecies.icon, { fontSize: '100px' }).setOrigin(0.5));
@@ -129,7 +146,9 @@ export class BattleScene extends Phaser.Scene {
       this.tweens.add({ targets: bossAura, scale: 1.5, alpha: 0, duration: 800, loop: -1 });
     }
 
-    this.enemyHpBar = this.createHpBar(this.enemyVisual, 0, 80, isBoss ? `BOSS ${this.enemyEntity.name}` : `Wild ${this.enemyEntity.name}`);
+    const eBarInfo = this.createHpBar(this.enemyVisual, 0, 80, isBoss ? `BOSS ${this.enemyEntity.name}` : `Wild ${this.enemyEntity.name}`);
+    this.enemyHpBar = eBarInfo.bar;
+    this.enemyBuffArea = eBarInfo.buffContainer;
     this.createMonsterSkillButtons(width / 2, height - 160, t);
     this.createTamerCommandBar(width / 2, height - 80, t);
     this.createCaptureButton(width / 2, height - 25, t);
@@ -152,8 +171,18 @@ export class BattleScene extends Phaser.Scene {
     if (this.battleEnded) return;
     if (!this.playerEntity || !this.enemyEntity) return;
 
-    this.playerEntity = updateCooldowns(this.playerEntity, delta);
-    this.enemyEntity = updateCooldowns(this.enemyEntity, delta);
+    this.playerEntity = updateCombatState(this.playerEntity, delta);
+    this.enemyEntity = updateCombatState(this.enemyEntity, delta);
+
+    // Handle REGEN ticks
+    [this.playerEntity, this.enemyEntity].forEach(e => {
+      e.buffs.forEach(b => {
+        if (b.effect === 'REGEN') {
+          const heal = (b.power * delta) / 1000;
+          e.hp = Math.min(e.maxHp, e.hp + heal);
+        }
+      });
+    });
 
     for (const key in this.tamerCooldowns) {
       this.tamerCooldowns[key] = Math.max(0, this.tamerCooldowns[key] - delta);
@@ -166,25 +195,43 @@ export class BattleScene extends Phaser.Scene {
     container.add(this.add.text(x, y - 25, name, { fontSize: '18px', fontStyle: 'bold' }).setOrigin(0.5));
     const bg = this.add.rectangle(x, y, 160, 12, 0x334155).setOrigin(0.5);
     const bar = this.add.rectangle(x - 80, y, 160, 12, 0x22c55e).setOrigin(0, 0.5);
-    container.add([bg, bar]);
-    return bar;
+
+    // Buff indicator area
+    const buffContainer = this.add.container(x - 80, y + 15);
+
+    container.add([bg, bar, buffContainer]);
+    return { bar, buffContainer };
   }
 
   createMonsterSkillButtons(centerX: number, y: number, t: any) {
-    const skills = this.playerEntity.skills;
-    const spacing = 140;
-    const startX = centerX - ((skills.length - 1) * spacing) / 2;
+    const species = MONSTER_DATA[this.playerEntity.speciesId];
+    if (!species) return;
+
+    const skillsToShow: string[] = [species.skills.basic, species.skills.special];
+    if (species.skills.ultimate && this.playerEntity.level >= 30) {
+      skillsToShow.push(species.skills.ultimate);
+    }
+
+    const spacing = 120;
+    const startX = centerX - ((skillsToShow.length - 1) * spacing) / 2;
+
     // clear any previous buttons
     this.skillButtons.forEach(b => b.destroy());
     this.skillButtons = [];
 
-    skills.forEach((sId, i) => {
+    skillsToShow.forEach((sId, i) => {
       const skill = SKILL_DATA[sId];
       if (!skill) return;
 
       const btn = this.add.container(startX + i * spacing, y);
-      const bg = this.add.rectangle(0, 0, 130, 50, 0x4338ca, 1).setInteractive({ useHandCursor: true });
-      const label = this.add.text(0, -8, t.skills[sId] || skill.name, { fontSize: '14px', fontStyle: 'bold' }).setOrigin(0.5);
+
+      let color = 0x4338ca; // Default
+      if (skill.category === 'BASIC') color = 0x64748b;
+      if (skill.category === 'SPECIAL') color = 0x3b82f6;
+      if (skill.category === 'ULTIMATE') color = 0xef4444;
+
+      const bg = this.add.rectangle(0, 0, 110, 50, color, 1).setInteractive({ useHandCursor: true });
+      const label = this.add.text(0, -8, t.skills[sId] || skill.name, { fontSize: '13px', fontStyle: 'bold' }).setOrigin(0.5);
       const cdText = this.add.text(0, 12, 'READY', { fontSize: '10px' }).setOrigin(0.5);
 
       btn.add([bg, label, cdText]);
@@ -243,15 +290,29 @@ export class BattleScene extends Phaser.Scene {
       const healAmt = skill.power;
       this.playerEntity.hp = Math.min(this.playerEntity.maxHp, this.playerEntity.hp + healAmt);
       this.showVfx(this.cameras.main.width * 0.25, this.cameras.main.height * 0.4, `+${healAmt}`, 0x22c55e);
-    } else if (skill.effect === 'BUFF_ATK') {
-      this.playerEntity.stats.attack += skill.power;
-      this.showVfx(this.cameras.main.width * 0.25, this.cameras.main.height * 0.4, `ATK UP!`, 0xf59e0b);
-      this.time.delayedCall(10000, () => {
-        if (this.playerEntity) this.playerEntity.stats.attack -= skill.power;
-      });
     } else if (skill.effect === 'CLEANSE') {
       this.playerEntity.cooldowns = {};
-      this.showVfx(this.cameras.main.width * 0.25, this.cameras.main.height * 0.4, `READY!`, 0x6366f1);
+      this.playerEntity.buffs = this.playerEntity.buffs.filter(b => b.effect !== 'DEBUFF_DEF');
+      this.showVfx(this.cameras.main.width * 0.25, this.cameras.main.height * 0.4, `CLEANSE!`, 0x6366f1);
+    } else {
+      // Apply duration-based buff
+      const buff = {
+        id: Math.random().toString(36).substr(2, 9),
+        source: skill.id,
+        effect: skill.effect as any,
+        power: skill.power,
+        duration: skill.duration || 10000
+      };
+
+      if (skill.effect === 'DEBUFF_DEF') {
+        this.enemyEntity.buffs.push(buff);
+        this.showVfx(this.cameras.main.width * 0.75, this.cameras.main.height * 0.4, `DEF DOWN!`, 0xef4444);
+      } else {
+        this.playerEntity.buffs.push(buff);
+        const color = skill.effect === 'BUFF_ATK' ? 0xf59e0b : skill.effect === 'BUFF_DEF' ? 0x3b82f6 : skill.effect === 'BUFF_SPD' ? 0x10b981 : 0x22c55e;
+        const msg = skill.effect.replace('BUFF_', '') + ' UP!';
+        this.showVfx(this.cameras.main.width * 0.25, this.cameras.main.height * 0.4, msg, color);
+      }
     }
   }
 
@@ -283,19 +344,38 @@ export class BattleScene extends Phaser.Scene {
     this.playerHpBar.setFillStyle(pPct > 0.5 ? 0x22c55e : pPct > 0.2 ? 0xeab308 : 0xef4444);
     this.enemyHpBar.setFillStyle(ePct > 0.5 ? 0x22c55e : ePct > 0.2 ? 0xeab308 : 0xef4444);
 
+    // Update Buff Icons
+    const updateBuffArea = (container: Phaser.GameObjects.Container, buffs: any[]) => {
+      container.removeAll(true);
+      buffs.forEach((b, i) => {
+        const skill = SUPPORT_SKILLS[b.source];
+        if (skill) {
+          const icon = this.add.text(i * 20, 0, skill.icon, { fontSize: '12px' });
+          container.add(icon);
+        }
+      });
+    };
+
+    updateBuffArea(this.playerBuffArea, this.playerEntity.buffs);
+    updateBuffArea(this.enemyBuffArea, this.enemyEntity.buffs);
+
     this.playerEntity.skills.forEach((sId, i) => {
       const btn = this.skillButtons[i];
       if (!btn) return;
+
       const cd = this.playerEntity.cooldowns[sId] || 0;
       const bg = btn.getAt(0) as Phaser.GameObjects.Rectangle;
       const cdText = btn.getAt(2) as Phaser.GameObjects.Text;
 
+      const skill = SKILL_DATA[sId];
+      if (!skill) return;
+
       if (bg && bg.setFillStyle) {
         if (cd > 0) {
-          bg.setFillStyle(0x312e81);
+          bg.alpha = 0.5;
           cdText.setText(`${(cd / 1000).toFixed(1)}s`);
         } else {
-          bg.setFillStyle(0x4338ca);
+          bg.alpha = 1.0;
           cdText.setText('READY');
         }
       }
@@ -407,8 +487,22 @@ export class BattleScene extends Phaser.Scene {
   }
 
   showVfx(x: number, y: number, text: string, color: number) {
-    const vfx = this.add.text(x, y - 50, text, { fontSize: '32px', color: '#' + color.toString(16), fontStyle: 'bold' }).setOrigin(0.5);
-    this.tweens.add({ targets: vfx, y: y - 120, alpha: 0, duration: 800, onComplete: () => vfx.destroy() });
+    const hex = color.toString(16).padStart(6, '0');
+    const vfx = this.add.text(x, y - 50, text, {
+      fontSize: '32px',
+      color: '#' + hex,
+      fontStyle: 'bold',
+      stroke: '#000000',
+      strokeThickness: 4
+    }).setOrigin(0.5);
+
+    this.tweens.add({
+      targets: vfx,
+      y: y - 120,
+      alpha: 0,
+      duration: 800,
+      onComplete: () => vfx.destroy()
+    });
   }
 
   /**

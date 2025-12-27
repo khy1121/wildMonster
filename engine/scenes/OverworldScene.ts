@@ -36,6 +36,12 @@ export class OverworldScene extends Phaser.Scene {
 
     gameEvents.emitEvent({ type: 'SCENE_CHANGED', sceneKey: 'OverworldScene' });
 
+    this.events.on('wake', () => {
+      gameEvents.emitEvent({ type: 'SCENE_CHANGED', sceneKey: 'OverworldScene' });
+      // Clear any remaining 3D artifacts just in case
+      ThreeOverlayRenderer.forceCleanup('game-root');
+    });
+
     this.scale.on('resize', this.onResize, this);
     const worldWidth = 3200;
     const worldHeight = 3200;

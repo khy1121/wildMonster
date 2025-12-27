@@ -25,6 +25,8 @@ export interface Stats {
   maxHp: number;
   attack: number;
   defense: number;
+  specialAttack: number;
+  skillResistance: number;
   speed: number;
 }
 
@@ -89,8 +91,9 @@ export interface SupportSkill {
   name: string;
   description: string;
   icon: string;
-  cooldown: number;
-  effect: 'HEAL' | 'BUFF_ATK' | 'CLEANSE';
+  cooldown: number; // ms
+  duration?: number; // ms
+  effect: 'HEAL' | 'BUFF_ATK' | 'BUFF_DEF' | 'BUFF_SPD' | 'CLEANSE' | 'DEBUFF_DEF' | 'REGEN';
   power: number;
 }
 
@@ -102,6 +105,12 @@ export interface MonsterSpecies {
   baseStats: Stats;
   icon: string;
   rarity: Rarity;
+  evolutionStage: 1 | 2 | 3 | 4;
+  skills: {
+    basic: string;
+    special: string;
+    ultimate?: string;
+  };
   learnableSkills?: { level: number; skillId: string }[];
   lootTable?: LootEntry[];
   evolutions?: EvolutionOption[];
