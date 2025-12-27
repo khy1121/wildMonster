@@ -163,6 +163,25 @@ export class OverworldScene extends Phaser.Scene {
     });
 
     this.checkBossConditions();
+    this.updateWorldLighting();
+  }
+
+  updateWorldLighting() {
+    const state = gameStateManager.getState();
+    const hour = state.gameTime / 100;
+
+    // Ambient color based on time
+    // 0-6: Night (Dark Blue)
+    // 6-8: Dawn (Orange/Pink)
+    // 8-16: Day (None/White)
+    // 16-19: Dusk (Purplish)
+    // 19-24: Night
+    let tint = 0xffffff;
+    if (hour < 5 || hour > 20) tint = 0x334155; // Deep Night
+    else if (hour < 7) tint = 0xfdba74; // Dawn
+    else if (hour > 18) tint = 0x818cf8; // Evening 
+
+    // this.cameras.main.setTint(tint);
   }
 
   spawnLoop() {
@@ -180,6 +199,22 @@ export class OverworldScene extends Phaser.Scene {
     // Condition for Thunderhoof Boss: Level 10+ AND it's "midnight" window AND not yet defeated as boss
     if (state.tamer.level >= 10 && (hour > 22 || hour < 2) && !state.flags['boss_thunderhoof_defeated']) {
       this.spawnBoss('thunderhoof');
+      return;
+    }
+
+    // Quest Bosses
+    if (state.activeQuests.includes('defeat_boss_flarelion') && !state.flags['boss_flarelion_defeated']) {
+      this.spawnBoss('flarelion');
+      return;
+    }
+    if (state.activeQuests.includes('defeat_boss_krakenwhale') && !state.flags['boss_krakenwhale_defeated']) {
+      this.spawnBoss('krakenwhale');
+      return;
+    }
+    if (state.activeQuests.includes('defeat_lunacat') && isNight && !state.flags['lunacat_defeated']) {
+      // Special: Lunacat as a mini-boss if quest is active
+      this.spawnBoss('lunacat');
+      return;
     }
   }
 
@@ -202,6 +237,7 @@ export class OverworldScene extends Phaser.Scene {
     const level = 15; // Boss level
 
     this.bossInstance = this.add.container(spawnX, spawnY);
+    let iconText: Phaser.GameObjects.Text | undefined;
 
     // Extra dramatic Boss Aura
     const aura1 = this.add.circle(0, 0, 50, species.auraColor || 0xffffff, 0.4);
@@ -210,7 +246,23 @@ export class OverworldScene extends Phaser.Scene {
     this.tweens.add({ targets: aura2, scale: 1.5, alpha: 0, duration: 2000, loop: -1, delay: 500 });
 
     const bg = this.add.rectangle(0, 0, 60, 60, 0x000000, 0.6).setStrokeStyle(4, 0xfacc15);
-    const icon = this.add.text(-20, -25, species.icon, { fontSize: '40px' });
+
+    if (species.spriteKey) {
+      const sprite = this.add.sprite(0, 0, species.spriteKey).setScale(1);
+      this.bossInstance.add(sprite);
+      this.tweens.add({
+        targets: sprite,
+        y: -10,
+        duration: 2000,
+        yoyo: true,
+        loop: -1,
+        ease: 'Sine.easeInOut'
+      });
+    } else {
+      iconText = this.add.text(-20, -25, species.icon, { fontSize: '40px' });
+      this.bossInstance.add(iconText);
+    }
+
     const lvlText = this.add.text(-25, 35, `BOSS Lv.${level}`, {
       fontSize: '14px',
       fontStyle: 'bold',
@@ -218,7 +270,8 @@ export class OverworldScene extends Phaser.Scene {
       backgroundColor: '#000000'
     });
 
-    this.bossInstance.add([aura1, aura2, bg, icon, lvlText]);
+    this.bossInstance.add([aura1, aura2, bg, lvlText]);
+    if (iconText) this.bossInstance.add(iconText);
     this.bossInstance.setData('payload', { speciesId, level, isBoss: true });
     this.bossInstance.setData('isBoss', true);
 
@@ -227,7 +280,7 @@ export class OverworldScene extends Phaser.Scene {
     body.setImmovable(true);
 
     // Show Boss Banner
-    this.showBossBanner();
+    this.showBossBanner(species.name);
 
     this.time.addEvent({
       delay: 1000,
@@ -239,23 +292,31 @@ export class OverworldScene extends Phaser.Scene {
     });
   }
 
-  showBossBanner() {
+  showBossBanner(name: string) {
     const { width, height } = this.cameras.main;
     const state = gameStateManager.getState();
     const t = getTranslation(state.language);
 
-    const bannerBg = this.add.rectangle(width / 2, 100, width, 60, 0x000000, 0.8).setScrollFactor(0).setDepth(1000);
-    const bannerText = this.add.text(width / 2, 100, t.ui.boss_appeared, {
-      fontSize: '28px',
-      fontStyle: 'black italic',
+    const bannerBg = this.add.rectangle(width / 2, 120, width, 80, 0x000000, 0.8).setScrollFactor(0).setDepth(2000);
+    const bannerText = this.add.text(width / 2, 105, t.ui.boss_appeared, {
+      fontSize: '18px',
+      fontStyle: 'bold',
       color: '#facc15'
-    }).setOrigin(0.5).setScrollFactor(0).setDepth(1001);
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(2001);
+
+    const nameText = this.add.text(width / 2, 135, name.toUpperCase(), {
+      fontSize: '32px',
+      fontStyle: 'black italic',
+      color: '#ffffff',
+      stroke: '#ef4444',
+      strokeThickness: 4
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(2001);
 
     bannerBg.alpha = 0;
     bannerText.alpha = 0;
 
     this.tweens.add({
-      targets: [bannerBg, bannerText],
+      targets: [bannerBg, bannerText, nameText],
       alpha: 1,
       duration: 500,
       yoyo: true,
@@ -263,6 +324,7 @@ export class OverworldScene extends Phaser.Scene {
       onComplete: () => {
         bannerBg.destroy();
         bannerText.destroy();
+        nameText.destroy();
       }
     });
   }
@@ -301,14 +363,32 @@ export class OverworldScene extends Phaser.Scene {
 
     const color = species.isSpecial ? 0xfacc15 : 0xef4444;
     const bg = this.add.rectangle(0, 0, 40, 40, color, 0.3).setStrokeStyle(2, color);
-    const icon = this.add.text(-12, -18, species.icon, { fontSize: '24px' });
+
+    let mobIcon: Phaser.GameObjects.Text | undefined;
+    if (species.spriteKey) {
+      const sprite = this.add.sprite(0, 0, species.spriteKey).setScale(0.5);
+      monster.add(sprite);
+      this.tweens.add({
+        targets: sprite,
+        y: -5,
+        duration: 1500,
+        yoyo: true,
+        loop: -1,
+        ease: 'Sine.easeInOut'
+      });
+    } else {
+      mobIcon = this.add.text(-12, -18, species.icon, { fontSize: '24px' });
+      monster.add(mobIcon);
+    }
+
     const lvlText = this.add.text(-15, 22, `Lv.${level}`, {
       fontSize: '10px',
       fontStyle: 'bold',
       color: species.isSpecial ? '#facc15' : '#ffffff'
     });
 
-    monster.add([bg, icon, lvlText]);
+    monster.add([bg, lvlText]);
+    if (mobIcon) monster.add(mobIcon);
     monster.setData('payload', { speciesId, level });
 
     this.wildMonsters.add(monster);

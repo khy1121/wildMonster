@@ -7,18 +7,17 @@ describe('Tamer Progression', () => {
   it('identifies correct milestones for level 1', () => {
     const prog = getTamerProgression(1);
     expect(prog.partySlots).toBe(1);
-    expect(prog.supportSkills).toContain('cheer');
+    expect(prog.supportSkills.length).toBe(0);
   });
 
-  it('unlocks 2nd slot and first aid at level 5', () => {
-    const prog = getTamerProgression(5);
+  it('unlocks 2nd slot at level 5', () => {
+    const prog = getTamerProgression(5, 'leo');
     expect(prog.partySlots).toBe(2);
-    expect(prog.supportSkills).toContain('cheer');
-    expect(prog.supportSkills).toContain('first_aid');
+    expect(prog.supportSkills).toContain('leo_rage'); // Unlocks at level 3
   });
 
-  it('unlocks 4th slot at level 12', () => {
-    const prog = getTamerProgression(12);
+  it('unlocks 4th slot at level 20', () => {
+    const prog = getTamerProgression(20);
     expect(prog.partySlots).toBe(4);
   });
 

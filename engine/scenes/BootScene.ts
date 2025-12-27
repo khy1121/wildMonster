@@ -3,6 +3,7 @@ import Phaser from 'phaser';
 import { gameEvents } from '../EventBus';
 import { gameStateManager } from '../GameStateManager';
 import { getTranslation } from '../../localization/strings';
+import { MONSTER_DATA } from '../../data/monsters';
 
 export class BootScene extends Phaser.Scene {
   public add!: Phaser.GameObjects.GameObjectFactory;
@@ -18,7 +19,7 @@ export class BootScene extends Phaser.Scene {
   preload() {
     const width = this.cameras.main.width;
     const height = this.cameras.main.height;
-    
+
     const state = gameStateManager.getState();
     const t = getTranslation(state.language);
 
@@ -38,6 +39,14 @@ export class BootScene extends Phaser.Scene {
 
     this.load.on('complete', () => {
       loadingText.destroy();
+    });
+
+    // Load monster sprites
+    Object.values(MONSTER_DATA).forEach(monster => {
+      if (monster.spriteKey) {
+        // Assume assets are in public/assets/monsters/
+        this.load.image(monster.spriteKey, `assets/monsters/${monster.spriteKey}.png`);
+      }
     });
   }
 

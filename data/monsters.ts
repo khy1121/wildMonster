@@ -13,6 +13,7 @@ export const MONSTER_DATA: Record<string, MonsterSpecies> = {
     icon: '🦖',
     rarity: 'Rare',
     skills: { basic: 'scratch', special: 'ember' },
+    spriteKey: 'ignis',
     evolutions: [
       { targetSpeciesId: 'flarehide', levelThreshold: 15, description: '성장한 불꽃의 피부', previewSkills: ['tackle'] }
     ]
@@ -27,6 +28,7 @@ export const MONSTER_DATA: Record<string, MonsterSpecies> = {
     icon: '🐉',
     rarity: 'Uncommon',
     skills: { basic: 'tackle', special: 'ember', ultimate: 'fire_blast' },
+    spriteKey: 'flarehide',
     evolutions: [
       { targetSpeciesId: 'volcadragon', levelThreshold: 35, description: '화염의 지배자', previewSkills: ['fire_blast'] }
     ]
@@ -68,6 +70,7 @@ export const MONSTER_DATA: Record<string, MonsterSpecies> = {
     icon: '🐡',
     rarity: 'Rare',
     skills: { basic: 'tackle', special: 'bubble' },
+    spriteKey: 'aqualo',
     evolutions: [
       { targetSpeciesId: 'serpentform', levelThreshold: 15, description: '우아한 바다 뱀', previewSkills: ['ice_shard'] }
     ]
@@ -123,6 +126,7 @@ export const MONSTER_DATA: Record<string, MonsterSpecies> = {
     icon: '🐥',
     rarity: 'Rare',
     skills: { basic: 'scratch', special: 'spark' },
+    spriteKey: 'voltwing',
     evolutions: [
       { targetSpeciesId: 'stormhawk', levelThreshold: 15, description: '번개만큼 빠른 매', previewSkills: ['tackle'] }
     ]
@@ -178,6 +182,7 @@ export const MONSTER_DATA: Record<string, MonsterSpecies> = {
     rarity: 'Common',
     baseStats: { hp: 50, maxHp: 50, attack: 12, specialAttack: 14, defense: 8, skillResistance: 6, speed: 10 },
     skills: { basic: 'scratch', special: 'ember' },
+    spriteKey: 'pyrocat',
     evolutions: [
       { targetSpeciesId: 'flarelion', levelThreshold: 12, description: '용맹한 사자로 진화', previewSkills: ['fire_blast'] }
     ]
@@ -191,7 +196,8 @@ export const MONSTER_DATA: Record<string, MonsterSpecies> = {
     icon: '🦁',
     rarity: 'Uncommon',
     baseStats: { hp: 100, maxHp: 100, attack: 28, specialAttack: 32, defense: 15, skillResistance: 12, speed: 18 },
-    skills: { basic: 'scratch', special: 'fire_blast' }
+    skills: { basic: 'scratch', special: 'fire_blast' },
+    spriteKey: 'flarelion'
   },
   'lunacat': {
     id: 'lunacat',
@@ -202,8 +208,10 @@ export const MONSTER_DATA: Record<string, MonsterSpecies> = {
     icon: '🐈',
     rarity: 'Rare',
     isSpecial: true,
+    spawnConditions: [{ type: 'TIME_OF_DAY', value: 'NIGHT' }],
     baseStats: { hp: 70, maxHp: 70, attack: 18, specialAttack: 22, defense: 10, skillResistance: 12, speed: 25 },
-    skills: { basic: 'scratch', special: 'dark_pulse' }
+    skills: { basic: 'scratch', special: 'dark_pulse' },
+    spriteKey: 'lunacat'
   },
   'thunderhoof': {
     id: 'thunderhoof',
@@ -214,8 +222,10 @@ export const MONSTER_DATA: Record<string, MonsterSpecies> = {
     icon: '🦌',
     rarity: 'Legendary',
     isSpecial: true,
+    spawnConditions: [{ type: 'TIME_OF_DAY', value: 'NIGHT' }],
     baseStats: { hp: 150, maxHp: 150, attack: 35, specialAttack: 40, defense: 20, skillResistance: 18, speed: 30 },
-    skills: { basic: 'scratch', special: 'spark' }
+    skills: { basic: 'scratch', special: 'spark' },
+    spriteKey: 'thunderhoof'
   },
   'droplet': {
     id: 'droplet',

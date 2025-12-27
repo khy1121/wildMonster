@@ -8,16 +8,18 @@ import EvolutionChoice from './ui/EvolutionChoice';
 import SkillTreeUI from './ui/SkillTreeUI';
 import ShopUI from './ui/ShopUI';
 import QuestLogUI from './ui/QuestLogUI';
+import QuestRewardPopup from './ui/QuestRewardPopup';
 import DebugPanel from './ui/DebugPanel';
 import InventoryUI from './components/InventoryUI';
 import { FactionUI } from './ui/AppOverlays';
 import { MenuUI } from './ui/MenuUI';
 import CharacterSelectionUI from './ui/CharacterSelectionUI';
 import StarterSelectionUI from './ui/StarterSelectionUI';
-import { GameState, EvolutionOption, MonsterInstance } from './domain/types';
+import { GameState, EvolutionOption, MonsterInstance, Quest } from './domain/types';
 import { gameEvents } from './engine/EventBus';
 import { gameStateManager } from './engine/GameStateManager';
 import { getTranslation } from './localization/strings';
+import { QUEST_DATA } from './data/quests';
 
 const App: React.FC = () => {
   const gameRef = useRef<Phaser.Game | null>(null);
@@ -25,6 +27,7 @@ const App: React.FC = () => {
 
   const [gameState, setGameState] = useState<GameState>(gameStateManager.getState());
   const [evolutionData, setEvolutionData] = useState<{ monsterUid: string, options: EvolutionOption[] } | null>(null);
+  const [completedQuest, setCompletedQuest] = useState<Quest | null>(null);
   const [overlay, setOverlay] = useState<'NONE' | 'SKILLS' | 'SHOP' | 'QUESTS' | 'DEBUG' | 'FACTIONS' | 'MENU' | 'INVENTORY'>('NONE');
   const [activeMonsterUid, setActiveMonsterUid] = useState<string | null>(null);
   const [selectionStep, setSelectionStep] = useState<'CHARACTER' | 'STARTER' | 'NONE'>('NONE');
@@ -47,15 +50,27 @@ const App: React.FC = () => {
       setEvolutionData({ monsterUid: event.monsterUid, options: event.options });
     });
 
+    gameEvents.on('QUEST_COMPLETED', (event: any) => {
+      const quest = QUEST_DATA.find(q => q.id === event.questId);
+      if (quest) {
+        setCompletedQuest(quest);
+      }
+    });
+
     gameEvents.on('SCENE_CHANGED', (event: any) => {
       setActiveScene(event.sceneKey);
     });
 
     gameEvents.on('BATTLE_END', () => {
       setActiveScene('OverworldScene');
+      // Refresh quests daily on battle end or scene change
+      gameStateManager.refreshDailyQuests();
     });
 
     SafeArea.init();
+
+    // Initial refresh
+    gameStateManager.refreshDailyQuests();
 
     if (!gameStateManager.getState().flags['game_started']) {
       setSelectionStep('CHARACTER');
@@ -193,6 +208,7 @@ const App: React.FC = () => {
           state={gameState}
           onAddGold={(a) => gameStateManager.addGold(a)}
           onAddMonster={(id) => gameStateManager.addDebugMonster(id)}
+          onCompleteQuest={(id) => gameStateManager.completeQuest(id)}
           onClose={() => setOverlay('NONE')}
         />
       )}
@@ -201,6 +217,17 @@ const App: React.FC = () => {
         <InventoryUI
           state={gameState}
           onClose={() => setOverlay('NONE')}
+        />
+      )}
+
+      {completedQuest && (
+        <QuestRewardPopup
+          quest={completedQuest}
+          language={gameState.language}
+          onClaim={() => {
+            gameStateManager.claimQuestReward(completedQuest.id);
+            setCompletedQuest(null);
+          }}
         />
       )}
 

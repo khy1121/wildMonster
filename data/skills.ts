@@ -1,15 +1,5 @@
 
-import { ElementType, SkillTree } from '../domain/types';
-
-export interface Skill {
-  id: string;
-  name: string;
-  type: ElementType;
-  category: 'BASIC' | 'SPECIAL' | 'ULTIMATE';
-  power: number;
-  cooldown: number; // in milliseconds
-  description: string;
-}
+import { ElementType, SkillTree, Skill } from '../domain/types';
 
 export const SKILL_DATA: Record<string, Skill> = {
   // --- BASIC ---

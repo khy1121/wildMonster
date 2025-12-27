@@ -257,23 +257,31 @@ export function getAvailableSkillIds(
   const level = (monster as any).level || 1;
   const unlocked = (monster as any).unlockedNodes || [];
 
-  const learnables = species.learnableSkills || [];
+  const skills: string[] = [];
 
-  const baseSkills = learnables.filter(ls => ls.level === 1).map(ls => ls.skillId);
-  const learnedSkills = learnables
-    .filter(ls => ls.level > 1 && level >= ls.level)
-    .sort((a, b) => a.level - b.level)
-    .map(ls => ls.skillId);
+  // 1. Add skills from the 'skills' object with default thresholds
+  if (species.skills.basic) skills.push(species.skills.basic);
+  if (species.skills.special && level >= 5) skills.push(species.skills.special);
+  if (species.skills.ultimate && level >= 15) skills.push(species.skills.ultimate);
 
+  // 2. Add skills from 'learnableSkills' if any
+  if (species.learnableSkills) {
+    species.learnableSkills.forEach(ls => {
+      if (level >= ls.level) skills.push(ls.skillId);
+    });
+  }
+
+  // 3. Add skills from the Skill Tree
   const tree = SKILL_TREES[species.id];
-  const treeSkills = unlocked.flatMap(nodeId => {
-    if (!tree) return [] as string[];
-    const node = tree.nodes.find(n => n.id === nodeId);
-    if (node && node.effect.type === 'skill') return [node.effect.value as string];
-    return [] as string[];
-  });
+  if (tree) {
+    unlocked.forEach(nodeId => {
+      const node = tree.nodes.find(n => n.id === nodeId);
+      if (node && node.effect.type === 'skill') {
+        skills.push(node.effect.value as string);
+      }
+    });
+  }
 
-  // Preserve order: base, learned (by level), then tree-unlocked; remove duplicates
-  const combined = [...baseSkills, ...learnedSkills, ...treeSkills];
-  return Array.from(new Set(combined));
+  // Deduplicate and return
+  return Array.from(new Set(skills));
 }

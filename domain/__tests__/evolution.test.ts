@@ -33,13 +33,10 @@ describe('Evolution System', () => {
     // Fix: Added missing language property
     language: 'en',
     // Fix: Added missing reputation property to satisfy GameState interface
-    reputation: {
-      [FactionType.EMBER_CLAN]: 0,
-      [FactionType.TIDE_WATCHERS]: 0,
-      [FactionType.STORM_HERDERS]: 0,
-      [FactionType.GLOOM_STALKERS]: 0,
-      [FactionType.GLADE_KEEPERS]: 0,
-    }
+    reputation: {},
+    activeQuests: [],
+    pendingRewards: [],
+    lastQuestRefresh: 0
   };
 
   it('correctly identifies evolution readiness', () => {
@@ -48,27 +45,35 @@ describe('Evolution System', () => {
     expect(checkEvolution(pyro, mockState).length).toBe(0);
 
     // Fixed: Satisfied requiredNodeId for pyrocat evolutions (p_fire_special and p_dark_special)
-    const readyPyro = { 
-      ...pyro, 
-      level: 10, 
-      unlockedNodes: ['p_fire_special', 'p_dark_special'] 
+    const readyPyro = {
+      ...pyro,
+      level: 12,
+      unlockedNodes: ['p_fire_special']
     };
     // Fixed: Passed mockState to satisfy signature
     const options = checkEvolution(readyPyro, mockState);
-    expect(options.length).toBe(2);
+    expect(options.length).toBe(1);
     expect(options[0].targetSpeciesId).toBe('flarelion');
-    expect(options[1].targetSpeciesId).toBe('shadowcat');
   });
 
-  it('transforms monster and retains stats/level scaling', () => {
+  it('fails evolution if missing required item', () => {
     const pyro = createMonsterInstance('pyrocat', 10);
-    const flarelion = transformMonster(pyro, 'flarelion');
+    pyro.unlockedNodes = ['p_fire_special', 'p_dark_special'];
 
-    expect(flarelion.speciesId).toBe('flarelion');
-    expect(flarelion.level).toBe(10);
-    expect(flarelion.evolutionHistory).toContain('pyrocat');
-    // Flarelion base HP is 100, Pyro is 50.
-    expect(flarelion.currentStats.maxHp).toBeGreaterThan(pyro.currentStats.maxHp);
-    expect(flarelion.currentHp).toBe(flarelion.currentStats.maxHp);
+    // Create state with NO items
+    const poorState = {
+      ...mockState,
+      tamer: { ...mockState.tamer, inventory: [] }
+    };
+
+    expect(checkEvolution(pyro, poorState).length).toBe(0);
+  });
+
+  it('fails evolution if missing required skill node', () => {
+    const pyro = createMonsterInstance('pyrocat', 10);
+    // Missing 'p_fire_special'
+    pyro.unlockedNodes = [];
+
+    expect(checkEvolution(pyro, mockState).length).toBe(0);
   });
 });

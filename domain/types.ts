@@ -30,6 +30,11 @@ export interface Stats {
   speed: number;
 }
 
+export interface Position {
+  x: number;
+  y: number;
+}
+
 export interface Item {
   id: string;
   name: string;
@@ -97,6 +102,16 @@ export interface SupportSkill {
   power: number;
 }
 
+export interface Skill {
+  id: string;
+  name: string;
+  type: ElementType;
+  category: 'BASIC' | 'SPECIAL' | 'ULTIMATE';
+  power: number;
+  cooldown: number; // in milliseconds
+  description: string;
+}
+
 export interface MonsterSpecies {
   id: string;
   name: string;
@@ -117,6 +132,7 @@ export interface MonsterSpecies {
   isSpecial?: boolean;
   auraColor?: number;
   spawnConditions?: SpawnCondition[];
+  spriteKey?: string;
 }
 
 export interface MonsterInstance {
@@ -145,6 +161,8 @@ export interface Quest {
   rewardItems?: InventoryItem[];
   requiredFlag?: string;
   requiredLevel?: number;
+  category: 'DAILY' | 'WEEKLY' | 'STORY' | 'CHALLENGE';
+  progressMax?: number; // For quests like "Catch 3 monsters"
 }
 
 export interface Character {
@@ -177,9 +195,13 @@ export interface GameState {
   currentScene: string;
   flags: Record<string, boolean | number | string>;
   gameTime: number;
-  completedQuests: string[];
-  reputation: Record<FactionType, number>;
   language: Language;
+  activeQuests: string[];
+  completedQuests: string[];
+  pendingRewards: string[];
+  reputation: Record<string, number>;
+  lastQuestRefresh: number;
+  lastWeeklyRefresh?: number;
   shopStock?: string[];
   shopNextRefresh?: number;
 }
@@ -202,4 +224,22 @@ export interface BattleRewards {
   exp: number;
   gold: number;
   items: { itemId: string; quantity: number }[];
+}
+
+export interface BattleEntity {
+  uid: string;
+  speciesId: string;
+  level: number;
+  currentStats: Stats;
+  maxHp: number;
+  currentHp: number;
+  activeSkills: string[];
+  cooldowns: Record<string, number>;
+  position: { x: number; y: number };
+}
+
+export interface BattleState {
+  playerMonsters: BattleEntity[];
+  enemyMonsters: BattleEntity[];
+  log: string[];
 }

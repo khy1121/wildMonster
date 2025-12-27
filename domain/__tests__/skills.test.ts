@@ -10,11 +10,12 @@ describe('getAvailableSkillIds', () => {
     expect(lvl1).toContain('scratch');
     expect(lvl1).not.toContain('ember');
 
-    const lvl6 = getAvailableSkillIds({ level: 6, unlockedNodes: [] }, pyro);
-    expect(lvl6).toEqual(['scratch', 'ember']);
+    const lvl5 = getAvailableSkillIds({ level: 5, unlockedNodes: [] }, pyro);
+    expect(lvl5).toEqual(['scratch', 'ember']);
 
-    const lvl16 = getAvailableSkillIds({ level: 16, unlockedNodes: [] }, pyro);
-    expect(lvl16).toEqual(['scratch', 'ember', 'fire_blast']);
+    const flarelion = MONSTER_DATA['flarelion'];
+    const lvl15 = getAvailableSkillIds({ level: 15, unlockedNodes: [] }, flarelion);
+    expect(lvl15).toEqual(['scratch', 'fire_blast']);
   });
 
   it('includes skill-tree unlocked skills and deduplicates', () => {

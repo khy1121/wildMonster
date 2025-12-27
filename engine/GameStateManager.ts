@@ -4,6 +4,7 @@ import { MONSTER_DATA } from '../data/monsters';
 import { ITEM_DATA } from '../data/items';
 import { CHARACTER_DATA } from '../data/characters';
 import { QUEST_DATA } from '../data/quests';
+import { SKILL_TREES } from '../data/skills';
 import { gameEvents as bus } from './EventBus';
 import { addExpToMonster, addExpToTamer, createMonsterInstance, addToInventory, rollLoot, calculateCaptureChance, checkEvolution, transformMonster, unlockNode, consumeItem } from '../domain/logic';
 import { SaveManager, SaveResult } from '../save/SaveManager';
@@ -30,18 +31,15 @@ const INITIAL_STATE: GameState = {
   currentScene: 'BootScene',
   flags: {},
   gameTime: 1200,
+  language: (navigator.language.startsWith('ko') ? 'ko' : 'en') as Language,
+  activeQuests: [],
   completedQuests: [],
-  reputation: {
-    [FactionType.EMBER_CLAN]: 0,
-    [FactionType.TIDE_WATCHERS]: 0,
-    [FactionType.STORM_HERDERS]: 0,
-    [FactionType.GLOOM_STALKERS]: 0,
-    [FactionType.GLADE_KEEPERS]: 0,
-  },
-  language: (navigator.language.startsWith('ko') ? 'ko' : 'en') as Language
+  pendingRewards: [],
+  reputation: {},
+  lastQuestRefresh: Date.now()
 };
 
-class GameStateManager {
+export class GameStateManager {
   private state: GameState;
 
   constructor() {
@@ -55,6 +53,18 @@ class GameStateManager {
     }
     if (!this.state.reputation) {
       this.state.reputation = { ...INITIAL_STATE.reputation };
+    }
+    if (!this.state.activeQuests) {
+      this.state.activeQuests = ['first_capture'];
+    }
+    if (!this.state.pendingRewards) {
+      this.state.pendingRewards = [];
+    }
+    if (!this.state.lastQuestRefresh) {
+      this.state.lastQuestRefresh = Date.now();
+    }
+    if (!this.state.lastWeeklyRefresh) {
+      this.state.lastWeeklyRefresh = Date.now();
     }
 
     if (!this.state.shopStock || !this.state.shopNextRefresh) {
@@ -173,6 +183,13 @@ class GameStateManager {
     }
 
     this.state.tamer.inventory = addToInventory(this.state.tamer.inventory, itemId, quantity);
+
+    // Track spend progress
+    ['daily_spend_100', 'daily_spend_500', 'weekly_spend_5000'].forEach(qid => {
+      const key = `quest_progress_${qid}`;
+      this.state.flags[key] = ((this.state.flags[key] as number) || 0) + totalCost;
+    });
+
     this.updateState({});
     return true;
   }
@@ -191,6 +208,13 @@ class GameStateManager {
 
       activeMonster.currentHp = Math.min(activeMonster.currentStats.maxHp, activeMonster.currentHp + (item.stats?.hp || 20));
       this.state.tamer.inventory = consumeItem(this.state.tamer.inventory, itemId, 1);
+
+      // Track quest progress
+      ['daily_item_use', 'daily_item_use_10', 'weekly_item_use_30'].forEach(qid => {
+        const progressKey = `quest_progress_${qid}`;
+        this.state.flags[progressKey] = ((this.state.flags[progressKey] as number) || 0) + 1;
+      });
+
       this.updateState({});
       return { success: true, message: `${item.name} used!` };
     }
@@ -223,7 +247,32 @@ class GameStateManager {
       const enemyData = MONSTER_DATA[enemySpeciesId];
       if (enemyData) {
         this.updateReputation(enemyData.faction, 5);
+
+        // Track Rare Hunter progress
+        const isRareOrHigher = ['Rare', 'Epic', 'Legendary'].includes(enemyData.rarity);
+        if (isRareOrHigher) {
+          this.state.flags['captured_rare_or_higher'] = true;
+        }
+        if (enemyData.rarity === 'Legendary') {
+          this.state.flags['captured_legendary'] = true;
+        }
       }
+
+      // First Capture story quest flag
+      this.state.flags['first_capture_done'] = true;
+
+      // Track weekly monster capture progress
+      ['daily_capture_1', 'daily_capture_3', 'weekly_monster_collector', 'weekly_capture_5_rare'].forEach(qid => {
+        if (qid === 'weekly_capture_5_rare' && !['Rare', 'Epic', 'Legendary'].includes(enemyData?.rarity || '')) return;
+        const captureKey = `quest_progress_${qid}`;
+        this.state.flags[captureKey] = ((this.state.flags[captureKey] as number) || 0) + 1;
+      });
+
+      // Captures count as wins for streaks
+      ['daily_win_3', 'daily_win_5', 'weekly_win_20', 'weekly_win_50', 'win_streak_10', 'win_streak_50'].forEach(qid => {
+        const key = `quest_progress_${qid}`;
+        this.state.flags[key] = ((this.state.flags[key] as number) || 0) + 1;
+      });
     }
 
     this.updateState({});
@@ -263,27 +312,181 @@ class GameStateManager {
 
   checkQuests() {
     QUEST_DATA.forEach(quest => {
+      // Only check if it's currently active and not yet completed or pending
+      if (!this.state.activeQuests.includes(quest.id)) return;
       if (this.state.completedQuests.includes(quest.id)) return;
+      if (this.state.pendingRewards.includes(quest.id)) return;
+
       let satisfied = true;
       if (quest.requiredLevel && this.state.tamer.level < quest.requiredLevel) satisfied = false;
       if (quest.requiredFlag && !this.state.flags[quest.requiredFlag]) satisfied = false;
+
+      // Special conditional logic for certain quest IDs
+      if (quest.id === 'first_capture' && !this.state.flags['first_capture_done']) satisfied = false;
+      if (quest.id === 'collector_beginner' && this.state.tamer.collection.length < 3) satisfied = false;
+      if (quest.id === 'collector_pro' && this.state.tamer.collection.length < 20) satisfied = false;
+      if (quest.id === 'collector_master' && this.state.tamer.collection.length < 50) satisfied = false;
+      if (quest.id === 'story_capture_5' && this.state.tamer.collection.length < 5) satisfied = false;
+      if (quest.id === 'gold_saver' && this.state.tamer.gold < 1000) satisfied = false;
+      if (quest.id === 'gold_millionaire' && this.state.tamer.gold < 100000) satisfied = false;
+      if (quest.id === 'rare_hunter' && !this.state.flags['captured_rare_or_higher']) satisfied = false;
+      if (quest.id === 'legendary_hunter' && !this.state.flags['captured_legendary']) satisfied = false;
+      if (quest.id === 'faction_friend' && !Object.values(this.state.reputation).some(r => r >= 100)) satisfied = false;
+      if (quest.id === 'faction_hero' && !Object.values(this.state.reputation).some(r => r >= 500)) satisfied = false;
+      if (quest.id === 'skill_unlock_all' && !this.state.tamer.party.some(m => {
+        const tree = SKILL_TREES[m.speciesId];
+        return tree && m.unlockedNodes.length >= tree.nodes.length;
+      })) satisfied = false;
+
+      // Progress tracking for specific quests
+      if (quest.progressMax) {
+        const progress = (this.state.flags[`quest_progress_${quest.id}`] as number) || 0;
+        if (progress < quest.progressMax) satisfied = false;
+      }
+
       if (satisfied) this.completeQuest(quest.id);
     });
   }
 
   completeQuest(questId: string) {
     const quest = QUEST_DATA.find(q => q.id === questId);
-    if (!quest || this.state.completedQuests.includes(questId)) return;
-    this.state.completedQuests.push(questId);
+    if (!quest) return;
+    if (this.state.completedQuests.includes(questId)) return;
+    if (this.state.pendingRewards.includes(questId)) return;
+
+    this.state.pendingRewards.push(questId);
+
+    // Track weekly completionist progress
+    if (quest.id !== 'weekly_completionist') {
+      const key = 'quest_progress_weekly_completionist';
+      this.state.flags[key] = ((this.state.flags[key] as number) || 0) + 1;
+    }
+
+    bus.emitEvent({ type: 'QUEST_COMPLETED', questId });
+    this.updateState({});
+  }
+
+  claimQuestReward(questId: string) {
+    const quest = QUEST_DATA.find(q => q.id === questId);
+    if (!quest || !this.state.pendingRewards.includes(questId)) return;
+
+    // Remove from pending and active
+    this.state.pendingRewards = this.state.pendingRewards.filter(id => id !== questId);
+    this.state.activeQuests = this.state.activeQuests.filter(id => id !== questId);
+
+    // Add to completed
+    if (!this.state.completedQuests.includes(questId)) {
+      this.state.completedQuests.push(questId);
+    }
+
+    // Grant rewards
     this.state.tamer.gold += quest.rewardGold;
     const { tamer } = addExpToTamer(this.state.tamer, quest.rewardExp);
     this.state.tamer = tamer;
+
     if (quest.rewardItems) {
       quest.rewardItems.forEach(ri => {
         this.state.tamer.inventory = addToInventory(this.state.tamer.inventory, ri.itemId, ri.quantity);
       });
     }
-    bus.emitEvent({ type: 'QUEST_COMPLETED', questId });
+
+    this.updateState({});
+  }
+
+  rerollQuest(questId: string) {
+    if (!this.state.activeQuests.includes(questId)) return;
+
+    // Hearthstone-like reroll: once per day (checking simple flag for simplicity in this demo)
+    if (this.state.flags['rerolled_today']) {
+      return;
+    }
+
+    const currentQuest = QUEST_DATA.find(q => q.id === questId);
+    if (!currentQuest || currentQuest.category === 'STORY') return; // Can't reroll story quests
+
+    const availableQuests = QUEST_DATA.filter(q =>
+      q.category !== 'STORY' &&
+      !this.state.activeQuests.includes(q.id) &&
+      !this.state.completedQuests.includes(q.id)
+    );
+
+    if (availableQuests.length > 0) {
+      const nextQuest = availableQuests[Math.floor(Math.random() * availableQuests.length)];
+      this.state.activeQuests = this.state.activeQuests.map(id => id === questId ? nextQuest.id : id);
+      this.state.flags['rerolled_today'] = true;
+      this.updateState({});
+    }
+  }
+
+  refreshDailyQuests() {
+    const now = Date.now();
+    const oneDay = 24 * 60 * 60 * 1000;
+    const oneWeek = 7 * oneDay;
+
+    let changed = false;
+
+    // Daily Refresh
+    if (now - this.state.lastQuestRefresh > oneDay) {
+      this.state.lastQuestRefresh = now;
+      this.state.flags['rerolled_today'] = false;
+
+      const activeDailies = QUEST_DATA.filter(q => q.category === 'DAILY' && this.state.activeQuests.includes(q.id));
+      if (activeDailies.length < 3) {
+        const availableDailies = QUEST_DATA.filter(q =>
+          q.category === 'DAILY' &&
+          !this.state.activeQuests.includes(q.id) &&
+          !this.state.completedQuests.includes(q.id)
+        );
+        if (availableDailies.length > 0) {
+          const next = availableDailies[Math.floor(Math.random() * availableDailies.length)];
+          this.state.activeQuests.push(next.id);
+        }
+      }
+      changed = true;
+    }
+
+    // Weekly Refresh
+    if (this.state.lastWeeklyRefresh === undefined || now - this.state.lastWeeklyRefresh > oneWeek) {
+      this.state.lastWeeklyRefresh = now;
+
+      const activeWeeklies = QUEST_DATA.filter(q => q.category === 'WEEKLY' && this.state.activeQuests.includes(q.id));
+      if (activeWeeklies.length < 1) {
+        const availableWeeklies = QUEST_DATA.filter(q =>
+          q.category === 'WEEKLY' &&
+          !this.state.activeQuests.includes(q.id) &&
+          !this.state.completedQuests.includes(q.id)
+        );
+        if (availableWeeklies.length > 0) {
+          const next = availableWeeklies[Math.floor(Math.random() * availableWeeklies.length)];
+          this.state.activeQuests.push(next.id);
+        }
+      }
+      changed = true;
+    }
+
+    if (changed) {
+      this.updateState({});
+    }
+  }
+
+  handleBattleEnd(winner: 'PLAYER' | 'ENEMY' | 'CAPTURED', enemySpeciesId: string, enemyLevel: number, isBoss: boolean) {
+    if (winner === 'PLAYER') {
+      this.grantRewards(enemySpeciesId, enemyLevel, isBoss);
+
+      // Story flags for specific bosses
+      if (isBoss) {
+        if (enemySpeciesId === 'flarelion') this.state.flags['boss_flarelion_defeated'] = true;
+        if (enemySpeciesId === 'krakenwhale') this.state.flags['boss_krakenwhale_defeated'] = true;
+      }
+
+      // Track regular wins vs elements (already in grantRewards)
+    } else if (winner === 'ENEMY') {
+      // Reset win streaks
+      this.state.flags['quest_progress_win_streak_10'] = 0;
+      this.state.flags['quest_progress_win_streak_50'] = 0;
+    }
+    // CAPTURED is already handled by attemptCapture
+
     this.updateState({});
   }
 
@@ -309,6 +512,33 @@ class GameStateManager {
     newTamer.inventory = updatedInventory;
 
     this.state.tamer = newTamer;
+
+    // Track quest progress (Wins)
+    ['daily_win_3', 'daily_win_5', 'weekly_win_20', 'weekly_win_50', 'win_streak_10', 'win_streak_50'].forEach(qid => {
+      const key = `quest_progress_${qid}`;
+      this.state.flags[key] = ((this.state.flags[key] as number) || 0) + 1;
+    });
+
+    if (enemyData) {
+      if (enemyData.type === 'FIRE') this.state.flags['quest_progress_daily_win_fire'] = ((this.state.flags['quest_progress_daily_win_fire'] as number) || 0) + 1;
+      if (enemyData.type === 'WATER') this.state.flags['quest_progress_daily_win_water'] = ((this.state.flags['quest_progress_daily_win_water'] as number) || 0) + 1;
+      if (enemyData.type === 'GRASS') this.state.flags['quest_progress_daily_win_grass'] = ((this.state.flags['quest_progress_daily_win_grass'] as number) || 0) + 1;
+      if (enemyData.type === 'ELECTRIC') this.state.flags['quest_progress_daily_win_electric'] = ((this.state.flags['quest_progress_daily_win_electric'] as number) || 0) + 1;
+      if (enemyData.type === 'NEUTRAL') this.state.flags['quest_progress_daily_win_neutral'] = ((this.state.flags['quest_progress_daily_win_neutral'] as number) || 0) + 1;
+      if (enemyData.type === 'DARK' || enemyData.type === 'LIGHT') this.state.flags['quest_progress_daily_win_dark_light'] = ((this.state.flags['quest_progress_daily_win_dark_light'] as number) || 0) + 1;
+
+      if (enemySpeciesId === 'puffle') this.state.flags['quest_progress_pesticide_specialist'] = ((this.state.flags['quest_progress_pesticide_specialist'] as number) || 0) + 1;
+    }
+
+    if (isBoss) {
+      this.state.flags['quest_progress_weekly_boss_slayer_3'] = ((this.state.flags['quest_progress_weekly_boss_slayer_3'] as number) || 0) + 1;
+    }
+
+    const goldKey = 'quest_progress_daily_earn_500';
+    this.state.flags[goldKey] = ((this.state.flags[goldKey] as number) || 0) + rewards.gold;
+    const weeklyGoldKey = 'quest_progress_weekly_earn_5000';
+    this.state.flags[weeklyGoldKey] = ((this.state.flags[weeklyGoldKey] as number) || 0) + rewards.gold;
+
     this.updateState({});
     bus.emitEvent({ type: 'REWARD_EARNED', rewards });
   }
@@ -337,6 +567,16 @@ class GameStateManager {
       if (!this.state.tamer.collection.includes(targetSpeciesId)) {
         this.state.tamer.collection.push(targetSpeciesId);
       }
+
+      // Evolution quest flag
+      this.state.flags['evolved_once'] = true;
+
+      // Track evolution progress
+      ['weekly_evolve_3', 'evolution_master'].forEach(qid => {
+        const key = `quest_progress_${qid}`;
+        this.state.flags[key] = ((this.state.flags[key] as number) || 0) + 1;
+      });
+
       this.updateState({});
     }
   }
@@ -347,6 +587,11 @@ class GameStateManager {
       const monster = this.state.tamer.party[partyIndex];
       const updated = unlockNode(monster, nodeId);
       this.state.tamer.party[partyIndex] = updated;
+
+      // Track skill unlock progress
+      const key = 'quest_progress_skill_unlock_10';
+      this.state.flags[key] = ((this.state.flags[key] as number) || 0) + 1;
+
       this.updateState({});
     }
   }

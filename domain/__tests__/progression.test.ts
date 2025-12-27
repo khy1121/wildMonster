@@ -1,11 +1,11 @@
 
 import { describe, it, expect } from 'vitest';
 // Fixed: Using getTamerProgression instead of non-existent getTamerMaxPartySize
-import { calculateStats, addExpToMonster, getTamerProgression, addExpToTamer } from '../logic';
+import { calculateStats, addExpToMonster, getTamerProgression, addExpToTamer, validateSpawn } from '../logic';
 import { Stats, MonsterInstance, ElementType, GameState, FactionType } from '../types';
 
 describe('Progression Logic', () => {
-  const baseStats: Stats = { hp: 10, maxHp: 10, attack: 5, defense: 5, speed: 5 };
+  const baseStats: Stats = { hp: 10, maxHp: 10, attack: 5, defense: 5, specialAttack: 5, skillResistance: 5, speed: 5 };
 
   // Dummy state for functions requiring it
   const dummyState: GameState = {
@@ -32,13 +32,10 @@ describe('Progression Logic', () => {
     // Fix: Added missing language property
     language: 'en',
     // Fix: Added missing reputation property to satisfy GameState interface
-    reputation: {
-      [FactionType.EMBER_CLAN]: 0,
-      [FactionType.TIDE_WATCHERS]: 0,
-      [FactionType.STORM_HERDERS]: 0,
-      [FactionType.GLOOM_STALKERS]: 0,
-      [FactionType.GLADE_KEEPERS]: 0,
-    }
+    reputation: {},
+    activeQuests: [],
+    pendingRewards: [],
+    lastQuestRefresh: 0
   };
 
   it('calculates stats correctly based on level', () => {
@@ -77,18 +74,40 @@ describe('Progression Logic', () => {
   });
 
   it('unlocks party slots based on tamer level', () => {
-    // Fixed: Using getTamerProgression(level).partySlots to fix missing export error
     expect(getTamerProgression(1).partySlots).toBe(1);
-    expect(getTamerProgression(3).partySlots).toBe(2);
-    expect(getTamerProgression(7).partySlots).toBe(3);
-    expect(getTamerProgression(12).partySlots).toBe(4);
+    expect(getTamerProgression(5).partySlots).toBe(2);
+    expect(getTamerProgression(10).partySlots).toBe(3);
+    expect(getTamerProgression(20).partySlots).toBe(4);
   });
 
   it('processes tamer experience and level up', () => {
-    const tamer = { name: 'Test', level: 1, exp: 450, party: [], gold: 0 };
+    const tamer = { name: 'Test', level: 1, exp: 450, characterId: 'leo', party: [], gold: 0 };
     const result = addExpToTamer(tamer as any, 100);
     expect(result.leveledUp).toBe(true);
     expect(result.tamer.level).toBe(2);
     expect(result.tamer.exp).toBe(50);
+  });
+
+  it('validates monster spawn conditions', () => {
+    const nightMonster = {
+      spawnConditions: [{ type: 'TIME_OF_DAY', value: 'NIGHT' }]
+    } as any;
+
+    const dayState = { ...dummyState, gameTime: 1200 }; // 12:00
+    const nightState = { ...dummyState, gameTime: 2200 }; // 22:00
+
+    expect(validateSpawn(nightMonster, dayState)).toBe(false);
+    expect(validateSpawn(nightMonster, nightState)).toBe(true);
+
+    const levelMonster = {
+      spawnConditions: [{ type: 'LEVEL_MIN', value: 10 }]
+    } as any;
+
+    expect(validateSpawn(levelMonster, dummyState)).toBe(false);
+    const highLevelState = {
+      ...dummyState,
+      tamer: { ...dummyState.tamer, level: 15 }
+    };
+    expect(validateSpawn(levelMonster, highLevelState)).toBe(true);
   });
 });

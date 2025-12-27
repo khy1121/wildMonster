@@ -132,13 +132,41 @@ export class BattleScene extends Phaser.Scene {
     }
 
     const pContainer = this.add.container(width * 0.25, height * 0.4);
-    pContainer.add(this.add.text(0, 0, playerSpecies.icon, { fontSize: '100px' }).setOrigin(0.5));
+    if (playerSpecies.spriteKey) {
+      const sprite = this.add.sprite(0, 0, playerSpecies.spriteKey).setScale(2).setFlipX(true);
+      pContainer.add(sprite);
+      this.tweens.add({
+        targets: sprite,
+        y: -10,
+        duration: 2000,
+        yoyo: true,
+        loop: -1,
+        ease: 'Sine.easeInOut'
+      });
+    } else {
+      pContainer.add(this.add.text(0, 0, playerSpecies.icon, { fontSize: '100px' }).setOrigin(0.5));
+    }
     const pBarInfo = this.createHpBar(pContainer, 0, 80, this.playerEntity.name);
     this.playerHpBar = pBarInfo.bar;
     this.playerBuffArea = pBarInfo.buffContainer;
 
     this.enemyVisual = this.add.container(width * 0.75, height * 0.4);
-    this.enemyVisual.add(this.add.text(0, 0, enemySpecies.icon, { fontSize: '100px' }).setOrigin(0.5));
+
+    if (enemySpecies.spriteKey) {
+      const sprite = this.add.sprite(0, 0, enemySpecies.spriteKey).setScale(2);
+      this.enemyVisual.add(sprite);
+      // Hover animation
+      this.tweens.add({
+        targets: sprite,
+        y: -10,
+        duration: 2000,
+        yoyo: true,
+        loop: -1,
+        ease: 'Sine.easeInOut'
+      });
+    } else {
+      this.enemyVisual.add(this.add.text(0, 0, enemySpecies.icon, { fontSize: '100px' }).setOrigin(0.5));
+    }
 
     if (isBoss) {
       const bossAura = this.add.circle(0, 0, 60, 0xfacc15, 0.3);
@@ -1028,9 +1056,7 @@ export class BattleScene extends Phaser.Scene {
     }
 
     this.time.delayedCall(2000, () => {
-      if (winner === 'PLAYER' && this.enemyEntity) {
-        gameStateManager.grantRewards(this.enemySpeciesId, this.enemyEntity.level, this.isBossBattle);
-      }
+      gameStateManager.handleBattleEnd(winner, this.enemySpeciesId, this.enemyEntity.level, this.isBossBattle);
       gameEvents.emitEvent({ type: 'BATTLE_END', winner });
 
       this.scene.stop();

@@ -4,24 +4,24 @@ import { MONSTERS, SKILLS } from '../constants';
 
 interface BattleArenaProps {
   battle: BattleState;
-  onEnd: (winner: 'PLAYER' | 'ENEMY', captured?: MonsterInstance) => void;
+  onEnd: (winner: 'PLAYER' | 'ENEMY' | 'CAPTURED', captured?: MonsterInstance) => void;
 }
 
 const BattleArena: React.FC<BattleArenaProps> = ({ battle, onEnd }) => {
-  const [entities, setEntities] = useState<{player: BattleEntity[], enemy: BattleEntity[]}>({
+  const [entities, setEntities] = useState<{ player: BattleEntity[], enemy: BattleEntity[] }>({
     player: battle.playerMonsters,
     enemy: battle.enemyMonsters
   });
   const [log, setLog] = useState<string[]>(battle.log);
-  const [vfx, setVfx] = useState<{id: string, x: number, y: number, text: string}[]>([]);
+  const [vfx, setVfx] = useState<{ id: string, x: number, y: number, text: string }[]>([]);
   const lastTickRef = useRef<number>(Date.now());
-  
+
   // Fix: useRef<number>() expects 1 argument (initialValue) in some configurations.
   // Using 0 as a default value for the animation request handle.
   const requestRef = useRef<number>(0);
 
   const addLog = (msg: string) => setLog(prev => [msg, ...prev].slice(0, 10));
-  
+
   const triggerVfx = (x: number, y: number, text: string) => {
     const id = Math.random().toString();
     setVfx(prev => [...prev, { id, x, y, text }]);
@@ -33,7 +33,7 @@ const BattleArena: React.FC<BattleArenaProps> = ({ battle, onEnd }) => {
   const processSkill = (source: BattleEntity, target: BattleEntity, skill: Skill) => {
     // Damage Calculation
     const damage = Math.max(1, skill.power + source.currentStats.attack - target.currentStats.defense);
-    
+
     // Update State
     setEntities(prev => {
       const isPlayerSource = prev.player.some(e => e.uid === source.uid);
@@ -76,13 +76,13 @@ const BattleArena: React.FC<BattleArenaProps> = ({ battle, onEnd }) => {
       const nextPlayer = prev.player.map(e => ({
         ...e,
         cooldowns: Object.fromEntries(
-          Object.entries(e.cooldowns).map(([id, ms]) => [id, Math.max(0, ms - dt)])
+          Object.entries(e.cooldowns).map(([id, ms]) => [id, Math.max(0, (ms as number) - dt)])
         )
       }));
       const nextEnemy = prev.enemy.map(e => ({
         ...e,
         cooldowns: Object.fromEntries(
-          Object.entries(e.cooldowns).map(([id, ms]) => [id, Math.max(0, ms - dt)])
+          Object.entries(e.cooldowns).map(([id, ms]) => [id, Math.max(0, (ms as number) - dt)])
         )
       }));
 
@@ -139,13 +139,16 @@ const BattleArena: React.FC<BattleArenaProps> = ({ battle, onEnd }) => {
     const enemy = entities.enemy[0];
     if (enemy.currentHp / enemy.maxHp < 0.3) {
       addLog("Successful capture!");
-      onEnd('PLAYER', {
+      onEnd('CAPTURED', {
         uid: Math.random().toString(36).substr(2, 9),
         speciesId: enemy.speciesId,
         level: enemy.level,
         exp: 0,
+        currentHp: enemy.maxHp,
         currentStats: enemy.currentStats,
-        activeSkills: enemy.activeSkills
+        evolutionHistory: [],
+        skillPoints: 0,
+        unlockedNodes: []
       });
     } else {
       addLog("The monster broke free!");
@@ -181,8 +184,8 @@ const BattleArena: React.FC<BattleArenaProps> = ({ battle, onEnd }) => {
 
         {/* VFX Layer */}
         {vfx.map(v => (
-          <div 
-            key={v.id} 
+          <div
+            key={v.id}
             className="absolute z-50 text-red-500 font-black text-2xl animate-bounce"
             style={{ left: `${v.x}%`, top: `${v.y}%` }}
           >
@@ -197,7 +200,7 @@ const BattleArena: React.FC<BattleArenaProps> = ({ battle, onEnd }) => {
           {log.map((line, i) => <div key={i}>{line}</div>)}
         </div>
         <div className="w-48 flex flex-col gap-2">
-          <button 
+          <button
             onClick={handleCapture}
             className="w-full h-full bg-indigo-600 hover:bg-indigo-500 rounded font-bold text-white transition flex items-center justify-center gap-2"
           >
@@ -212,7 +215,7 @@ const BattleArena: React.FC<BattleArenaProps> = ({ battle, onEnd }) => {
 const BattleUnit: React.FC<{ entity: BattleEntity, flip?: boolean }> = ({ entity, flip }) => {
   const species = MONSTERS[entity.speciesId];
   const hpPercent = (entity.currentHp / entity.maxHp) * 100;
-  
+
   return (
     <div className={`flex items-center gap-4 ${flip ? 'flex-row-reverse' : ''}`}>
       <div className={`text-7xl transition-transform ${flip ? '-scale-x-100' : ''} ${entity.currentHp > 0 ? 'animate-pulse' : ''}`}>
@@ -224,7 +227,7 @@ const BattleUnit: React.FC<{ entity: BattleEntity, flip?: boolean }> = ({ entity
           <span className="text-[10px] text-slate-400">Lvl {entity.level}</span>
         </div>
         <div className="w-full h-2 bg-slate-700 rounded-full overflow-hidden">
-          <div 
+          <div
             className={`h-full transition-all duration-300 ${hpPercent > 50 ? 'bg-green-500' : hpPercent > 20 ? 'bg-yellow-500' : 'bg-red-500'}`}
             style={{ width: `${hpPercent}%` }}
           ></div>
