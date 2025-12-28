@@ -10,6 +10,10 @@ import { addExpToMonster, addExpToTamer, createMonsterInstance, addToInventory, 
 import { SaveManager, SaveResult } from '../save/SaveManager';
 import { gameRNG } from '../domain/RNG';
 import { getFactionDiscount } from '../localization/strings';
+// Phase 4 imports
+import { ACHIEVEMENTS } from '../data/achievements';
+import { getDailyReward } from '../data/dailyRewards';
+import { EXPEDITIONS } from '../data/expeditions';
 
 const INITIAL_STATE: GameState = {
   version: 1,
@@ -80,6 +84,27 @@ export class GameStateManager {
     }
     if (!this.state.lastWeeklyRefresh) {
       this.state.lastWeeklyRefresh = Date.now();
+    }
+
+    // Phase 4: Ensure new fields exist for old saves
+    if (!this.state.dailyLogin) {
+      this.state.dailyLogin = {
+        lastLoginDate: '',
+        consecutiveDays: 0,
+        claimedToday: false
+      };
+    }
+    if (!this.state.tamer.achievementProgress) {
+      this.state.tamer.achievementProgress = {};
+    }
+    if (!this.state.tamer.unlockedAchievements) {
+      this.state.tamer.unlockedAchievements = [];
+    }
+    if (!this.state.tamer.activeExpeditions) {
+      this.state.tamer.activeExpeditions = [];
+    }
+    if (this.state.tamer.expeditionSlots === undefined) {
+      this.state.tamer.expeditionSlots = 1;
     }
 
     if (!this.state.shopStock || !this.state.shopNextRefresh) {
@@ -1015,14 +1040,12 @@ export class GameStateManager {
   }
 
   private getDayReward(day: number) {
-    const { getDailyReward } = require('../data/dailyRewards');
     return getDailyReward(day);
   }
 
   claimDailyLogin(): boolean {
     if (this.state.dailyLogin.claimedToday) return false;
 
-    const { getDailyReward } = require('../data/dailyRewards');
     const reward = getDailyReward(this.state.dailyLogin.consecutiveDays);
 
     if (reward.gold) {
@@ -1041,7 +1064,6 @@ export class GameStateManager {
 
   // ===== PHASE 4: Expedition System =====
   startExpedition(expeditionId: string, monsterUids: string[]): { success: boolean; message: string } {
-    const { EXPEDITIONS } = require('../data/expeditions');
     const expedition = EXPEDITIONS[expeditionId];
 
     if (!expedition) return { success: false, message: 'Invalid expedition' };
@@ -1070,8 +1092,7 @@ export class GameStateManager {
 
     // Check element requirements
     if (expedition.requirements.element) {
-      const { MONSTER_DATA } = require('../data/monsters');
-      if (!monsters.some(m => MONSTER_DATA[m!.speciesId]?.element === expedition.requirements.element)) {
+      if (!monsters.some(m => MONSTER_DATA[m!.speciesId]?.type === expedition.requirements.element)) {
         return { success: false, message: `Requires a ${expedition.requirements.element} type monster` };
       }
     }
@@ -1106,7 +1127,6 @@ export class GameStateManager {
       return { success: false, rewards: null }; // Not finished yet
     }
 
-    const { EXPEDITIONS } = require('../data/expeditions');
     const expedition = EXPEDITIONS[expeditionId];
     if (!expedition) return { success: false, rewards: null };
 

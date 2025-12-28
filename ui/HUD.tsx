@@ -29,7 +29,7 @@ const HUD: React.FC<HUDProps> = ({ state, onOpenSkills, onOpenQuests, onOpenFact
   const leadRep = leadFaction ? reputation[leadFaction] : 0;
 
   // Phase 4: Check for completed expeditions
-  const hasCompletedExpedition = tamer.activeExpeditions.some(e => Date.now() >= e.endTime);
+  const hasCompletedExpedition = tamer.activeExpeditions?.some(e => Date.now() >= e.endTime) ?? false;
 
   return (
     <div className="absolute top-0 left-0 w-full p-2 md:p-4 pointer-events-none flex flex-col gap-2">
