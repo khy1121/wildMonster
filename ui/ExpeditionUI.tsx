@@ -4,6 +4,7 @@ import { GameStateManager } from '../engine/GameStateManager';
 import { EXPEDITION_DATA, EXPEDITIONS } from '../data/expeditions';
 import { MONSTER_DATA } from '../data/monsters';
 import { Button } from './components/Button';
+import { getTranslation } from '../localization/strings';
 
 interface ExpeditionUIProps {
     gsm: GameStateManager;
@@ -16,6 +17,8 @@ export const ExpeditionUI: React.FC<ExpeditionUIProps> = ({ gsm, onClose }) => {
     const [selectedMonsters, setSelectedMonsters] = useState<string[]>([]);
     const [now, setNow] = useState(Date.now());
 
+    const t = getTranslation(state.language);
+
     // Update time every second for countdown
     useEffect(() => {
         const interval = setInterval(() => setNow(Date.now()), 1000);
@@ -23,7 +26,7 @@ export const ExpeditionUI: React.FC<ExpeditionUIProps> = ({ gsm, onClose }) => {
     }, []);
 
     const availableMonsters = [...state.tamer.party, ...state.tamer.storage];
-    const activeExpeditions = state.tamer.activeExpeditions;
+    const activeExpeditions = state.tamer.activeExpeditions || [];
 
     const handleSelectMonster = (uid: string) => {
         if (selectedMonsters.includes(uid)) {
@@ -53,7 +56,10 @@ export const ExpeditionUI: React.FC<ExpeditionUIProps> = ({ gsm, onClose }) => {
         const result = gsm.claimExpedition(expeditionId);
         if (result.success) {
             setState({ ...gsm.getState() });
-            alert(`Rewards: ${result.rewards.gold} Gold, ${result.rewards.exp} EXP, Items: ${result.rewards.items.join(', ') || 'None'}`);
+            const rewardText = state.language === 'ko'
+                ? `보상: ${result.rewards.gold} 골드, ${result.rewards.exp} 경험치, 아이템: ${result.rewards.items.join(', ') || '없음'}`
+                : `Rewards: ${result.rewards.gold} Gold, ${result.rewards.exp} EXP, Items: ${result.rewards.items.join(', ') || 'None'}`;
+            alert(rewardText);
         }
     };
 
@@ -77,24 +83,28 @@ export const ExpeditionUI: React.FC<ExpeditionUIProps> = ({ gsm, onClose }) => {
                 {/* Header */}
                 <div className="flex justify-between items-center mb-6">
                     <div>
-                        <h2 className="text-2xl md:text-3xl font-black text-white uppercase tracking-wider">Expeditions</h2>
+                        <h2 className="text-2xl md:text-3xl font-black text-white uppercase tracking-wider">{t.ui.expeditions}</h2>
                         <p className="text-slate-400 text-sm">
-                            Slots: {activeExpeditions.length} / {state.tamer.expeditionSlots}
+                            {state.language === 'ko' ? '슬롯' : 'Slots'}: {activeExpeditions.length} / {state.tamer.expeditionSlots}
                         </p>
                     </div>
                     <Button variant="outline" size="md" onClick={onClose} icon={<i className="fa-solid fa-times"></i>}>
-                        Close
+                        {t.ui.close}
                     </Button>
                 </div>
 
                 {/* Active Expeditions */}
                 {activeExpeditions.length > 0 && (
                     <div className="mb-6">
-                        <h3 className="text-lg font-bold text-white mb-3">Active Expeditions</h3>
+                        <h3 className="text-lg font-bold text-white mb-3">{t.ui.active_expeditions}</h3>
                         <div className="grid gap-3">
                             {activeExpeditions.map(active => {
                                 const exp = EXPEDITIONS[active.expeditionId];
                                 const isComplete = now >= active.endTime;
+
+                                const displayName = state.language === 'ko' && exp?.nameKo
+                                    ? exp.nameKo
+                                    : exp?.name || 'Unknown';
 
                                 return (
                                     <div
@@ -104,14 +114,16 @@ export const ExpeditionUI: React.FC<ExpeditionUIProps> = ({ gsm, onClose }) => {
                                     >
                                         <div className="text-3xl">{exp?.icon || '🗺️'}</div>
                                         <div className="flex-1">
-                                            <h4 className="text-white font-bold">{exp?.name || 'Unknown'}</h4>
+                                            <h4 className="text-white font-bold">{displayName}</h4>
                                             <p className="text-slate-400 text-sm">
-                                                {isComplete ? '✅ Complete!' : `Time remaining: ${formatTimeRemaining(active.endTime)}`}
+                                                {isComplete
+                                                    ? `✅ ${t.ui.expedition_complete}`
+                                                    : `${t.ui.time_remaining}: ${formatTimeRemaining(active.endTime)}`}
                                             </p>
                                         </div>
                                         {isComplete && (
                                             <Button variant="primary" size="sm" onClick={() => handleClaimExpedition(active.expeditionId)}>
-                                                Claim
+                                                {t.ui.claim}
                                             </Button>
                                         )}
                                     </div>
@@ -125,11 +137,14 @@ export const ExpeditionUI: React.FC<ExpeditionUIProps> = ({ gsm, onClose }) => {
                 <div className="flex-1 flex flex-col md:flex-row gap-4 overflow-hidden">
                     {/* Expedition List */}
                     <div className="flex-1 overflow-auto custom-scrollbar">
-                        <h3 className="text-lg font-bold text-white mb-3">Available Expeditions</h3>
+                        <h3 className="text-lg font-bold text-white mb-3">{t.ui.available}</h3>
                         <div className="grid gap-3">
                             {EXPEDITION_DATA.map(exp => {
                                 const isSelected = selectedExpedition === exp.id;
                                 const isActive = activeExpeditions.some(a => a.expeditionId === exp.id);
+
+                                const displayName = state.language === 'ko' && exp.nameKo ? exp.nameKo : exp.name;
+                                const displayDesc = state.language === 'ko' && exp.descriptionKo ? exp.descriptionKo : exp.description;
 
                                 return (
                                     <button
@@ -147,14 +162,14 @@ export const ExpeditionUI: React.FC<ExpeditionUIProps> = ({ gsm, onClose }) => {
                                     >
                                         <div className="text-3xl">{exp.icon}</div>
                                         <div className="flex-1">
-                                            <h4 className="text-white font-bold">{exp.name}</h4>
-                                            <p className="text-slate-400 text-sm mb-2">{exp.description}</p>
+                                            <h4 className="text-white font-bold">{displayName}</h4>
+                                            <p className="text-slate-400 text-sm mb-2">{displayDesc}</p>
                                             <div className="flex flex-wrap gap-2 text-xs">
                                                 <span className="bg-slate-800 px-2 py-1 rounded text-slate-300">
                                                     ⏱️ {formatDuration(exp.duration)}
                                                 </span>
                                                 <span className="bg-slate-800 px-2 py-1 rounded text-slate-300">
-                                                    👥 {exp.requirements.partySize} Monster{exp.requirements.partySize > 1 ? 's' : ''}
+                                                    👥 {exp.requirements.partySize} {state.language === 'ko' ? '마리' : `Monster${exp.requirements.partySize > 1 ? 's' : ''}`}
                                                 </span>
                                                 {exp.requirements.minLevel && (
                                                     <span className="bg-slate-800 px-2 py-1 rounded text-slate-300">
@@ -181,9 +196,9 @@ export const ExpeditionUI: React.FC<ExpeditionUIProps> = ({ gsm, onClose }) => {
                     {/* Monster Selection Panel */}
                     {selectedExpedition && (
                         <div className="w-full md:w-80 bg-slate-900 rounded-xl border border-slate-700 p-4 flex flex-col">
-                            <h3 className="text-lg font-bold text-white mb-3">Select Monsters</h3>
+                            <h3 className="text-lg font-bold text-white mb-3">{t.ui.select_monsters}</h3>
                             <p className="text-slate-400 text-sm mb-3">
-                                Selected: {selectedMonsters.length} / {EXPEDITIONS[selectedExpedition]?.requirements.partySize || 1}
+                                {t.ui.selected}: {selectedMonsters.length} / {EXPEDITIONS[selectedExpedition]?.requirements.partySize || 1}
                             </p>
 
                             <div className="flex-1 overflow-auto custom-scrollbar space-y-2">
@@ -220,7 +235,7 @@ export const ExpeditionUI: React.FC<ExpeditionUIProps> = ({ gsm, onClose }) => {
                                 disabled={selectedMonsters.length !== EXPEDITIONS[selectedExpedition]?.requirements.partySize}
                                 className="mt-4"
                             >
-                                Start Expedition
+                                {t.ui.start_expedition}
                             </Button>
                         </div>
                     )}

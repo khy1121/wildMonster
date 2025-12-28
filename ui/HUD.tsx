@@ -94,7 +94,7 @@ const HUD: React.FC<HUDProps> = ({ state, onOpenSkills, onOpenQuests, onOpenFact
               className="btn-primary flex items-center justify-center gap-2 text-[9px] md:text-[10px] min-h-[40px] bg-emerald-600 hover:bg-emerald-500 border-emerald-500 relative"
               aria-label="Open Incubator"
             >
-              <i className="fa-solid fa-flask"></i> <span className="hidden sm:inline">Incubator</span>
+              <i className="fa-solid fa-flask"></i> <span className="hidden sm:inline">{t.ui.incubator}</span>
               {state.incubators.some(s => s.isComplete) && (
                 <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border border-white animate-bounce" />
               )}
@@ -107,7 +107,7 @@ const HUD: React.FC<HUDProps> = ({ state, onOpenSkills, onOpenQuests, onOpenFact
                 className="btn-primary flex items-center justify-center gap-2 text-[9px] md:text-[10px] min-h-[40px] bg-amber-600 hover:bg-amber-500 border-amber-500"
                 aria-label="Open Achievements"
               >
-                <i className="fa-solid fa-trophy"></i> <span className="hidden sm:inline">Achieve</span>
+                <i className="fa-solid fa-trophy"></i> <span className="hidden sm:inline">{t.ui.achievements}</span>
               </button>
             )}
 
@@ -117,7 +117,7 @@ const HUD: React.FC<HUDProps> = ({ state, onOpenSkills, onOpenQuests, onOpenFact
                 className="btn-primary flex items-center justify-center gap-2 text-[9px] md:text-[10px] min-h-[40px] bg-purple-600 hover:bg-purple-500 border-purple-500 relative"
                 aria-label="Open Expeditions"
               >
-                <i className="fa-solid fa-compass"></i> <span className="hidden sm:inline">Explore</span>
+                <i className="fa-solid fa-compass"></i> <span className="hidden sm:inline">{t.ui.expeditions}</span>
                 {hasCompletedExpedition && (
                   <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border border-white animate-bounce" />
                 )}

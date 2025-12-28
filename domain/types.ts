@@ -181,7 +181,9 @@ export type AchievementCategory = 'combat' | 'collection' | 'progression' | 'eco
 export interface Achievement {
   id: string;
   name: string;
+  nameKo?: string;  // Korean translation
   description: string;
+  descriptionKo?: string;  // Korean translation
   category: AchievementCategory;
   target: number;  // e.g., 100 for "Defeat 100 monsters"
   reward: {
@@ -208,7 +210,9 @@ export interface ActiveExpedition {
 export interface Expedition {
   id: string;
   name: string;
+  nameKo?: string;  // Korean translation
   description: string;
+  descriptionKo?: string;  // Korean translation
   duration: number;  // in milliseconds
   requirements: {
     minLevel?: number;

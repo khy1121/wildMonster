@@ -3,6 +3,7 @@ import { GameState } from '../domain/types';
 import { GameStateManager } from '../engine/GameStateManager';
 import { DAILY_LOGIN_REWARDS, DailyReward } from '../data/dailyRewards';
 import { Button } from './components/Button';
+import { getTranslation } from '../localization/strings';
 
 interface DailyLoginUIProps {
     gsm: GameStateManager;
@@ -13,6 +14,8 @@ export const DailyLoginUI: React.FC<DailyLoginUIProps> = ({ gsm, onClose }) => {
     const [state, setState] = useState<GameState>(gsm.getState());
     const [claimed, setClaimed] = useState(state.dailyLogin.claimedToday);
     const currentDay = state.dailyLogin.consecutiveDays || 1;
+
+    const t = getTranslation(state.language);
 
     const handleClaim = () => {
         const success = gsm.claimDailyLogin();
@@ -28,8 +31,10 @@ export const DailyLoginUI: React.FC<DailyLoginUIProps> = ({ gsm, onClose }) => {
 
                 {/* Header */}
                 <div className="bg-gradient-to-r from-amber-600 to-orange-600 p-6 text-center">
-                    <h2 className="text-2xl font-black text-white uppercase tracking-wider">Daily Login</h2>
-                    <p className="text-amber-200 text-sm mt-1">Day {currentDay} Streak! 🔥</p>
+                    <h2 className="text-2xl font-black text-white uppercase tracking-wider">{t.ui.daily_login}</h2>
+                    <p className="text-amber-200 text-sm mt-1">
+                        {t.ui.consecutive_days.replace('{days}', currentDay.toString())} 🔥
+                    </p>
                 </div>
 
                 {/* Reward Grid */}
@@ -38,6 +43,10 @@ export const DailyLoginUI: React.FC<DailyLoginUIProps> = ({ gsm, onClose }) => {
                         {DAILY_LOGIN_REWARDS.map((reward) => {
                             const isCurrentDay = reward.day === ((currentDay - 1) % 7) + 1;
                             const isPast = reward.day < ((currentDay - 1) % 7) + 1;
+
+                            const displayDesc = state.language === 'ko' && reward.descriptionKo
+                                ? reward.descriptionKo
+                                : reward.description;
 
                             return (
                                 <div
@@ -51,11 +60,13 @@ export const DailyLoginUI: React.FC<DailyLoginUIProps> = ({ gsm, onClose }) => {
                                                 : 'bg-slate-800/50 border-slate-700'}
                   `}
                                 >
-                                    <div className="text-[10px] text-slate-400 font-bold">Day {reward.day}</div>
+                                    <div className="text-[10px] text-slate-400 font-bold">
+                                        {t.ui.day.replace('{day}', reward.day.toString())}
+                                    </div>
                                     <div className="text-xl my-1">
                                         {reward.gold > 0 ? '💰' : reward.items?.[0]?.itemId.includes('egg') ? '🥚' : '📦'}
                                     </div>
-                                    <div className="text-[8px] text-slate-300 line-clamp-2">{reward.description}</div>
+                                    <div className="text-[8px] text-slate-300 line-clamp-2">{displayDesc}</div>
 
                                     {isPast && (
                                         <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-xl">
@@ -75,7 +86,7 @@ export const DailyLoginUI: React.FC<DailyLoginUIProps> = ({ gsm, onClose }) => {
                 {/* Action Area */}
                 <div className="p-4 border-t border-slate-700 flex gap-4">
                     <Button variant="outline" size="md" onClick={onClose} className="flex-1">
-                        Close
+                        {t.ui.close}
                     </Button>
                     <Button
                         variant="primary"
@@ -84,7 +95,7 @@ export const DailyLoginUI: React.FC<DailyLoginUIProps> = ({ gsm, onClose }) => {
                         disabled={claimed}
                         className="flex-1"
                     >
-                        {claimed ? '✓ Claimed!' : 'Claim Reward'}
+                        {claimed ? `✓ ${t.ui.claimed}` : t.ui.claim_reward}
                     </Button>
                 </div>
             </div>
