@@ -24,23 +24,30 @@ describe('Evolution System', () => {
       unlockedPartySlots: 1,
       unlockedStorageSlots: 20,
       unlockedSupportSkills: [],
-      // Fix: Added missing collection property
-      collection: []
+      collection: [],
+      // Phase 4
+      achievementProgress: {},
+      unlockedAchievements: [],
+      activeExpeditions: [],
+      expeditionSlots: 1
     },
     worldPosition: { x: 0, y: 0 },
     currentScene: 'BootScene',
     flags: {},
     gameTime: 1200,
-    // Fix: Added missing completedQuests property
     completedQuests: [],
-    // Fix: Added missing language property
     language: 'en',
-    // Fix: Added missing reputation property to satisfy GameState interface
     reputation: {},
     activeQuests: [],
     pendingRewards: [],
     lastQuestRefresh: 0,
-    incubators: []
+    incubators: [],
+    // Phase 4
+    dailyLogin: {
+      lastLoginDate: '',
+      consecutiveDays: 0,
+      claimedToday: false
+    }
   };
 
   it('correctly identifies evolution readiness', () => {

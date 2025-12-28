@@ -13,9 +13,12 @@ interface HUDProps {
   onOpenSettings: () => void;
   onOpenInventory: () => void;
   onOpenIncubator: () => void;
+  // Phase 4
+  onOpenAchievements?: () => void;
+  onOpenExpeditions?: () => void;
 }
 
-const HUD: React.FC<HUDProps> = ({ state, onOpenSkills, onOpenQuests, onOpenFactions, onOpenShop, onOpenSettings, onOpenInventory, onOpenIncubator }) => {
+const HUD: React.FC<HUDProps> = ({ state, onOpenSkills, onOpenQuests, onOpenFactions, onOpenShop, onOpenSettings, onOpenInventory, onOpenIncubator, onOpenAchievements, onOpenExpeditions }) => {
   const { tamer, language, reputation } = state;
   const t = getTranslation(language);
   const activeMonster = tamer.party[0];
@@ -24,6 +27,9 @@ const HUD: React.FC<HUDProps> = ({ state, onOpenSkills, onOpenQuests, onOpenFact
   // Find dominant faction for lead monster
   const leadFaction = species ? species.faction : null;
   const leadRep = leadFaction ? reputation[leadFaction] : 0;
+
+  // Phase 4: Check for completed expeditions
+  const hasCompletedExpedition = tamer.activeExpeditions.some(e => Date.now() >= e.endTime);
 
   return (
     <div className="absolute top-0 left-0 w-full p-2 md:p-4 pointer-events-none flex flex-col gap-2">
@@ -93,6 +99,30 @@ const HUD: React.FC<HUDProps> = ({ state, onOpenSkills, onOpenQuests, onOpenFact
                 <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border border-white animate-bounce" />
               )}
             </button>
+
+            {/* Phase 4 Buttons */}
+            {onOpenAchievements && (
+              <button
+                onClick={onOpenAchievements}
+                className="btn-primary flex items-center justify-center gap-2 text-[9px] md:text-[10px] min-h-[40px] bg-amber-600 hover:bg-amber-500 border-amber-500"
+                aria-label="Open Achievements"
+              >
+                <i className="fa-solid fa-trophy"></i> <span className="hidden sm:inline">Achieve</span>
+              </button>
+            )}
+
+            {onOpenExpeditions && (
+              <button
+                onClick={onOpenExpeditions}
+                className="btn-primary flex items-center justify-center gap-2 text-[9px] md:text-[10px] min-h-[40px] bg-purple-600 hover:bg-purple-500 border-purple-500 relative"
+                aria-label="Open Expeditions"
+              >
+                <i className="fa-solid fa-compass"></i> <span className="hidden sm:inline">Explore</span>
+                {hasCompletedExpedition && (
+                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border border-white animate-bounce" />
+                )}
+              </button>
+            )}
           </div>
         </div>
 

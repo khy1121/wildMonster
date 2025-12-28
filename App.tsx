@@ -16,6 +16,10 @@ import { MenuUI } from './ui/MenuUI';
 import CharacterSelectionUI from './ui/CharacterSelectionUI';
 import StarterSelectionUI from './ui/StarterSelectionUI';
 import IncubatorUI from './ui/IncubatorUI';
+// Phase 4
+import { AchievementsUI } from './ui/AchievementsUI';
+import { ExpeditionUI } from './ui/ExpeditionUI';
+import { DailyLoginUI } from './ui/DailyLoginUI';
 import { GameState, EvolutionOption, MonsterInstance, Quest } from './domain/types';
 import { gameEvents } from './engine/EventBus';
 import { gameStateManager } from './engine/GameStateManager';
@@ -29,7 +33,8 @@ const App: React.FC = () => {
   const [gameState, setGameState] = useState<GameState>(gameStateManager.getState());
   const [evolutionData, setEvolutionData] = useState<{ monsterUid: string, options: EvolutionOption[] } | null>(null);
   const [completedQuest, setCompletedQuest] = useState<Quest | null>(null);
-  const [overlay, setOverlay] = useState<'NONE' | 'SKILLS' | 'SHOP' | 'QUESTS' | 'DEBUG' | 'FACTIONS' | 'MENU' | 'INVENTORY' | 'INCUBATOR'>('NONE');
+  const [overlay, setOverlay] = useState<'NONE' | 'SKILLS' | 'SHOP' | 'QUESTS' | 'DEBUG' | 'FACTIONS' | 'MENU' | 'INVENTORY' | 'INCUBATOR' | 'ACHIEVEMENTS' | 'EXPEDITIONS'>('NONE');
+  const [showDailyLogin, setShowDailyLogin] = useState(false);
   const [activeMonsterUid, setActiveMonsterUid] = useState<string | null>(null);
   const [selectionStep, setSelectionStep] = useState<'CHARACTER' | 'STARTER' | 'NONE'>('NONE');
   const [selectedCharId, setSelectedCharId] = useState<string | null>(null);
@@ -75,6 +80,12 @@ const App: React.FC = () => {
 
     if (!gameStateManager.getState().flags['game_started']) {
       setSelectionStep('CHARACTER');
+    } else {
+      // Phase 4: Check Daily Login when game is already started
+      const loginCheck = gameStateManager.checkDailyLogin();
+      if (loginCheck.isNewDay || !gameStateManager.getState().dailyLogin.claimedToday) {
+        setShowDailyLogin(true);
+      }
     }
 
     const win = window as any;
@@ -141,6 +152,8 @@ const App: React.FC = () => {
             onOpenSettings={() => setOverlay('MENU')}
             onOpenInventory={() => setOverlay('INVENTORY')}
             onOpenIncubator={() => setOverlay('INCUBATOR')}
+            onOpenAchievements={() => setOverlay('ACHIEVEMENTS')}
+            onOpenExpeditions={() => setOverlay('EXPEDITIONS')}
           />
 
           <button
@@ -237,6 +250,28 @@ const App: React.FC = () => {
             gameStateManager.claimQuestReward(completedQuest.id);
             setCompletedQuest(null);
           }}
+        />
+      )}
+
+      {/* Phase 4 UIs */}
+      {overlay === 'ACHIEVEMENTS' && (
+        <AchievementsUI
+          gsm={gameStateManager}
+          onClose={() => setOverlay('NONE')}
+        />
+      )}
+
+      {overlay === 'EXPEDITIONS' && (
+        <ExpeditionUI
+          gsm={gameStateManager}
+          onClose={() => setOverlay('NONE')}
+        />
+      )}
+
+      {showDailyLogin && (
+        <DailyLoginUI
+          gsm={gameStateManager}
+          onClose={() => setShowDailyLogin(false)}
         />
       )}
 

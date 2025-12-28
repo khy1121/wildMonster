@@ -176,6 +176,53 @@ export interface Quest {
   progressMax?: number; // For quests like "Catch 3 monsters"
 }
 
+export type AchievementCategory = 'combat' | 'collection' | 'progression' | 'economy';
+
+export interface Achievement {
+  id: string;
+  name: string;
+  description: string;
+  category: AchievementCategory;
+  target: number;  // e.g., 100 for "Defeat 100 monsters"
+  reward: {
+    gold?: number;
+    items?: { itemId: string; quantity: number }[];
+    title?: string;
+  };
+  icon: string;
+}
+
+export interface DailyLoginState {
+  lastLoginDate: string;  // ISO date string (YYYY-MM-DD)
+  consecutiveDays: number;
+  claimedToday: boolean;
+}
+
+export interface ActiveExpedition {
+  expeditionId: string;
+  monsterUids: string[];
+  startTime: number;  // timestamp
+  endTime: number;
+}
+
+export interface Expedition {
+  id: string;
+  name: string;
+  description: string;
+  duration: number;  // in milliseconds
+  requirements: {
+    minLevel?: number;
+    element?: ElementType;
+    partySize: number;
+  };
+  rewards: {
+    gold: number;
+    exp: number;
+    items?: { itemId: string; chance: number }[];
+  };
+  icon: string;
+}
+
 export interface Character {
   id: string;
   name: string;
@@ -200,6 +247,12 @@ export interface Tamer {
   unlockedStorageSlots: number;
   unlockedSupportSkills: string[];
   collection: string[];
+  // Phase 4: Achievements
+  achievementProgress: Record<string, number>;  // achievementId -> current progress
+  unlockedAchievements: string[];  // completed achievement IDs
+  // Phase 4: Expeditions
+  activeExpeditions: ActiveExpedition[];
+  expeditionSlots: number;  // default 1
 }
 
 export interface GameState {
@@ -219,6 +272,8 @@ export interface GameState {
   shopStock?: string[];
   shopNextRefresh?: number;
   incubators: IncubatorSlot[];
+  // Phase 4
+  dailyLogin: DailyLoginState;
 }
 
 export type GameEvent =
@@ -234,7 +289,9 @@ export type GameEvent =
   | { type: 'QUEST_COMPLETED'; questId: string }
   | { type: 'REPUTATION_CHANGED'; faction: FactionType; delta: number; total: number }
   | { type: 'RETURN_TO_TITLE' }
-  | { type: 'LOG_MESSAGE'; message: string };
+  | { type: 'LOG_MESSAGE'; message: string }
+  | { type: 'ACHIEVEMENT_UNLOCKED'; achievementId: string }
+  | { type: 'EXPEDITION_COMPLETE'; expeditionId: string };
 
 export interface BattleRewards {
   exp: number;

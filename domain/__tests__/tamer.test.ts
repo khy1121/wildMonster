@@ -35,8 +35,12 @@ describe('Tamer Progression', () => {
       unlockedPartySlots: 1,
       unlockedStorageSlots: 20,
       unlockedSupportSkills: ['cheer'],
-      // Fix: Added missing collection property
-      collection: []
+      collection: [],
+      // Phase 4
+      achievementProgress: {},
+      unlockedAchievements: [],
+      activeExpeditions: [],
+      expeditionSlots: 1
     };
 
     const { tamer, leveledUp } = addExpToTamer(initialTamer, 100);
