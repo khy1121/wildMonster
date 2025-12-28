@@ -15,11 +15,14 @@ describe('Evolution System', () => {
       party: [],
       storage: [],
       gold: 0,
+      maxSpiritPoints: 100,
+      currentSpiritPoints: 100,
       inventory: [
         { itemId: 'sun_stone', quantity: 1 },
         { itemId: 'moon_stone', quantity: 1 }
       ],
       unlockedPartySlots: 1,
+      unlockedStorageSlots: 20,
       unlockedSupportSkills: [],
       // Fix: Added missing collection property
       collection: []
@@ -36,7 +39,8 @@ describe('Evolution System', () => {
     reputation: {},
     activeQuests: [],
     pendingRewards: [],
-    lastQuestRefresh: 0
+    lastQuestRefresh: 0,
+    incubators: []
   };
 
   it('correctly identifies evolution readiness', () => {

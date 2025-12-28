@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { BattleState, BattleEntity, MonsterInstance, Skill } from '../types';
-import { MONSTERS, SKILLS } from '../constants';
+import { MONSTER_DATA } from '../data/monsters';
+import { SKILL_DATA } from '../data/skills';
 
 interface BattleArenaProps {
   battle: BattleState;
@@ -63,7 +64,7 @@ const BattleArena: React.FC<BattleArenaProps> = ({ battle, onEnd }) => {
       return { player: newPlayer, enemy: newEnemy };
     });
 
-    addLog(`${MONSTERS[source.speciesId].name} used ${skill.name}!`);
+    addLog(`${MONSTER_DATA[source.speciesId].name} used ${skill.name}!`);
     triggerVfx(target.position.x, target.position.y, `-${damage}`);
   };
 
@@ -93,7 +94,7 @@ const BattleArena: React.FC<BattleArenaProps> = ({ battle, onEnd }) => {
           if (p.cooldowns[sId] === 0 || p.cooldowns[sId] === undefined) {
             const aliveEnemy = nextEnemy.find(en => en.currentHp > 0);
             if (aliveEnemy) {
-              processSkill(p, aliveEnemy, SKILLS[sId]);
+              processSkill(p, aliveEnemy, SKILL_DATA[sId]);
             }
           }
         });
@@ -105,7 +106,7 @@ const BattleArena: React.FC<BattleArenaProps> = ({ battle, onEnd }) => {
           if (en.cooldowns[sId] === 0 || en.cooldowns[sId] === undefined) {
             const alivePlayer = nextPlayer.find(p => p.currentHp > 0);
             if (alivePlayer) {
-              processSkill(en, alivePlayer, SKILLS[sId]);
+              processSkill(en, alivePlayer, SKILL_DATA[sId]);
             }
           }
         });
@@ -147,6 +148,7 @@ const BattleArena: React.FC<BattleArenaProps> = ({ battle, onEnd }) => {
         currentHp: enemy.maxHp,
         currentStats: enemy.currentStats,
         evolutionHistory: [],
+        enhancementLevel: 0,
         skillPoints: 0,
         unlockedNodes: []
       });
@@ -156,55 +158,134 @@ const BattleArena: React.FC<BattleArenaProps> = ({ battle, onEnd }) => {
     }
   };
 
+  const handleTamerSkill = (skillId: 'heal' | 'boost') => {
+    // In a real scenario, we'd call GameStateManager's useTamerSkill. 
+    // However, BattleArena is isolated UI. We usually propagate events via gameEvents or props.
+    // For this prototype, we'll assume we can import gameStateManager directly or pass a handler.
+    // Given the architecture, let's use a direct import for simplicity in this React component,
+    // OR better, assume Tamer stats are passed in 'battle' state or fetched from manager.
+    // Let's import the manager to trigger the logic.
+    const { gameStateManager } = require('../engine/GameStateManager');
+    const result = gameStateManager.useTamerSkill(skillId);
+
+    if (result.success) {
+      addLog(result.message);
+      triggerVfx(50, 80, skillId === 'heal' ? '💚' : '💪');
+    } else {
+      addLog(result.message);
+    }
+  };
+
+  const [tamerStats, setTamerStats] = useState({ current: 100, max: 100 });
+
+  // Poll Tamer stats (since they change via skills)
+  useEffect(() => {
+    const { gameStateManager } = require('../engine/GameStateManager');
+    const interval = setInterval(() => {
+      const state = gameStateManager.getState();
+      if (state.tamer) {
+        setTamerStats({
+          current: state.tamer.currentSpiritPoints,
+          max: state.tamer.maxSpiritPoints
+        });
+      }
+    }, 500);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
-    <div className="w-full h-full bg-slate-900 flex flex-col items-center p-8 relative overflow-hidden">
-      {/* Background Arena */}
-      <div className="absolute inset-0 opacity-20 pointer-events-none">
-        <div className="w-full h-full border-[20px] border-slate-700 rounded-full scale-150"></div>
+    <div className="fixed inset-0 z-[100] bg-slate-950 flex flex-col items-center overflow-hidden font-sans">
+      {/* Dynamic Background */}
+      <div className="absolute inset-0 opacity-20 pointer-events-none overflow-hidden">
+        <div className="absolute -top-1/2 -left-1/2 w-[200%] h-[200%] border-[40px] border-indigo-900 rounded-full animate-spin-slow opacity-30"></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-indigo-900/20 to-transparent"></div>
       </div>
 
-      <div className="flex-1 w-full max-w-4xl relative">
-        {/* Enemy Side */}
-        <div className="absolute right-0 top-1/4 flex flex-col items-end">
+      {/* Main Battle Field */}
+      <div className="flex-1 w-full max-w-lg relative flex flex-col items-center justify-center p-4">
+        {/* Enemy Side (Top Area for Mobile) */}
+        <div className="w-full flex justify-end items-start mb-12">
           {entities.enemy.map(en => (
-            <div key={en.uid} className={`transition-all duration-300 ${en.currentHp <= 0 ? 'opacity-0 grayscale scale-50' : ''}`}>
+            <div key={en.uid} className={`transition-all duration-500 transform ${en.currentHp <= 0 ? 'opacity-0 -translate-y-12' : 'animate-fade-in'}`}>
               <BattleUnit entity={en} flip />
             </div>
           ))}
         </div>
 
-        {/* Player Side */}
-        <div className="absolute left-0 bottom-1/4 flex flex-col items-start gap-4">
+        {/* Player Side (Middle Area) */}
+        <div className="w-full flex justify-start items-center">
           {entities.player.map(p => (
-            <div key={p.uid} className={`transition-all duration-300 ${p.currentHp <= 0 ? 'opacity-50 grayscale' : ''}`}>
+            <div key={p.uid} className={`transition-all duration-500 transform ${p.currentHp <= 0 ? 'opacity-50 grayscale translate-y-4' : 'animate-float'}`}>
               <BattleUnit entity={p} />
             </div>
           ))}
         </div>
 
-        {/* VFX Layer */}
+        {/* Floating Damage Text */}
         {vfx.map(v => (
           <div
             key={v.id}
-            className="absolute z-50 text-red-500 font-black text-2xl animate-bounce"
-            style={{ left: `${v.x}%`, top: `${v.y}%` }}
+            className="absolute z-50 text-red-500 font-black text-3xl animate-pop-out flex items-center gap-1"
+            style={{ left: `${v.x}%`, top: `${v.y}%`, pointerEvents: 'none' }}
           >
-            {v.text}
+            <span className="text-xl">💥</span> {v.text}
           </div>
         ))}
       </div>
 
-      {/* Bottom Command Bar */}
-      <div className="w-full max-w-4xl h-32 bg-slate-800 border-t-4 border-slate-700 p-4 flex gap-4">
-        <div className="flex-1 bg-slate-900 rounded p-2 overflow-y-auto font-mono text-xs text-green-400">
-          {log.map((line, i) => <div key={i}>{line}</div>)}
+      {/* Mobile-First Bottom Command Center */}
+      <div className="w-full max-w-lg bg-slate-900/90 backdrop-blur-md border-t-2 border-slate-800 p-4 md:p-6 pb-safe flex flex-col gap-3 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
+
+        {/* Tamer Status & DS Bar */}
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-10 h-10 rounded-full bg-indigo-500 border-2 border-white overflow-hidden">
+            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="Tamer" className="w-full h-full object-cover" />
+          </div>
+          <div className="flex-1">
+            <div className="flex justify-between text-[10px] uppercase font-bold text-slate-400 mb-1">
+              <span>Spirit (DS)</span>
+              <span>{tamerStats.current} / {tamerStats.max}</span>
+            </div>
+            <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-blue-500 to-cyan-400 transition-all duration-300"
+                style={{ width: `${(tamerStats.current / tamerStats.max) * 100}%` }}
+              ></div>
+            </div>
+          </div>
         </div>
-        <div className="w-48 flex flex-col gap-2">
+
+        {/* Combat Log - Slim for Mobile */}
+        <div className="h-10 bg-black/40 rounded-lg px-3 py-1 overflow-y-auto font-mono text-[10px] text-green-400 border border-slate-800/50">
+          {log.map((line, i) => <div key={i} className="animate-in fade-in slide-in-from-left-2">{line}</div>)}
+        </div>
+
+        {/* Interaction Bar */}
+        <div className="flex gap-2 items-stretch h-16">
+          {/* Tamer Skills */}
+          <button
+            onClick={() => handleTamerSkill('heal')}
+            className="flex-1 bg-emerald-900/50 hover:bg-emerald-800/50 border border-emerald-700 rounded-xl flex flex-col items-center justify-center p-1 active:scale-95 transition-all"
+          >
+            <span className="text-xl">💚</span>
+            <span className="text-[9px] font-bold text-emerald-200">HEAL (20)</span>
+          </button>
+
+          <button
+            onClick={() => handleTamerSkill('boost')}
+            className="flex-1 bg-orange-900/50 hover:bg-orange-800/50 border border-orange-700 rounded-xl flex flex-col items-center justify-center p-1 active:scale-95 transition-all"
+          >
+            <span className="text-xl">🔥</span>
+            <span className="text-[9px] font-bold text-orange-200">BOOST (30)</span>
+          </button>
+
+          {/* Capture Button - Large and Ergonomic */}
           <button
             onClick={handleCapture}
-            className="w-full h-full bg-indigo-600 hover:bg-indigo-500 rounded font-bold text-white transition flex items-center justify-center gap-2"
+            className="w-20 bg-gradient-to-br from-indigo-600 to-indigo-800 hover:from-indigo-500 hover:to-indigo-700 rounded-xl font-black text-white transition-all active:scale-95 shadow-[0_4px_15px_rgba(79,70,229,0.4)] flex flex-col items-center justify-center gap-1 border-b-4 border-indigo-950"
           >
-            <i className="fa-solid fa-circle-dot"></i> CAPTURE
+            <span className="text-2xl drop-shadow-md">🧿</span>
+            <span className="text-[9px] uppercase tracking-tighter">Capture</span>
           </button>
         </div>
       </div>
@@ -213,27 +294,38 @@ const BattleArena: React.FC<BattleArenaProps> = ({ battle, onEnd }) => {
 };
 
 const BattleUnit: React.FC<{ entity: BattleEntity, flip?: boolean }> = ({ entity, flip }) => {
-  const species = MONSTERS[entity.speciesId];
+  const species = MONSTER_DATA[entity.speciesId];
   const hpPercent = (entity.currentHp / entity.maxHp) * 100;
 
   return (
-    <div className={`flex items-center gap-4 ${flip ? 'flex-row-reverse' : ''}`}>
-      <div className={`text-7xl transition-transform ${flip ? '-scale-x-100' : ''} ${entity.currentHp > 0 ? 'animate-pulse' : ''}`}>
-        {species.icon}
+    <div className={`flex flex-col items-center gap-2 ${flip ? 'animate-in slide-in-from-right-10' : 'animate-in slide-in-from-left-10'}`}>
+      {/* Unit Sprite / Icon */}
+      <div className={`relative ${flip ? 'scale-x-[-1]' : ''}`}>
+        <div className="text-7xl md:text-8xl filter drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)]">
+          {species.icon}
+        </div>
+        {/* Unit Status Effects or Indicators could go here */}
       </div>
-      <div className={`w-48 bg-slate-800/80 p-2 rounded border-2 border-slate-600 ${flip ? 'text-right' : 'text-left'}`}>
+
+      {/* HP Plate */}
+      <div className={`w-40 md:w-48 bg-slate-900/80 backdrop-blur-sm p-2 rounded-xl border border-slate-700 shadow-xl`}>
         <div className="flex justify-between items-center mb-1">
-          <span className="font-bold text-sm">{species.name}</span>
-          <span className="text-[10px] text-slate-400">Lvl {entity.level}</span>
+          <span className="font-bold text-[11px] md:text-xs text-white uppercase tracking-wider truncate max-w-[80px]">{species.name}</span>
+          <span className="text-[9px] font-mono text-slate-400 bg-slate-950 px-1.5 py-0.5 rounded-md border border-slate-800">LV.{entity.level}</span>
         </div>
-        <div className="w-full h-2 bg-slate-700 rounded-full overflow-hidden">
+
+        <div className="w-full h-2.5 bg-slate-950 rounded-full overflow-hidden border border-slate-800 p-[1px]">
           <div
-            className={`h-full transition-all duration-300 ${hpPercent > 50 ? 'bg-green-500' : hpPercent > 20 ? 'bg-yellow-500' : 'bg-red-500'}`}
+            className={`h-full rounded-full transition-all duration-1000 ease-out fill-available ${hpPercent > 50 ? 'bg-gradient-to-r from-emerald-500 to-green-400' : hpPercent > 20 ? 'bg-gradient-to-r from-yellow-500 to-orange-400' : 'bg-gradient-to-r from-red-600 to-rose-500'}`}
             style={{ width: `${hpPercent}%` }}
-          ></div>
+          >
+            <div className="w-full h-full opacity-30 bg-[linear-gradient(45deg,rgba(255,255,255,.2)_25%,transparent_25%,transparent_50%,rgba(255,255,255,.2)_50%,rgba(255,255,255,.2)_75%,transparent_75%,transparent)] bg-[length:10px_10px] animate-shimmer"></div>
+          </div>
         </div>
-        <div className="text-[9px] text-slate-400 mt-1 uppercase tracking-tighter">
-          HP {Math.round(entity.currentHp)} / {entity.maxHp}
+
+        <div className="flex justify-between items-center mt-1 text-[8px] font-black uppercase tracking-tighter">
+          <span className="text-slate-500">Stability</span>
+          <span className={hpPercent < 20 ? 'animate-pulse text-red-500' : 'text-slate-400'}>{Math.round(entity.currentHp)} / {entity.maxHp}</span>
         </div>
       </div>
     </div>

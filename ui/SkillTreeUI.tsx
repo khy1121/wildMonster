@@ -11,9 +11,10 @@ interface SkillTreeUIProps {
   onUnlock: (nodeId: string) => void;
   onClose: () => void;
   language: Language;
+  embedded?: boolean;
 }
 
-const SkillTreeUI: React.FC<SkillTreeUIProps> = ({ monster, onUnlock, onClose, language }) => {
+const SkillTreeUI: React.FC<SkillTreeUIProps> = ({ monster, onUnlock, onClose, language, embedded = false }) => {
   const t = getTranslation(language);
   const tree = SKILL_TREES[monster.speciesId];
   const species = MONSTER_DATA[monster.speciesId];
@@ -23,34 +24,54 @@ const SkillTreeUI: React.FC<SkillTreeUIProps> = ({ monster, onUnlock, onClose, l
 
   const selectedNode = tree.nodes.find(n => n.id === selectedNodeId);
 
+  // Container Classes
+  const containerClass = embedded
+    ? "relative w-full h-full flex flex-col bg-slate-900/0"
+    : "fixed inset-0 bg-slate-950/95 z-[150] flex flex-col items-center justify-center p-0 md:p-8 backdrop-blur-xl animate-in fade-in duration-300";
+
+  const contentWrapperClass = embedded
+    ? "w-full h-full flex flex-col"
+    : "w-full h-full flex flex-col max-w-6xl";
+
   return (
-    <div className="fixed inset-0 bg-slate-950/95 z-[150] flex flex-col items-center justify-center p-0 md:p-8 backdrop-blur-xl animate-in fade-in duration-300">
-      <div className="w-full h-full flex flex-col max-w-6xl">
-        {/* Header */}
-        <div className="p-4 md:px-0 md:pt-0 md:pb-6 flex justify-between items-center bg-slate-900 md:bg-transparent shrink-0">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 md:w-20 md:h-20 bg-slate-900 border-2 border-slate-700 rounded-3xl flex items-center justify-center text-4xl md:text-5xl shadow-xl">
-              {species.icon}
-            </div>
-            <div className="min-w-0">
-              <h2 className="text-xl md:text-4xl font-black italic text-white uppercase tracking-tighter truncate">
-                {t.species[monster.speciesId as keyof typeof t.species] || species.name} 
-                <span className="text-indigo-500 font-mono not-italic text-sm md:text-lg ml-2">{t.ui.skills}</span>
-              </h2>
-              <div className="flex items-center gap-3 mt-1">
-                <p className="text-indigo-400 font-bold text-xs md:text-base bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
-                  {t.ui.spirit_points}: {monster.skillPoints}
-                </p>
-                <p className="text-slate-500 font-mono text-xs">LV.{monster.level}</p>
+    <div className={containerClass}>
+      <div className={contentWrapperClass}>
+        {/* Header - Only show if NOT embedded */}
+        {!embedded && (
+          <div className="p-4 md:px-0 md:pt-0 md:pb-6 flex justify-between items-center bg-slate-900 md:bg-transparent shrink-0">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 md:w-20 md:h-20 bg-slate-900 border-2 border-slate-700 rounded-3xl flex items-center justify-center text-4xl md:text-5xl shadow-xl">
+                {species.icon}
+              </div>
+              <div className="min-w-0">
+                <h2 className="text-xl md:text-4xl font-black italic text-white uppercase tracking-tighter truncate">
+                  {t.species[monster.speciesId as keyof typeof t.species] || species.name}
+                  <span className="text-indigo-500 font-mono not-italic text-sm md:text-lg ml-2">{t.ui.skills}</span>
+                </h2>
+                <div className="flex items-center gap-3 mt-1">
+                  <p className="text-indigo-400 font-bold text-xs md:text-base bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
+                    {t.ui.spirit_points}: {monster.skillPoints}
+                  </p>
+                  <p className="text-slate-500 font-mono text-xs">LV.{monster.level}</p>
+                </div>
               </div>
             </div>
+            <Button variant="outline" size="md" onClick={onClose} icon={<i className="fa-solid fa-arrow-left"></i>}>
+              {t.ui.back}
+            </Button>
           </div>
-          <Button variant="outline" size="md" onClick={onClose} icon={<i className="fa-solid fa-arrow-left"></i>}>
-            {t.ui.back}
-          </Button>
-        </div>
+        )}
 
-        <div className="flex flex-col md:flex-row flex-1 gap-6 min-h-0">
+        {/* Embedded Mini-Header (SP Display) */}
+        {embedded && (
+          <div className="flex justify-end p-2 bg-slate-900/50">
+            <span className="text-indigo-400 font-bold text-xs bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
+              Spirit Points: {monster.skillPoints}
+            </span>
+          </div>
+        )}
+
+        <div className="flex flex-col md:flex-row flex-1 gap-6 min-h-0 p-4">
           {/* Tree Visualization */}
           <div className="flex-1 relative bg-slate-900/50 rounded-3xl border border-slate-800 overflow-hidden shadow-2xl">
             <div className="absolute inset-0 grid grid-cols-12 grid-rows-6 pointer-events-none opacity-10">
@@ -68,11 +89,11 @@ const SkillTreeUI: React.FC<SkillTreeUIProps> = ({ monster, onUnlock, onClose, l
                     if (!preNode) return null;
                     const isUnlocked = monster.unlockedNodes.includes(node.id) && monster.unlockedNodes.includes(preId);
                     return (
-                      <line 
+                      <line
                         key={`${preId}-${node.id}`}
-                        x1={preNode.position.x * 120 + 48} 
+                        x1={preNode.position.x * 120 + 48}
                         y1={preNode.position.y * 120 + 48}
-                        x2={node.position.x * 120 + 48} 
+                        x2={node.position.x * 120 + 48}
                         y2={node.position.y * 120 + 48}
                         stroke={isUnlocked ? "#6366f1" : "#1e293b"}
                         strokeWidth="3"
@@ -90,21 +111,21 @@ const SkillTreeUI: React.FC<SkillTreeUIProps> = ({ monster, onUnlock, onClose, l
                   const isAvailable = !isUnlocked && canAfford && prereqsMet;
 
                   return (
-                    <div 
+                    <div
                       key={node.id}
                       className="absolute"
-                      style={{ 
-                        left: `${node.position.x * 120}px`, 
-                        top: `${node.position.y * 120}px` 
+                      style={{
+                        left: `${node.position.x * 120}px`,
+                        top: `${node.position.y * 120}px`
                       }}
                     >
-                      <button 
+                      <button
                         onClick={() => setSelectedNodeId(node.id)}
                         className={`
                           relative w-24 h-24 rounded-2xl flex flex-col items-center justify-center p-2 text-center transition-all duration-300 border-2
-                          ${isUnlocked ? 'bg-indigo-600 border-indigo-300 shadow-[0_0_20px_rgba(99,102,241,0.4)]' : 
-                            isAvailable ? 'bg-slate-800 border-indigo-500 hover:scale-110 shadow-lg' : 
-                            'bg-slate-950 border-slate-800 opacity-60 grayscale'}
+                          ${isUnlocked ? 'bg-indigo-600 border-indigo-300 shadow-[0_0_20px_rgba(99,102,241,0.4)]' :
+                            isAvailable ? 'bg-slate-800 border-indigo-500 hover:scale-110 shadow-lg' :
+                              'bg-slate-950 border-slate-800 opacity-60 grayscale'}
                           ${isSelected ? 'ring-4 ring-white ring-offset-4 ring-offset-slate-900 scale-105 z-10' : ''}
                         `}
                       >
@@ -166,23 +187,23 @@ const SkillTreeUI: React.FC<SkillTreeUIProps> = ({ monster, onUnlock, onClose, l
 
                   {!monster.unlockedNodes.includes(selectedNode.id) && (
                     <div className="space-y-2">
-                       <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{t.ui.locked || 'Requirements'}</p>
-                       <div className="flex flex-col gap-1">
-                          <div className={`text-[10px] flex justify-between ${monster.skillPoints >= selectedNode.cost ? 'text-green-400' : 'text-red-400'}`}>
-                            <span>• Spirit Points</span>
-                            <span>{monster.skillPoints}/{selectedNode.cost}</span>
-                          </div>
-                          {selectedNode.prerequisites.map(preId => {
-                            const preNode = tree.nodes.find(n => n.id === preId);
-                            const met = monster.unlockedNodes.includes(preId);
-                            return (
-                              <div key={preId} className={`text-[10px] flex justify-between ${met ? 'text-green-400' : 'text-red-400'}`}>
-                                <span>• Required: {t.skill_nodes[preId as keyof typeof t.skill_nodes] || preNode?.name}</span>
-                                <span>{met ? 'OK' : 'LOCKED'}</span>
-                              </div>
-                            );
-                          })}
-                       </div>
+                      <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{t.ui.locked || 'Requirements'}</p>
+                      <div className="flex flex-col gap-1">
+                        <div className={`text-[10px] flex justify-between ${monster.skillPoints >= selectedNode.cost ? 'text-green-400' : 'text-red-400'}`}>
+                          <span>• Spirit Points</span>
+                          <span>{monster.skillPoints}/{selectedNode.cost}</span>
+                        </div>
+                        {selectedNode.prerequisites.map(preId => {
+                          const preNode = tree.nodes.find(n => n.id === preId);
+                          const met = monster.unlockedNodes.includes(preId);
+                          return (
+                            <div key={preId} className={`text-[10px] flex justify-between ${met ? 'text-green-400' : 'text-red-400'}`}>
+                              <span>• Required: {t.skill_nodes[preId as keyof typeof t.skill_nodes] || preNode?.name}</span>
+                              <span>{met ? 'OK' : 'LOCKED'}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -193,9 +214,9 @@ const SkillTreeUI: React.FC<SkillTreeUIProps> = ({ monster, onUnlock, onClose, l
                       Already Unlocked
                     </div>
                   ) : (
-                    <Button 
-                      variant="primary" 
-                      size="full" 
+                    <Button
+                      variant="primary"
+                      size="full"
                       disabled={!(!monster.unlockedNodes.includes(selectedNode.id) && monster.skillPoints >= selectedNode.cost && selectedNode.prerequisites.every(p => monster.unlockedNodes.includes(p)))}
                       onClick={() => onUnlock(selectedNode.id)}
                     >
@@ -207,7 +228,7 @@ const SkillTreeUI: React.FC<SkillTreeUIProps> = ({ monster, onUnlock, onClose, l
             ) : (
               <div className="flex-1 flex flex-col items-center justify-center text-center opacity-40">
                 <i className="fa-solid fa-circle-info text-4xl mb-4 text-slate-700"></i>
-                <p className="text-sm text-slate-500 uppercase font-bold tracking-widest">Select a node<br/>to view details</p>
+                <p className="text-sm text-slate-500 uppercase font-bold tracking-widest">Select a node<br />to view details</p>
               </div>
             )}
           </div>

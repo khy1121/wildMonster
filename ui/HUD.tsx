@@ -12,9 +12,10 @@ interface HUDProps {
   onOpenShop: () => void;
   onOpenSettings: () => void;
   onOpenInventory: () => void;
+  onOpenIncubator: () => void;
 }
 
-const HUD: React.FC<HUDProps> = ({ state, onOpenSkills, onOpenQuests, onOpenFactions, onOpenShop, onOpenSettings, onOpenInventory }) => {
+const HUD: React.FC<HUDProps> = ({ state, onOpenSkills, onOpenQuests, onOpenFactions, onOpenShop, onOpenSettings, onOpenInventory, onOpenIncubator }) => {
   const { tamer, language, reputation } = state;
   const t = getTranslation(language);
   const activeMonster = tamer.party[0];
@@ -76,10 +77,21 @@ const HUD: React.FC<HUDProps> = ({ state, onOpenSkills, onOpenQuests, onOpenFact
 
             <button
               onClick={onOpenInventory}
-              className="btn-primary col-span-2 flex items-center justify-center gap-2 text-[9px] md:text-[10px] min-h-[40px] bg-yellow-600 hover:bg-yellow-500 border-yellow-500"
+              className="btn-primary flex items-center justify-center gap-2 text-[9px] md:text-[10px] min-h-[40px] bg-yellow-600 hover:bg-yellow-500 border-yellow-500"
               aria-label="Open Inventory"
             >
               <i className="fa-solid fa-briefcase"></i> <span className="hidden sm:inline">{t.ui.inventory}</span>
+            </button>
+
+            <button
+              onClick={onOpenIncubator}
+              className="btn-primary flex items-center justify-center gap-2 text-[9px] md:text-[10px] min-h-[40px] bg-emerald-600 hover:bg-emerald-500 border-emerald-500 relative"
+              aria-label="Open Incubator"
+            >
+              <i className="fa-solid fa-flask"></i> <span className="hidden sm:inline">Incubator</span>
+              {state.incubators.some(s => s.isComplete) && (
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border border-white animate-bounce" />
+              )}
             </button>
           </div>
         </div>

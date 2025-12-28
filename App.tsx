@@ -5,7 +5,7 @@ import { createGameConfig } from './engine/GameConfig';
 import { SafeArea } from './engine/SafeArea';
 import HUD from './ui/HUD';
 import EvolutionChoice from './ui/EvolutionChoice';
-import SkillTreeUI from './ui/SkillTreeUI';
+import { MonsterDetailUI } from './ui/MonsterDetailUI';
 import ShopUI from './ui/ShopUI';
 import QuestLogUI from './ui/QuestLogUI';
 import QuestRewardPopup from './ui/QuestRewardPopup';
@@ -15,6 +15,7 @@ import { FactionUI } from './ui/AppOverlays';
 import { MenuUI } from './ui/MenuUI';
 import CharacterSelectionUI from './ui/CharacterSelectionUI';
 import StarterSelectionUI from './ui/StarterSelectionUI';
+import IncubatorUI from './ui/IncubatorUI';
 import { GameState, EvolutionOption, MonsterInstance, Quest } from './domain/types';
 import { gameEvents } from './engine/EventBus';
 import { gameStateManager } from './engine/GameStateManager';
@@ -28,7 +29,7 @@ const App: React.FC = () => {
   const [gameState, setGameState] = useState<GameState>(gameStateManager.getState());
   const [evolutionData, setEvolutionData] = useState<{ monsterUid: string, options: EvolutionOption[] } | null>(null);
   const [completedQuest, setCompletedQuest] = useState<Quest | null>(null);
-  const [overlay, setOverlay] = useState<'NONE' | 'SKILLS' | 'SHOP' | 'QUESTS' | 'DEBUG' | 'FACTIONS' | 'MENU' | 'INVENTORY'>('NONE');
+  const [overlay, setOverlay] = useState<'NONE' | 'SKILLS' | 'SHOP' | 'QUESTS' | 'DEBUG' | 'FACTIONS' | 'MENU' | 'INVENTORY' | 'INCUBATOR'>('NONE');
   const [activeMonsterUid, setActiveMonsterUid] = useState<string | null>(null);
   const [selectionStep, setSelectionStep] = useState<'CHARACTER' | 'STARTER' | 'NONE'>('NONE');
   const [selectedCharId, setSelectedCharId] = useState<string | null>(null);
@@ -139,6 +140,7 @@ const App: React.FC = () => {
             onOpenShop={() => setOverlay('SHOP')}
             onOpenSettings={() => setOverlay('MENU')}
             onOpenInventory={() => setOverlay('INVENTORY')}
+            onOpenIncubator={() => setOverlay('INCUBATOR')}
           />
 
           <button
@@ -160,11 +162,11 @@ const App: React.FC = () => {
         />
       )}
 
-      {overlay === 'SKILLS' && currentSkillTreeMonster && (
-        <SkillTreeUI
-          monster={currentSkillTreeMonster}
+      {overlay === 'SKILLS' && activeMonsterUid && (
+        <MonsterDetailUI
+          gsm={gameStateManager}
+          monsterUid={activeMonsterUid}
           language={gameState.language}
-          onUnlock={(id) => gameStateManager.unlockSkillNode(currentSkillTreeMonster.uid, id)}
           onClose={() => setOverlay('NONE')}
         />
       )}
@@ -215,6 +217,13 @@ const App: React.FC = () => {
 
       {overlay === 'INVENTORY' && (
         <InventoryUI
+          state={gameState}
+          onClose={() => setOverlay('NONE')}
+        />
+      )}
+
+      {overlay === 'INCUBATOR' && (
+        <IncubatorUI
           state={gameState}
           onClose={() => setOverlay('NONE')}
         />

@@ -406,6 +406,8 @@ export const strings = {
       quota_exceeded: 'Storage Quota Exceeded',
       storage_unavailable: 'Storage Unavailable',
       settings: 'Settings',
+      claim_reward: 'Claim Rewards',
+      quest_completed: 'Quest Completed!',
       inventory: 'Inventory',
       no_items: 'No items to use.',
       use_item: 'Use Item',
@@ -420,8 +422,6 @@ export const strings = {
       hp_restored: 'Restored {amount} HP!',
       hp_full: 'HP is already full',
       item_used: 'Used {item}!',
-      quest_completed: 'Quest Completed!',
-      claim_reward: 'Claim Reward',
     },
     characters: {
       leo: 'Leo',

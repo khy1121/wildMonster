@@ -1,6 +1,7 @@
 
-import { Stats, MonsterSpecies, MonsterInstance, Tamer, BattleRewards, InventoryItem, Rarity, EvolutionOption, GameState, SpawnCondition } from './types';
+import { Stats, MonsterSpecies, MonsterInstance, Tamer, BattleRewards, InventoryItem, Rarity, EvolutionOption, GameState, SpawnCondition, ElementType } from './types';
 import { MONSTER_DATA } from '../data/monsters';
+import { ITEM_DATA } from '../data/items';
 import { SKILL_TREES } from '../data/skills';
 import { TAMER_MILESTONES } from '../data/tamer';
 import { RNG } from './RNG';
@@ -78,15 +79,18 @@ export function transformMonster(monster: MonsterInstance, targetSpeciesId: stri
   const targetSpecies = MONSTER_DATA[targetSpeciesId];
   if (!targetSpecies) return monster;
 
-  const newStats = calculateStats(targetSpecies.baseStats, monster.level, [], targetSpeciesId);
-
-  return {
+  const partialMonster = {
     ...monster,
     speciesId: targetSpeciesId,
     evolutionHistory: [...monster.evolutionHistory, monster.speciesId],
+    unlockedNodes: []
+  };
+  const newStats = recalculateMonsterStats(partialMonster);
+
+  return {
+    ...partialMonster,
     currentStats: newStats,
     currentHp: newStats.maxHp,
-    unlockedNodes: []
   };
 }
 
@@ -110,15 +114,20 @@ export function addExpToMonster(monster: MonsterInstance, amount: number, state:
   }
 
   const species = MONSTER_DATA[monster.speciesId];
-  const newStats = calculateStats(species.baseStats, newLevel, monster.unlockedNodes, monster.speciesId);
+  // Create temporary updated monster to calc stats
+  const tempMonster = {
+    ...monster,
+    level: newLevel,
+    exp: newExp,
+    skillPoints: newSkillPoints,
+    // unlockedNodes same as monster
+  };
+  const newStats = recalculateMonsterStats(tempMonster);
 
   return {
     leveledUp,
     monster: {
-      ...monster,
-      level: newLevel,
-      exp: newExp,
-      skillPoints: newSkillPoints,
+      ...tempMonster,
       currentStats: newStats,
       currentHp: leveledUp ? newStats.maxHp : Math.min(monster.currentHp + (newStats.maxHp - monster.currentStats.maxHp), newStats.maxHp)
     }
@@ -136,13 +145,16 @@ export function unlockNode(monster: MonsterInstance, nodeId: string): MonsterIns
   if (!prereqsMet) return monster;
 
   const newUnlockedNodes = [...monster.unlockedNodes, nodeId];
-  const species = MONSTER_DATA[monster.speciesId];
-  const newStats = calculateStats(species.baseStats, monster.level, newUnlockedNodes, monster.speciesId);
-
-  return {
+  // Create partial updated monster
+  const tempMonster = {
     ...monster,
     skillPoints: monster.skillPoints - node.cost,
-    unlockedNodes: newUnlockedNodes,
+    unlockedNodes: newUnlockedNodes
+  };
+  const newStats = recalculateMonsterStats(tempMonster);
+
+  return {
+    ...tempMonster,
     currentStats: newStats
   };
 }
@@ -212,6 +224,8 @@ export function rollLoot(speciesId: string, rng: RNG): BattleRewards {
   const species = MONSTER_DATA[speciesId];
   if (!species) return { exp: 25, gold: 10, items: [] };
   const rewards: BattleRewards = { exp: species.isSpecial ? 75 : 25, gold: rng.range(5, 15), items: [] };
+
+  // Base loot table
   if (species.lootTable) {
     for (const entry of species.lootTable) {
       if (rng.chance(entry.chance)) {
@@ -219,6 +233,16 @@ export function rollLoot(speciesId: string, rng: RNG): BattleRewards {
       }
     }
   }
+
+  // RPG Expansion: Egg Drops
+  const eggChance = species.isSpecial ? 0.05 : 0.01; // 5% for special, 1% for regular
+  if (rng.chance(eggChance)) {
+    const eggId = species.type === ElementType.FIRE ? 'wilder_egg_fire' :
+      species.type === ElementType.WATER ? 'wilder_egg_water' :
+        'wilder_egg_fire'; // Fallback
+    rewards.items.push({ itemId: eggId, quantity: 1 });
+  }
+
   return rewards;
 }
 
@@ -243,10 +267,116 @@ export function createMonsterInstance(speciesId: string, level: number = 1): Mon
     exp: 0,
     currentHp: stats.maxHp,
     currentStats: stats,
+    enhancementLevel: 0,
     evolutionHistory: [],
     skillPoints: 0,
     unlockedNodes: []
   };
+}
+
+export function validateEnhancement(monster: MonsterInstance, cloneItem: string): { valid: boolean; reason?: string } {
+  // Check max level
+  if (monster.enhancementLevel >= 15) return { valid: false, reason: 'Already at max enhancement level.' };
+
+  // Check Clone Tier
+  // D: 0->3 (Target 1-3)
+  // C: 3->6
+  // B: 6->9
+  // A: 9->12
+  // S: 12->15
+  const level = monster.enhancementLevel;
+  if (level < 3 && cloneItem !== 'power_clone_d') return { valid: false, reason: 'Requires Power Clone [D].' };
+  if (level >= 3 && level < 6 && cloneItem !== 'power_clone_c') return { valid: false, reason: 'Requires Power Clone [C].' };
+  // Add B, A, S checks later if items exist
+
+  return { valid: true };
+}
+
+export function calculateEnhancementStats(monster: MonsterInstance, level: number): Stats {
+  // Base stats are fixed (should store baseStats in instance? Or re-calculate from species?)
+  // Currently MonsterInstance stores currentStats.
+  // We'll just apply a multiplier to currentStats based on level?
+  // Or better: Store `statsBonus` in MonsterInstance (which I didn't add yet, but I can assume enhancement adds to it).
+  // Implicitly: Stats = Base * (1 + 0.03 * Level)
+  // But we have `currentStats`.
+  // Let's assume we boost `currentStats` by a flat % per level.
+  // 3% per level is decent.
+  // But re-calculating is hard without base stats.
+  // Simplify: On success, increase stats by 3%. On fail (drop), decrease by 3%.
+  // Wait, drift issues.
+  // Better: Re-run `calculateStats` logic if we had it.
+  // `calculateStats` uses species base stats.
+  // `calculateStats(baseStats, level, ...)`
+  // Let's just modify the `monster.currentStats` directly for now.
+  const multiplier = 1.03;
+  const boost = (val: number) => Math.floor(Math.max(val + 1, val * multiplier));
+
+  return {
+    ...monster.currentStats,
+    hp: boost(monster.currentStats.hp),
+    maxHp: boost(monster.currentStats.maxHp),
+    attack: boost(monster.currentStats.attack),
+    defense: boost(monster.currentStats.defense),
+    specialAttack: boost(monster.currentStats.specialAttack),
+    skillResistance: boost(monster.currentStats.skillResistance),
+    speed: boost(monster.currentStats.speed),
+  };
+}
+
+// Helper to recalculate all stats (Base + Skills + Enhancement + Equipment)
+export function recalculateMonsterStats(monster: MonsterInstance): Stats {
+  const species = MONSTER_DATA[monster.speciesId];
+  if (!species) return monster.currentStats;
+
+  // 1. Base Stats + Skill Nodes
+  let stats = calculateStats(species.baseStats, monster.level, monster.unlockedNodes, monster.speciesId);
+
+  // 2. Enhancement
+  if (monster.enhancementLevel > 0) {
+    // We reuse the valid logic from calculateEnhancementStats but applied to 'stats'
+    const multiplier = 1.03;
+    const boost = (val: number) => Math.floor(Math.max(val + 1, val * multiplier));
+    // Apply boost repeatedly for each level? 
+    // No, calculateEnhancementStats assumes linear or cumulative?
+    // My previous implementation was: val * multiplier.
+    // Ideally it should be compounding: val * (1.03 ^ level).
+    // Or flat: val * (1 + 0.03 * level).
+    // Let's stick to the previous simple logic but correctly applied.
+    // Since previous logic was just `boost(val)`, it implies a single application.
+    // Wait, if I enhance 0->1, I apply boost.
+    // If I enhance 1->2, I apply boost again.
+    // So for level N, I should apply boost N times?
+    // Or just use formula: val * Math.pow(1.03, level).
+
+    const scale = Math.pow(1.03, monster.enhancementLevel);
+    const applyScale = (val: number) => Math.floor(Math.max(val + monster.enhancementLevel, val * scale)); // Ensure at least +level
+
+    stats = {
+      ...stats,
+      hp: applyScale(stats.hp),
+      maxHp: applyScale(stats.maxHp),
+      attack: applyScale(stats.attack),
+      defense: applyScale(stats.defense),
+      specialAttack: applyScale(stats.specialAttack),
+      skillResistance: applyScale(stats.skillResistance),
+      speed: applyScale(stats.speed)
+    };
+  }
+
+  // 3. Equipment
+  if (monster.heldItemId) {
+    const item = ITEM_DATA[monster.heldItemId];
+    if (item && item.stats) {
+      if (item.stats.hp) { stats.hp += item.stats.hp; stats.maxHp += item.stats.hp; }
+      if (item.stats.attack) stats.attack += item.stats.attack;
+      if (item.stats.defense) stats.defense += item.stats.defense;
+      if (item.stats.specialAttack) stats.specialAttack += item.stats.specialAttack;
+      if (item.stats.skillResistance) stats.skillResistance += item.stats.skillResistance;
+      if (item.stats.speed) stats.speed += item.stats.speed;
+    }
+  }
+
+  return stats;
 }
 
 export function getAvailableSkillIds(

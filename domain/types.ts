@@ -40,7 +40,7 @@ export interface Item {
   name: string;
   description: string;
   icon: string;
-  category: 'Healing' | 'Capture' | 'Evolution' | 'Weapon' | 'Armor' | 'Accessory' | 'Material' | 'Misc';
+  category: 'Healing' | 'Capture' | 'Evolution' | 'Weapon' | 'Armor' | 'Accessory' | 'Material' | 'Egg' | 'Incubator' | 'Misc' | 'Equipment';
   tier?: 'D' | 'C' | 'B' | 'A' | 'S';
   power: number;
   price: number;
@@ -142,9 +142,20 @@ export interface MonsterInstance {
   exp: number;
   currentHp: number;
   currentStats: Stats;
+  enhancementLevel: number; // 0-15
+  heldItemId?: string;      // Equipped item
   evolutionHistory: string[];
   skillPoints: number;
   unlockedNodes: string[];
+}
+
+export interface IncubatorSlot {
+  id: string;
+  eggItemId: string;
+  materials: InventoryItem[];
+  startTime: number;
+  duration: number; // in gameTime units
+  isComplete: boolean;
 }
 
 export interface InventoryItem {
@@ -182,8 +193,11 @@ export interface Tamer {
   party: MonsterInstance[];
   storage: MonsterInstance[];
   gold: number;
+  maxSpiritPoints: number; // For Tamer skills (DS)
+  currentSpiritPoints: number;
   inventory: InventoryItem[];
   unlockedPartySlots: number;
+  unlockedStorageSlots: number;
   unlockedSupportSkills: string[];
   collection: string[];
 }
@@ -204,6 +218,7 @@ export interface GameState {
   lastWeeklyRefresh?: number;
   shopStock?: string[];
   shopNextRefresh?: number;
+  incubators: IncubatorSlot[];
 }
 
 export type GameEvent =
@@ -218,7 +233,8 @@ export type GameEvent =
   | { type: 'TAMER_LEVEL_UP'; level: number }
   | { type: 'QUEST_COMPLETED'; questId: string }
   | { type: 'REPUTATION_CHANGED'; faction: FactionType; delta: number; total: number }
-  | { type: 'RETURN_TO_TITLE' };
+  | { type: 'RETURN_TO_TITLE' }
+  | { type: 'LOG_MESSAGE'; message: string };
 
 export interface BattleRewards {
   exp: number;
@@ -236,6 +252,8 @@ export interface BattleEntity {
   activeSkills: string[];
   cooldowns: Record<string, number>;
   position: { x: number; y: number };
+  enhancementLevel: number;
+  heldItemId?: string;
 }
 
 export interface BattleState {

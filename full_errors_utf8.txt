@@ -1,0 +1,6 @@
+﻿engine/GameStateManager.ts(304,5): error TS2741: Property 'unlockedStorageSlots' is missing in type '{ name: string; level: number; exp: number; gold: number; characterId: string; party: undefined[]; storage: undefined[]; inventory: { itemId: string; quantity: number; }[]; unlockedPartySlots: number; unlockedSupportSkills: string[]; collection: string[]; }' but required in type 'Tamer'.
+engine/GameStateManager.ts(688,17): error TS2304: Cannot find name 'IncubatorSlot'.
+localization/strings.ts(77,7): error TS1117: An object literal cannot have multiple properties with the same name.
+localization/strings.ts(78,7): error TS1117: An object literal cannot have multiple properties with the same name.
+localization/strings.ts(427,7): error TS1117: An object literal cannot have multiple properties with the same name.
+localization/strings.ts(428,7): error TS1117: An object literal cannot have multiple properties with the same name.

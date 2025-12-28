@@ -221,5 +221,158 @@ export const ITEM_DATA: Record<string, Item> = {
     power: 0,
     price: 120,
     flavorText: 'The rust hides a strength that modern forges can\'t replicate.'
+  },
+
+  // --- RPG Expansion Items ---
+  'wilder_egg_fire': {
+    id: 'wilder_egg_fire',
+    name: 'Fire Wilder Egg',
+    description: 'A warm egg that pulses with heat.',
+    icon: '🥚🔥',
+    category: 'Egg',
+    power: 0,
+    price: 1000
+  },
+  'wilder_egg_water': {
+    id: 'wilder_egg_water',
+    name: 'Water Wilder Egg',
+    description: 'A blue egg that feels cool to the touch.',
+    icon: '🥚💧',
+    category: 'Egg',
+    power: 0,
+    price: 1000
+  },
+  'basic_incubator': {
+    id: 'basic_incubator',
+    name: 'Portable Incubator',
+    description: 'A device used to hatch Wilder eggs.',
+    icon: '📟',
+    category: 'Incubator',
+    power: 0,
+    price: 2000
+  },
+  'storage_license': {
+    id: 'storage_license',
+    name: 'Storage Expansion License',
+    description: 'Increas Wilder storage by 10 slots.',
+    icon: '📜',
+    category: 'Misc',
+    power: 0,
+    price: 5000
+  },
+  'hatch_catalyst': {
+    id: 'hatch_catalyst',
+    name: 'Hatch Catalyst',
+    description: 'Special item to accelerate hatching.',
+    icon: '🧪',
+    category: 'Material',
+    power: 0,
+    price: 300
+  },
+  // --- Phase 2: Data Chips ---
+  'data_fire': {
+    id: 'data_fire',
+    name: 'Fire Data',
+    description: 'Data extracted from fire monsters. Used for incubation.',
+    icon: '🔥💾',
+    category: 'Material',
+    power: 0,
+    price: 100
+  },
+  'data_water': {
+    id: 'data_water',
+    name: 'Water Data',
+    description: 'Data extracted from water monsters. Used for incubation.',
+    icon: '💧💾',
+    category: 'Material',
+    power: 0,
+    price: 100
+  },
+  'data_grass': {
+    id: 'data_grass',
+    name: 'Grass Data',
+    description: 'Data extracted from grass monsters. Used for incubation.',
+    icon: '🌱💾',
+    category: 'Material',
+    power: 0,
+    price: 100
+  },
+  // --- Phase 2: Mercenary Eggs ---
+  'mercenary_egg_fire': {
+    id: 'mercenary_egg_fire',
+    name: 'Mercenary Fire Egg',
+    description: 'A glowing egg containing a powerful Fire Wilder. Requires Fire Data.',
+    icon: '🥚🔥✨',
+    category: 'Egg',
+    power: 0,
+    price: 5000
+  },
+  'mercenary_egg_water': {
+    id: 'mercenary_egg_water',
+    name: 'Mercenary Water Egg',
+    description: 'A shimmering egg containing a powerful Water Wilder. Requires Water Data.',
+    icon: '🥚💧✨',
+    category: 'Egg',
+    power: 0,
+    price: 5000
+  },
+  // --- Phase 3: Enhancement Items (Clones) ---
+  'power_clone_d': {
+    id: 'power_clone_d',
+    name: 'Power Clone [D]',
+    description: 'Enhances stats for levels 1-3. Success rate: High.',
+    icon: '💾D',
+    category: 'Material',
+    power: 0,
+    price: 500
+  },
+  'power_clone_c': {
+    id: 'power_clone_c',
+    name: 'Power Clone [C]',
+    description: 'Enhances stats for levels 4-6. Success rate: Medium.',
+    icon: '💾C',
+    category: 'Material',
+    power: 0,
+    price: 1500
+  },
+  'backup_disk': {
+    id: 'backup_disk',
+    name: 'Backup Disk',
+    description: 'Prevents stat decrease upon enhancement failure.',
+    icon: '💿',
+    category: 'Material',
+    power: 0,
+    price: 1000
+  },
+  // --- Phase 3: Equipment ---
+  'attack_ring': {
+    id: 'attack_ring',
+    name: 'Attack Ring',
+    description: 'Increases Attack power.',
+    icon: '💍',
+    category: 'Equipment',
+    power: 10, // ATK Bonus
+    stats: { attack: 10 },
+    price: 2000
+  },
+  'health_necklace': {
+    id: 'health_necklace',
+    name: 'Health Necklace',
+    description: 'Increases Max HP.',
+    icon: '📿',
+    category: 'Equipment',
+    power: 0,
+    stats: { hp: 500 },
+    price: 2000
+  },
+  'speed_boots': {
+    id: 'speed_boots',
+    name: 'Speed Boots',
+    description: 'Increases Speed.',
+    icon: '👢',
+    category: 'Equipment',
+    power: 0,
+    stats: { speed: 10 },
+    price: 2000
   }
 };

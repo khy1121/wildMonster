@@ -99,7 +99,8 @@ export class BattleScene extends Phaser.Scene {
       stats: activeMonster.currentStats,
       skills: playerSkills,
       cooldowns: {},
-      buffs: []
+      buffs: [],
+      enhancementLevel: activeMonster.enhancementLevel || 0
     };
 
     const enemyBaseStats = enemySpecies.baseStats;
@@ -124,7 +125,8 @@ export class BattleScene extends Phaser.Scene {
       },
       skills: [enemySpecies.skills.basic, enemySpecies.skills.special],
       cooldowns: {},
-      buffs: []
+      buffs: [],
+      enhancementLevel: 0
     };
 
     if (enemySpecies.skills.ultimate && enemyLevel >= 30) {

@@ -29,8 +29,11 @@ describe('Tamer Progression', () => {
       party: [],
       storage: [],
       gold: 0,
+      maxSpiritPoints: 100,
+      currentSpiritPoints: 100,
       inventory: [],
       unlockedPartySlots: 1,
+      unlockedStorageSlots: 20,
       unlockedSupportSkills: ['cheer'],
       // Fix: Added missing collection property
       collection: []

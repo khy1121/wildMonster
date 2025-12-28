@@ -21,6 +21,8 @@ export interface CombatEntity {
   skills: string[];
   cooldowns: Record<string, number>; // skillId -> remainingMs
   buffs: BattleBuff[];
+  enhancementLevel: number;
+  heldItemId?: string;
 }
 
 export function calculateDamage(attacker: CombatEntity, defender: CombatEntity, skillId: string): number {

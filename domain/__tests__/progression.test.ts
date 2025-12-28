@@ -17,8 +17,11 @@ describe('Progression Logic', () => {
       party: [],
       storage: [],
       gold: 0,
+      maxSpiritPoints: 100,
+      currentSpiritPoints: 100,
       inventory: [],
       unlockedPartySlots: 1,
+      unlockedStorageSlots: 20,
       unlockedSupportSkills: [],
       // Fix: Added missing collection property
       collection: []
@@ -35,7 +38,8 @@ describe('Progression Logic', () => {
     reputation: {},
     activeQuests: [],
     pendingRewards: [],
-    lastQuestRefresh: 0
+    lastQuestRefresh: 0,
+    incubators: []
   };
 
   it('calculates stats correctly based on level', () => {
@@ -61,7 +65,8 @@ describe('Progression Logic', () => {
       currentStats: calculateStats(baseStats, 1, [], 'pyrocat'),
       evolutionHistory: [],
       skillPoints: 0,
-      unlockedNodes: []
+      unlockedNodes: [],
+      enhancementLevel: 0
     };
 
     // Fixed: Added dummyState argument to satisfy 3-argument signature

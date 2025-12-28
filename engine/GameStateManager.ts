@@ -1,12 +1,12 @@
 
-import { GameState, Tamer, MonsterInstance, BattleRewards, InventoryItem, Language, FactionType, EvolutionOption } from '../domain/types';
+import { GameState, Tamer, MonsterInstance, BattleRewards, InventoryItem, Language, FactionType, EvolutionOption, GameEvent, IncubatorSlot } from '../domain/types';
 import { MONSTER_DATA } from '../data/monsters';
 import { ITEM_DATA } from '../data/items';
 import { CHARACTER_DATA } from '../data/characters';
 import { QUEST_DATA } from '../data/quests';
 import { SKILL_TREES } from '../data/skills';
 import { gameEvents as bus } from './EventBus';
-import { addExpToMonster, addExpToTamer, createMonsterInstance, addToInventory, rollLoot, calculateCaptureChance, checkEvolution, transformMonster, unlockNode, consumeItem } from '../domain/logic';
+import { addExpToMonster, addExpToTamer, createMonsterInstance, addToInventory, rollLoot, calculateCaptureChance, checkEvolution, transformMonster, unlockNode, consumeItem, validateEnhancement, recalculateMonsterStats } from '../domain/logic';
 import { SaveManager, SaveResult } from '../save/SaveManager';
 import { gameRNG } from '../domain/RNG';
 import { getFactionDiscount } from '../localization/strings';
@@ -20,10 +20,13 @@ const INITIAL_STATE: GameState = {
     party: [],
     storage: [],
     gold: 150,
+    maxSpiritPoints: 100,
+    currentSpiritPoints: 100,
     inventory: [
       { itemId: 'capture_orb', quantity: 5 }
     ],
     unlockedPartySlots: 6,
+    unlockedStorageSlots: 20, // Default 20 slots
     unlockedSupportSkills: ['cheer'],
     collection: []
   },
@@ -36,7 +39,8 @@ const INITIAL_STATE: GameState = {
   completedQuests: [],
   pendingRewards: [],
   reputation: {},
-  lastQuestRefresh: Date.now()
+  lastQuestRefresh: Date.now(),
+  incubators: []
 };
 
 export class GameStateManager {
@@ -105,6 +109,10 @@ export class GameStateManager {
     const shuffled = [...allItems].sort(() => 0.5 - Math.random());
     const selected = shuffled.slice(0, 4);
 
+    // RPG Expansion: Ensure specialty items are in stock
+    if (!selected.includes('storage_license')) selected.push('storage_license');
+    if (!selected.includes('basic_incubator')) selected.push('basic_incubator');
+
     const refreshInterval = 4 * 60 * 60 * 1000;
     this.state.shopStock = selected;
     this.state.shopNextRefresh = Date.now() + refreshInterval;
@@ -127,6 +135,7 @@ export class GameStateManager {
 
   updateTime(delta: number) {
     this.state.gameTime = (this.state.gameTime + delta) % 2400;
+    this.checkIncubation();
   }
 
   updateState(patch: Partial<GameState>) {
@@ -184,6 +193,12 @@ export class GameStateManager {
 
     this.state.tamer.inventory = addToInventory(this.state.tamer.inventory, itemId, quantity);
 
+    // Special handling for Storage Expansion
+    if (itemId === 'storage_license') {
+      this.state.tamer.unlockedStorageSlots += 10 * quantity;
+      this.state.tamer.inventory = consumeItem(this.state.tamer.inventory, itemId, quantity);
+    }
+
     // Track spend progress
     ['daily_spend_100', 'daily_spend_500', 'weekly_spend_5000'].forEach(qid => {
       const key = `quest_progress_${qid}`;
@@ -192,6 +207,97 @@ export class GameStateManager {
 
     this.updateState({});
     return true;
+  }
+
+  enhanceMonster(monsterUid: string, cloneItemId: string, useBackup: boolean): { success: boolean; message: string } {
+    const monsterIdx = this.state.tamer.party.findIndex(m => m.uid === monsterUid);
+    const monster = monsterIdx !== -1
+      ? this.state.tamer.party[monsterIdx]
+      : this.state.tamer.storage.find(m => m.uid === monsterUid);
+
+    if (!monster) return { success: false, message: 'Monster not found.' };
+
+    const hasClone = this.state.tamer.inventory.find(i => i.itemId === cloneItemId && i.quantity > 0);
+    if (!hasClone) return { success: false, message: 'Missing Clone Item.' };
+
+    if (useBackup) {
+      const hasBackup = this.state.tamer.inventory.find(i => i.itemId === 'backup_disk' && i.quantity > 0);
+      if (!hasBackup) return { success: false, message: 'Missing Backup Disk.' };
+    }
+
+    const val = validateEnhancement(monster, cloneItemId);
+    if (!val.valid) return { success: false, message: val.reason || 'Invalid enhancement.' };
+
+    // Consume Items
+    this.state.tamer.inventory = consumeItem(this.state.tamer.inventory, cloneItemId, 1);
+    if (useBackup) {
+      this.state.tamer.inventory = consumeItem(this.state.tamer.inventory, 'backup_disk', 1);
+    }
+
+    // Success Check (Simple Logic)
+    // Clone D: 70%, Clone C: 50%
+    const chance = cloneItemId === 'power_clone_d' ? 0.7 : 0.5;
+    const success = gameRNG.chance(chance);
+
+    if (success) {
+      monster.enhancementLevel++;
+      monster.currentStats = recalculateMonsterStats(monster);
+      bus.emitEvent({ type: 'LOG_MESSAGE', message: `${monster.speciesId} enhancement succeeded! (+${monster.enhancementLevel})` });
+      this.updateState({});
+      return { success: true, message: 'Enhancement Successful!' };
+    } else {
+      let message = 'Enhancement Failed.';
+      if (!useBackup && monster.enhancementLevel > 0) {
+        // Fail = No change for MVP
+        message += ' (No change)';
+      } else if (useBackup) {
+        message += ' (Protected by Backup Disk)';
+      }
+      bus.emitEvent({ type: 'LOG_MESSAGE', message: `${monster.speciesId} enhancement failed.` });
+      this.updateState({});
+      return { success: false, message };
+    }
+  }
+
+  equipItem(monsterUid: string, itemId: string): { success: boolean; message: string } {
+    const monster = this.state.tamer.party.find(m => m.uid === monsterUid)
+      || this.state.tamer.storage.find(m => m.uid === monsterUid);
+    if (!monster) return { success: false, message: 'Monster not found' };
+
+    const invItem = this.state.tamer.inventory.find(i => i.itemId === itemId);
+    if (!invItem || invItem.quantity <= 0) return { success: false, message: 'Item not in inventory' };
+
+    const itemData = ITEM_DATA[itemId];
+    if (itemData.category !== 'Equipment') return { success: false, message: 'Not an equipment item' };
+
+    // Unequip current if any
+    if (monster.heldItemId) {
+      this.unequipItem(monsterUid);
+    }
+
+    // Equip new
+    this.state.tamer.inventory = consumeItem(this.state.tamer.inventory, itemId, 1);
+    monster.heldItemId = itemId;
+    monster.currentStats = recalculateMonsterStats(monster);
+
+    this.updateState({});
+    return { success: true, message: 'Item equipped' };
+  }
+
+  unequipItem(monsterUid: string): { success: boolean; message: string } {
+    const monster = this.state.tamer.party.find(m => m.uid === monsterUid)
+      || this.state.tamer.storage.find(m => m.uid === monsterUid);
+    if (!monster) return { success: false, message: 'Monster not found' };
+
+    if (!monster.heldItemId) return { success: false, message: 'No item equipped' };
+
+    const oldItemId = monster.heldItemId;
+    monster.heldItemId = undefined;
+    monster.currentStats = recalculateMonsterStats(monster);
+    this.state.tamer.inventory = addToInventory(this.state.tamer.inventory, oldItemId, 1);
+
+    this.updateState({});
+    return { success: true, message: 'Item unequipped' };
   }
 
   useItem(itemId: string): { success: boolean, message: string } {
@@ -222,6 +328,45 @@ export class GameStateManager {
     return { success: false, message: 'Cannot use this item here' };
   }
 
+  // --- RPG Expansion: Battle Skills ---
+  useTamerSkill(skillId: 'heal' | 'boost'): { success: boolean, message: string } {
+    const COST_HEAL = 20;
+    const COST_BOOST = 30;
+
+    if (skillId === 'heal') {
+      if (this.state.tamer.currentSpiritPoints < COST_HEAL) return { success: false, message: 'Not enough Spirit Points!' };
+      const activeMonster = this.state.tamer.party[0];
+      if (!activeMonster) return { success: false, message: 'No monster!' };
+
+      const healAmount = Math.floor(activeMonster.currentStats.maxHp * 0.3);
+      activeMonster.currentHp = Math.min(activeMonster.currentStats.maxHp, activeMonster.currentHp + healAmount);
+      this.state.tamer.currentSpiritPoints -= COST_HEAL;
+
+      this.updateState({});
+      bus.emitEvent({ type: 'LOG_MESSAGE', message: `Tamer used Heal! Restored ${healAmount} HP.` });
+      return { success: true, message: 'Heal used!' };
+    }
+
+    if (skillId === 'boost') {
+      if (this.state.tamer.currentSpiritPoints < COST_BOOST) return { success: false, message: 'Not enough Spirit Points!' };
+      // Implementation note: "Boost" usually works via a temporary buff.
+      // For phase 1 of this feature, we'll just heal a bit of SP or apply a flag? 
+      // Let's make it meaningful: Give 50% HP Shield? Or just a log message + future hook.
+      // Actually, we need to affect the BattleEntity. But GameStateManager affects Global State.
+      // BattleScene manages local battle state.
+      // So this method might need to emit an event that BattleScene listens to.
+
+      this.state.tamer.currentSpiritPoints -= COST_BOOST;
+      this.updateState({});
+      bus.emitEvent({ type: 'LOG_MESSAGE', message: `Tamer used Boost! Attack increased!` });
+      // We need a specific event to tell BattleScene to apply the buff
+      // bus.emitEvent({ type: 'TAMER_SKILL_USED', skill: 'boost', targetUid: this.state.tamer.party[0].uid }); // Future
+      return { success: true, message: 'Boost used!' };
+    }
+
+    return { success: false, message: 'Unknown skill' };
+  }
+
   attemptCapture(enemySpeciesId: string, enemyLevel: number, currentHp: number, maxHp: number): boolean {
     const inv = this.state.tamer.inventory;
     const orbIndex = inv.findIndex(i => i.itemId === 'capture_orb');
@@ -236,8 +381,13 @@ export class GameStateManager {
       const monster = createMonsterInstance(enemySpeciesId, enemyLevel);
       if (this.state.tamer.party.length < this.state.tamer.unlockedPartySlots) {
         this.state.tamer.party.push(monster);
-      } else {
+      } else if (this.state.tamer.storage.length < this.state.tamer.unlockedStorageSlots) {
         this.state.tamer.storage.push(monster);
+      } else {
+        // Storage full!
+        bus.emitEvent({ type: 'LOG_MESSAGE', message: 'Storage is full! Captured monster escaped.' });
+        this.updateState({});
+        return true; // Still technically a "successful" capture act but result is loss
       }
 
       if (!this.state.tamer.collection.includes(enemySpeciesId)) {
@@ -288,6 +438,8 @@ export class GameStateManager {
       level: 1,
       exp: 0,
       gold: 200,
+      maxSpiritPoints: 100,
+      currentSpiritPoints: 100,
       characterId: characterId,
       party: [],
       storage: [],
@@ -296,6 +448,7 @@ export class GameStateManager {
         { itemId: 'capture_orb', quantity: 5 }
       ],
       unlockedPartySlots: 6,
+      unlockedStorageSlots: 20,
       unlockedSupportSkills: ['cheer'],
       collection: [starterSpeciesId]
     };
@@ -644,6 +797,98 @@ export class GameStateManager {
     // We emit an event that scenes can listen to, or we can just reload for simplicity
     // But let's emit an event for a smoother transition
     bus.emitEvent({ type: 'RETURN_TO_TITLE' });
+  }
+
+  // --- Incubation System ---
+
+  startIncubation(eggItemId: string, materials: InventoryItem[]): boolean {
+    const incubatorItem = this.state.tamer.inventory.find(i => i.itemId === 'basic_incubator');
+    if (!incubatorItem) return false;
+
+    const eggItem = this.state.tamer.inventory.find(i => i.itemId === eggItemId);
+    if (!eggItem) return false;
+
+    // Define requirements based on egg type
+    const requirements: { itemId: string, quantity: number }[] = [];
+
+    if (eggItemId.includes('fire')) requirements.push({ itemId: 'data_fire', quantity: 5 });
+    if (eggItemId.includes('water')) requirements.push({ itemId: 'data_water', quantity: 5 });
+    // Mercenary eggs might require more
+    if (eggItemId.includes('mercenary')) requirements.forEach(r => r.quantity = 10);
+
+    // Validate materials
+    for (const req of requirements) {
+      const mat = materials.find(m => m.itemId === req.itemId);
+      if (!mat || mat.quantity < req.quantity) return false;
+    }
+
+    // Consume egg and materials
+    this.state.tamer.inventory = consumeItem(this.state.tamer.inventory, eggItemId, 1);
+    for (const mat of materials) {
+      this.state.tamer.inventory = consumeItem(this.state.tamer.inventory, mat.itemId, mat.quantity);
+    }
+
+    const slot: IncubatorSlot = {
+      id: Math.random().toString(36).substr(2, 9),
+      eggItemId,
+      materials,
+      startTime: this.state.gameTime,
+      duration: 200, // Takes 200 units of gameTime
+      isComplete: false
+    };
+
+    this.state.incubators.push(slot);
+    this.updateState({});
+    return true;
+  }
+
+  checkIncubation() {
+    let changed = false;
+    this.state.incubators.forEach(slot => {
+      if (!slot.isComplete) {
+        // Simple progress check based on gameTime elapsed
+        // Note: this assumes gameTime is continuous and doesn't wrap oddly for duration
+        // For a more robust system, we might track absolute elapsed time
+        const elapsed = (this.state.gameTime - slot.startTime + 2400) % 2400;
+        if (elapsed >= slot.duration) {
+          slot.isComplete = true;
+          changed = true;
+          bus.emitEvent({ type: 'LOG_MESSAGE', message: 'An egg is ready to hatch!' });
+        }
+      }
+    });
+
+    if (changed) this.updateState({});
+  }
+
+  hatchEgg(slotId: string): MonsterInstance | null {
+    const index = this.state.incubators.findIndex(s => s.id === slotId);
+    if (index === -1) return null;
+
+    const slot = this.state.incubators[index];
+    if (!slot.isComplete) return null;
+
+    // Determine species based on egg type
+    let speciesId = 'pyrocat'; // Default
+    if (slot.eggItemId === 'wilder_egg_fire') speciesId = 'pyrocat';
+    if (slot.eggItemId === 'wilder_egg_water') speciesId = 'droplet';
+    // Add more logic for special materials later
+
+    const monster = createMonsterInstance(speciesId, 1);
+
+    // Add to storage or party
+    if (this.state.tamer.party.length < this.state.tamer.unlockedPartySlots) {
+      this.state.tamer.party.push(monster);
+    } else if (this.state.tamer.storage.length < this.state.tamer.unlockedStorageSlots) {
+      this.state.tamer.storage.push(monster);
+    } else {
+      // If full, we can't hatch. User needs to make space.
+      return null;
+    }
+
+    this.state.incubators.splice(index, 1);
+    this.updateState({});
+    return monster;
   }
 }
 
