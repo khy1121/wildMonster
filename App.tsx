@@ -353,7 +353,9 @@ const App: React.FC = () => {
       )}
 
       {overlay === '3D_WORLD' && (
-        <World3D onClose={() => setOverlay('NONE')} />
+        <World3D
+          onClose={() => setOverlay('NONE')}
+        />
       )}
 
       {overlay === 'TEST_3D' && (
