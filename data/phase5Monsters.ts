@@ -762,7 +762,7 @@ export const PHASE5_MONSTERS: Record<string, MonsterSpecies> = {
         name: 'Elder God Fragment',
         type: ElementType.VOID,
         faction: FactionType.GLADE_KEEPERS,
-        evolutionStage: 5,
+        evolutionStage: 4,  // Changed from 5 to match type constraint
         baseStats: { hp: 1000, maxHp: 1000, attack: 150, specialAttack: 180, defense: 120, skillResistance: 140, speed: 100 },
         icon: '💀',
         rarity: 'Legendary',

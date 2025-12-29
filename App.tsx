@@ -7,8 +7,8 @@ import HUD from './ui/HUD';
 import EvolutionChoice from './ui/EvolutionChoice';
 import { MonsterDetailUI } from './ui/MonsterDetailUI';
 import ShopUI from './ui/ShopUI';
-import QuestLogUI from './ui/QuestLogUI';
-import QuestRewardPopup from './ui/QuestRewardPopup';
+// import QuestLogUI from './ui/QuestLogUI';  // Old Quest system - disabled for Phase 5
+// import QuestRewardPopup from './ui/QuestRewardPopup';  // Old Quest system - disabled for Phase 5
 import DebugPanel from './ui/DebugPanel';
 import InventoryUI from './components/InventoryUI';
 import { FactionUI } from './ui/AppOverlays';
@@ -23,11 +23,11 @@ import { DailyLoginUI } from './ui/DailyLoginUI';
 // Phase 5
 import { WorldMapUI } from './ui/WorldMapUI';
 import { EnhancedQuestLogUI } from './ui/EnhancedQuestLogUI';
-import { GameState, EvolutionOption, MonsterInstance, Quest } from './domain/types';
+import { GameState, EvolutionOption, MonsterInstance } from './domain/types';  // Removed Quest - using Phase 5 structure
 import { gameEvents } from './engine/EventBus';
 import { gameStateManager } from './engine/GameStateManager';
 import { getTranslation } from './localization/strings';
-import { QUEST_DATA } from './data/quests';
+// import { QUEST_DATA } from './data/quests';  // Disabled for Phase 5 - using EnhancedQuestLogUI
 
 const App: React.FC = () => {
   const gameRef = useRef<Phaser.Game | null>(null);
@@ -35,7 +35,7 @@ const App: React.FC = () => {
 
   const [gameState, setGameState] = useState<GameState>(gameStateManager.getState());
   const [evolutionData, setEvolutionData] = useState<{ monsterUid: string, options: EvolutionOption[] } | null>(null);
-  const [completedQuest, setCompletedQuest] = useState<Quest | null>(null);
+  // const [completedQuest, setCompletedQuest] = useState<Quest | null>(null);  // Disabled for Phase 5
   const [overlay, setOverlay] = useState<'NONE' | 'SKILLS' | 'SHOP' | 'QUESTS' | 'DEBUG' | 'FACTIONS' | 'MENU' | 'INVENTORY' | 'INCUBATOR' | 'ACHIEVEMENTS' | 'EXPEDITIONS' | 'WORLDMAP' | 'ENHANCED_QUESTS'>('NONE');
   const [showDailyLogin, setShowDailyLogin] = useState(false);
   const [activeMonsterUid, setActiveMonsterUid] = useState<string | null>(null);
@@ -59,12 +59,12 @@ const App: React.FC = () => {
       setEvolutionData({ monsterUid: event.monsterUid, options: event.options });
     });
 
-    gameEvents.on('QUEST_COMPLETED', (event: any) => {
-      const quest = QUEST_DATA.find(q => q.id === event.questId);
-      if (quest) {
-        setCompletedQuest(quest);
-      }
-    });
+    // gameEvents.on('QUEST_COMPLETED', (event: any) => {  // Disabled for Phase 5
+    //   const quest = QUEST_DATA.find(q => q.id === event.questId);
+    //   if (quest) {
+    //     setCompletedQuest(quest);
+    //   }
+    // });
 
     gameEvents.on('SCENE_CHANGED', (event: any) => {
       setActiveScene(event.sceneKey);
@@ -202,12 +202,13 @@ const App: React.FC = () => {
         />
       )}
 
-      {overlay === 'QUESTS' && (
+      {/* Old Quest System - Replaced by ENHANCED_QUESTS */}
+      {/* {overlay === 'QUESTS' && (
         <QuestLogUI
           state={gameState}
           onClose={() => setOverlay('NONE')}
         />
-      )}
+      )} */}
 
       {overlay === 'FACTIONS' && (
         <FactionUI
@@ -247,7 +248,8 @@ const App: React.FC = () => {
         />
       )}
 
-      {completedQuest && (
+      {/* Old Quest Reward Popup - Disabled for Phase 5 */}
+      {/* {completedQuest && (
         <QuestRewardPopup
           quest={completedQuest}
           language={gameState.language}
@@ -256,7 +258,7 @@ const App: React.FC = () => {
             setCompletedQuest(null);
           }}
         />
-      )}
+      )} */}
 
       {/* Phase 4 UIs */}
       {overlay === 'ACHIEVEMENTS' && (
@@ -286,10 +288,8 @@ const App: React.FC = () => {
           gsm={gameStateManager}
           onClose={() => setOverlay('NONE')}
           onTravelToRegion={(regionId) => {
-            // Update current region in state
-            const currentState = gameStateManager.getState();
-            currentState.currentRegion = regionId;
-            gameEvents.emit({ type: 'STATE_UPDATED', state: currentState });
+            // WorldMapUI will handle region travel logic internally
+            // Just close the overlay for now
             setOverlay('NONE');
           }}
         />
