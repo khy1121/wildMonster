@@ -22,10 +22,12 @@ interface HUDProps {
   onOpenEquipment?: () => void;
   onOpenSaves?: () => void;
   onOpenHelp?: () => void;
+  onOpen3DWorld?: () => void;
+  onOpenTest3D?: () => void;
 }
 
 
-const HUD: React.FC<HUDProps> = ({ state, onOpenSkills, onOpenQuests, onOpenFactions, onOpenShop, onOpenSettings, onOpenInventory, onOpenIncubator, onOpenAchievements, onOpenExpeditions, onOpenWorldMap, onOpenEnhancedQuests, onOpenEquipment, onOpenSaves, onOpenHelp }) => {
+const HUD: React.FC<HUDProps> = ({ state, onOpenSkills, onOpenQuests, onOpenFactions, onOpenShop, onOpenSettings, onOpenInventory, onOpenIncubator, onOpenAchievements, onOpenExpeditions, onOpenWorldMap, onOpenEnhancedQuests, onOpenEquipment, onOpenSaves, onOpenHelp, onOpen3DWorld, onOpenTest3D }) => {
   const { tamer, language, reputation } = state;
   const t = getTranslation(language);
   const activeMonster = tamer.party[0];
@@ -172,6 +174,7 @@ const HUD: React.FC<HUDProps> = ({ state, onOpenSkills, onOpenQuests, onOpenFact
               </button>
             )}
 
+
             {onOpenHelp && (
               <button
                 onClick={onOpenHelp}
@@ -179,6 +182,26 @@ const HUD: React.FC<HUDProps> = ({ state, onOpenSkills, onOpenQuests, onOpenFact
                 aria-label="Open Help Manual"
               >
                 <i className="fa-solid fa-question-circle"></i> <span className="hidden sm:inline">{language === 'ko' ? '도움말' : 'Help'}</span>
+              </button>
+            )}
+
+            {onOpen3DWorld && (
+              <button
+                onClick={onOpen3DWorld}
+                className="btn-primary flex items-center justify-center gap-2 text-[9px] md:text-[10px] min-h-[40px] bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 border-pink-500 animate-pulse"
+                aria-label="Open 3D World"
+              >
+                <i className="fa-solid fa-cube"></i> <span className="hidden sm:inline">{language === 'ko' ? '3D 월드' : '3D World'}</span>
+              </button>
+            )}
+
+            {onOpenTest3D && (
+              <button
+                onClick={onOpenTest3D}
+                className="btn-primary flex items-center justify-center gap-2 text-[9px] md:text-[10px] min-h-[40px] bg-green-600 hover:bg-green-500 border-green-500"
+                aria-label="Test 3D"
+              >
+                <i className="fa-solid fa-flask"></i> <span className="hidden sm:inline">{language === 'ko' ? '테스트' : 'Test'}</span>
               </button>
             )}
           </div>

@@ -32,6 +32,9 @@ import { saveManager } from './engine/SaveManager';
 import { TutorialOverlay } from './ui/TutorialOverlay';
 import { HelpManualUI } from './ui/HelpManualUI';
 import { tutorialManager } from './engine/TutorialManager';
+// 3D World
+import { World3D } from './components/World3D/World3D';
+import { TestWorld3D } from './components/World3D/TestWorld3D';
 import { GameState, EvolutionOption, MonsterInstance } from './domain/types';  // Removed Quest - using Phase 5 structure
 import { gameEvents } from './engine/EventBus';
 import { gameStateManager } from './engine/GameStateManager';
@@ -45,7 +48,7 @@ const App: React.FC = () => {
   const [gameState, setGameState] = useState<GameState>(gameStateManager.getState());
   const [evolutionData, setEvolutionData] = useState<{ monsterUid: string, options: EvolutionOption[] } | null>(null);
   // const [completedQuest, setCompletedQuest] = useState<Quest | null>(null);  // Disabled for Phase 5
-  const [overlay, setOverlay] = useState<'NONE' | 'SKILLS' | 'SHOP' | 'QUESTS' | 'DEBUG' | 'FACTIONS' | 'MENU' | 'INVENTORY' | 'INCUBATOR' | 'ACHIEVEMENTS' | 'EXPEDITIONS' | 'WORLDMAP' | 'ENHANCED_QUESTS' | 'EQUIPMENT' | 'SAVES' | 'HELP'>('NONE');
+  const [overlay, setOverlay] = useState<'NONE' | 'SKILLS' | 'SHOP' | 'QUESTS' | 'DEBUG' | 'FACTIONS' | 'MENU' | 'INVENTORY' | 'INCUBATOR' | 'ACHIEVEMENTS' | 'EXPEDITIONS' | 'WORLDMAP' | 'ENHANCED_QUESTS' | 'EQUIPMENT' | 'SAVES' | 'HELP' | '3D_WORLD' | 'TEST_3D'>('NONE');
   const [showDailyLogin, setShowDailyLogin] = useState(false);
   const [activeMonsterUid, setActiveMonsterUid] = useState<string | null>(null);
   const [selectionStep, setSelectionStep] = useState<'CHARACTER' | 'STARTER' | 'NONE'>('NONE');
@@ -176,6 +179,8 @@ const App: React.FC = () => {
             onOpenEquipment={() => setOverlay('EQUIPMENT')}
             onOpenSaves={() => setOverlay('SAVES')}
             onOpenHelp={() => setOverlay('HELP')}
+            onOpen3DWorld={() => setOverlay('3D_WORLD')}
+            onOpenTest3D={() => setOverlay('TEST_3D')}
           />
 
           <button
@@ -345,6 +350,14 @@ const App: React.FC = () => {
           language={gameState.language}
           onClose={() => setOverlay('NONE')}
         />
+      )}
+
+      {overlay === '3D_WORLD' && (
+        <World3D onClose={() => setOverlay('NONE')} />
+      )}
+
+      {overlay === 'TEST_3D' && (
+        <TestWorld3D onClose={() => setOverlay('NONE')} />
       )}
 
       <div className="absolute bottom-2 left-4 text-[7px] text-slate-600 font-mono pointer-events-none uppercase tracking-[0.2em] hidden md:block">
