@@ -55,7 +55,20 @@ const INITIAL_STATE: GameState = {
     lastLoginDate: '',
     consecutiveDays: 0,
     claimedToday: false
-  }
+  },
+  // Phase 5: World Building
+  currentRegion: 'chronos_plaza',  // Start at hub
+  unlockedRegions: ['chronos_plaza'],
+  unlockedPortals: [],
+  storyProgress: {
+    fragmentsCollected: 0,
+    bossesDefeated: [],
+    mainQuestsCompleted: [],
+    loreNotesFound: 0,
+    currentAct: 1,
+  },
+  activeQuestObjectives: {},
+  foundLoreNotes: []
 };
 
 export class GameStateManager {
@@ -105,6 +118,32 @@ export class GameStateManager {
     }
     if (this.state.tamer.expeditionSlots === undefined) {
       this.state.tamer.expeditionSlots = 1;
+    }
+
+    // Phase 5: Ensure world building fields exist for old saves
+    if (!this.state.currentRegion) {
+      this.state.currentRegion = 'chronos_plaza';
+    }
+    if (!this.state.unlockedRegions) {
+      this.state.unlockedRegions = ['chronos_plaza'];
+    }
+    if (!this.state.unlockedPortals) {
+      this.state.unlockedPortals = [];
+    }
+    if (!this.state.storyProgress) {
+      this.state.storyProgress = {
+        fragmentsCollected: 0,
+        bossesDefeated: [],
+        mainQuestsCompleted: [],
+        loreNotesFound: 0,
+        currentAct: 1
+      };
+    }
+    if (!this.state.activeQuestObjectives) {
+      this.state.activeQuestObjectives = {};
+    }
+    if (!this.state.foundLoreNotes) {
+      this.state.foundLoreNotes = [];
     }
 
     if (!this.state.shopStock || !this.state.shopNextRefresh) {

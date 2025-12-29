@@ -20,6 +20,9 @@ import IncubatorUI from './ui/IncubatorUI';
 import { AchievementsUI } from './ui/AchievementsUI';
 import { ExpeditionUI } from './ui/ExpeditionUI';
 import { DailyLoginUI } from './ui/DailyLoginUI';
+// Phase 5
+import { WorldMapUI } from './ui/WorldMapUI';
+import { EnhancedQuestLogUI } from './ui/EnhancedQuestLogUI';
 import { GameState, EvolutionOption, MonsterInstance, Quest } from './domain/types';
 import { gameEvents } from './engine/EventBus';
 import { gameStateManager } from './engine/GameStateManager';
@@ -33,7 +36,7 @@ const App: React.FC = () => {
   const [gameState, setGameState] = useState<GameState>(gameStateManager.getState());
   const [evolutionData, setEvolutionData] = useState<{ monsterUid: string, options: EvolutionOption[] } | null>(null);
   const [completedQuest, setCompletedQuest] = useState<Quest | null>(null);
-  const [overlay, setOverlay] = useState<'NONE' | 'SKILLS' | 'SHOP' | 'QUESTS' | 'DEBUG' | 'FACTIONS' | 'MENU' | 'INVENTORY' | 'INCUBATOR' | 'ACHIEVEMENTS' | 'EXPEDITIONS'>('NONE');
+  const [overlay, setOverlay] = useState<'NONE' | 'SKILLS' | 'SHOP' | 'QUESTS' | 'DEBUG' | 'FACTIONS' | 'MENU' | 'INVENTORY' | 'INCUBATOR' | 'ACHIEVEMENTS' | 'EXPEDITIONS' | 'WORLDMAP' | 'ENHANCED_QUESTS'>('NONE');
   const [showDailyLogin, setShowDailyLogin] = useState(false);
   const [activeMonsterUid, setActiveMonsterUid] = useState<string | null>(null);
   const [selectionStep, setSelectionStep] = useState<'CHARACTER' | 'STARTER' | 'NONE'>('NONE');
@@ -154,6 +157,8 @@ const App: React.FC = () => {
             onOpenIncubator={() => setOverlay('INCUBATOR')}
             onOpenAchievements={() => setOverlay('ACHIEVEMENTS')}
             onOpenExpeditions={() => setOverlay('EXPEDITIONS')}
+            onOpenWorldMap={() => setOverlay('WORLDMAP')}
+            onOpenEnhancedQuests={() => setOverlay('ENHANCED_QUESTS')}
           />
 
           <button
@@ -272,6 +277,28 @@ const App: React.FC = () => {
         <DailyLoginUI
           gsm={gameStateManager}
           onClose={() => setShowDailyLogin(false)}
+        />
+      )}
+
+      {/* Phase 5 UIs */}
+      {overlay === 'WORLDMAP' && (
+        <WorldMapUI
+          gsm={gameStateManager}
+          onClose={() => setOverlay('NONE')}
+          onTravelToRegion={(regionId) => {
+            // Update current region in state
+            const currentState = gameStateManager.getState();
+            currentState.currentRegion = regionId;
+            gameEvents.emit({ type: 'STATE_UPDATED', state: currentState });
+            setOverlay('NONE');
+          }}
+        />
+      )}
+
+      {overlay === 'ENHANCED_QUESTS' && (
+        <EnhancedQuestLogUI
+          gsm={gameStateManager}
+          onClose={() => setOverlay('NONE')}
         />
       )}
 

@@ -16,9 +16,12 @@ interface HUDProps {
   // Phase 4
   onOpenAchievements?: () => void;
   onOpenExpeditions?: () => void;
+  // Phase 5
+  onOpenWorldMap?: () => void;
+  onOpenEnhancedQuests?: () => void;
 }
 
-const HUD: React.FC<HUDProps> = ({ state, onOpenSkills, onOpenQuests, onOpenFactions, onOpenShop, onOpenSettings, onOpenInventory, onOpenIncubator, onOpenAchievements, onOpenExpeditions }) => {
+const HUD: React.FC<HUDProps> = ({ state, onOpenSkills, onOpenQuests, onOpenFactions, onOpenShop, onOpenSettings, onOpenInventory, onOpenIncubator, onOpenAchievements, onOpenExpeditions, onOpenWorldMap, onOpenEnhancedQuests }) => {
   const { tamer, language, reputation } = state;
   const t = getTranslation(language);
   const activeMonster = tamer.party[0];
@@ -121,6 +124,27 @@ const HUD: React.FC<HUDProps> = ({ state, onOpenSkills, onOpenQuests, onOpenFact
                 {hasCompletedExpedition && (
                   <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border border-white animate-bounce" />
                 )}
+              </button>
+            )}
+
+            {/* Phase 5 Buttons */}
+            {onOpenWorldMap && (
+              <button
+                onClick={onOpenWorldMap}
+                className="btn-primary flex items-center justify-center gap-2 text-[9px] md:text-[10px] min-h-[40px] bg-indigo-600 hover:bg-indigo-500 border-indigo-500"
+                aria-label="Open World Map"
+              >
+                <i className="fa-solid fa-map"></i> <span className="hidden sm:inline">{language === 'ko' ? '세계 지도' : 'World Map'}</span>
+              </button>
+            )}
+
+            {onOpenEnhancedQuests && (
+              <button
+                onClick={onOpenEnhancedQuests}
+                className="btn-primary flex items-center justify-center gap-2 text-[9px] md:text-[10px] min-h-[40px] bg-cyan-600 hover:bg-cyan-500 border-cyan-500"
+                aria-label="Open Enhanced Quest Log"
+              >
+                <i className="fa-solid fa-scroll"></i> <span className="hidden sm:inline">{language === 'ko' ? '퀘스트' : 'Quests'}</span>
               </button>
             )}
           </div>

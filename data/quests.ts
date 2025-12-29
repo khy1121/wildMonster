@@ -1,461 +1,347 @@
 import { Quest } from '../domain/types';
 
+// Phase 5: Region-based Quest System
+// Quests are now tied to regions and use objective-based progression
+
 export const QUEST_DATA: Quest[] = [
-  // --- STORY QUESTS (1-10) ---
+  // ===== CHRONOS PLAZA (Hub) - Tutorial & Introduction =====
   {
-    id: 'first_capture',
-    title: 'The Tamer Path',
-    description: 'Capture your first wild monster using a Capture Orb.',
-    rewardGold: 100,
-    rewardExp: 50,
-    rewardItems: [{ itemId: 'capture_orb', quantity: 3 }],
-    category: 'STORY'
-  },
-  {
-    id: 'reach_level_5',
-    title: 'Rising Star',
-    description: 'Reach Tamer level 5 to prove your potential.',
-    requiredLevel: 5,
-    rewardGold: 500,
-    rewardExp: 200,
-    rewardItems: [{ itemId: 'potion', quantity: 5 }],
-    category: 'STORY'
-  },
-  {
-    id: 'defeat_lunacat',
-    title: 'Night Stalker',
-    description: 'Defeat the elusive Lunacat that appears in the fields at night.',
-    requiredLevel: 10,
-    requiredFlag: 'lunacat_defeated',
-    rewardGold: 1500,
-    rewardExp: 1000,
-    rewardItems: [{ itemId: 'sun_stone', quantity: 1 }, { itemId: 'moon_stone', quantity: 1 }],
-    category: 'STORY'
-  },
-  {
-    id: 'story_capture_5',
-    title: 'Growing Collection',
-    description: 'Capture 5 different species of monsters.',
-    rewardGold: 800,
-    rewardExp: 400,
-    category: 'STORY'
-  },
-  {
-    id: 'reach_level_10',
-    title: 'Tamer Apprentice',
-    description: 'Reach Tamer level 10.',
-    requiredLevel: 10,
-    rewardGold: 1000,
-    rewardExp: 500,
-    category: 'STORY'
-  },
-  {
-    id: 'reach_level_20',
-    title: 'Tamer Professional',
-    description: 'Reach Tamer level 20.',
-    requiredLevel: 20,
-    rewardGold: 2000,
-    rewardExp: 1000,
-    category: 'STORY'
-  },
-  {
-    id: 'defeat_boss_flarelion',
-    title: 'Trial of Fire',
-    description: 'Defeat the Alpha Flarelion.',
-    requiredFlag: 'boss_flarelion_defeated',
-    rewardGold: 5000,
-    rewardExp: 2500,
-    rewardItems: [{ itemId: 'blazing_fang', quantity: 1 }],
-    category: 'STORY'
-  },
-  {
-    id: 'defeat_boss_krakenwhale',
-    title: 'Depths of the Ocean',
-    description: 'Defeat the Alpha Krakenwhale.',
-    requiredFlag: 'boss_krakenwhale_defeated',
-    rewardGold: 6000,
-    rewardExp: 3000,
-    rewardItems: [{ itemId: 'tidal_blade', quantity: 1 }],
-    category: 'STORY'
-  },
-  {
-    id: 'reach_level_50',
-    title: 'The Ultimate Tamer',
-    description: 'Reach Tamer level 50.',
-    requiredLevel: 50,
-    rewardGold: 10000,
-    rewardExp: 5000,
-    category: 'STORY'
+    id: 'welcome_to_aetheria',
+    type: 'main',
+    name: 'Welcome to Aetheria',
+    nameKo: '아이테리아에 오신 것을 환영합니다',
+    description: 'Meet Elder Chronos and learn about the Great Rift.',
+    descriptionKo: '크로노스 장로를 만나 대균열에 대해 알아보세요.',
+    region: 'chronos_plaza',
+    objectives: [
+      {
+        type: 'talk',
+        target: 'elder_chronos',
+        count: 1,
+        current: 0,
+        description: 'Talk to Elder Chronos',
+        descriptionKo: '크로노스 장로와 대화하기'
+      }
+    ],
+    rewards: {
+      gold: 100,
+      exp: 50
+    },
+    npcGiver: 'elder_chronos',
+    status: 'available'
   },
 
-  // --- DAILY QUESTS (11-25) ---
+  // ===== EMBERFALL GROVE (Region 1) - Main Story =====
   {
-    id: 'daily_win_3',
-    title: 'Morning Drill',
-    description: 'Win 3 battles against wild monsters.',
-    rewardGold: 200,
-    rewardExp: 100,
-    category: 'DAILY',
-    progressMax: 3
+    id: 'first_steps',
+    type: 'main',
+    name: 'First Steps',
+    nameKo: '첫 걸음',
+    description: 'Capture your first wild monster in Emberfall Grove.',
+    descriptionKo: '엠버폴 숲에서 첫 야생 몬스터를 포획하세요.',
+    region: 'emberfall_grove',
+    requiresLevel: 1,
+    prerequisites: ['welcome_to_aetheria'],
+    objectives: [
+      {
+        type: 'capture',
+        target: 'any',
+        count: 1,
+        current: 0,
+        description: 'Capture any wild monster',
+        descriptionKo: '야생 몬스터 1마리 포획'
+      }
+    ],
+    rewards: {
+      gold: 200,
+      exp: 100,
+      items: [{ itemId: 'capture_orb', quantity: 3 }]
+    },
+    status: 'locked'
   },
   {
-    id: 'daily_win_5',
-    title: 'Battle Hardened',
-    description: 'Win 5 battles against wild monsters.',
-    rewardGold: 350,
-    rewardExp: 150,
-    category: 'DAILY',
-    progressMax: 5
+    id: 'forest_fire',
+    type: 'main',
+    name: 'Forest Fire',
+    nameKo: '숲의 불길',
+    description: 'Flame Keeper Ignar needs help clearing the burning forest. Defeat 10 Fire-type monsters.',
+    descriptionKo: '불의 수호자 이그나르가 타오르는 숲을 정리하는 것을 도와주세요. 불 속성 몬스터 10마리를 처치하세요.',
+    region: 'emberfall_grove',
+    requiresLevel: 2,
+    prerequisites: ['first_steps'],
+    objectives: [
+      {
+        type: 'defeat',
+        target: 'fire_type',
+        count: 10,
+        current: 0,
+        description: 'Defeat 10 Fire-type monsters',
+        descriptionKo: '불 속성 몬스터 10마리 처치'
+      }
+    ],
+    rewards: {
+      gold: 500,
+      exp: 250,
+      items: [{ itemId: 'potion', quantity: 3 }]
+    },
+    npcGiver: 'flame_keeper_ignar',
+    status: 'locked'
   },
   {
-    id: 'daily_capture_1',
-    title: 'Quick Catch',
-    description: 'Capture 1 wild monster.',
-    rewardGold: 150,
-    rewardExp: 75,
-    category: 'DAILY',
-    progressMax: 1
+    id: 'keepers_request',
+    type: 'side',
+    name: "Keeper's Request",
+    nameKo: '수호자의 부탁',
+    description: 'Collect 5 Fire Herbs for Ignar.',
+    descriptionKo: '이그나르를 위해 불의 약초 5개를 수집하세요.',
+    region: 'emberfall_grove',
+    requiresLevel: 3,
+    objectives: [
+      {
+        type: 'collect',
+        target: 'fire_herb',
+        count: 5,
+        current: 0,
+        description: 'Collect 5 Fire Herbs',
+        descriptionKo: '불의 약초 5개 수집'
+      }
+    ],
+    rewards: {
+      gold: 300,
+      exp: 150,
+      items: [{ itemId: 'fire_data', quantity: 1 }]
+    },
+    npcGiver: 'flame_keeper_ignar',
+    status: 'locked'
   },
   {
-    id: 'daily_capture_3',
-    title: 'Recruitment Drive',
-    description: 'Capture 3 wild monsters.',
-    rewardGold: 400,
-    rewardExp: 200,
-    category: 'DAILY',
-    progressMax: 3
+    id: 'shrine_guardian',
+    type: 'main',
+    name: 'Shrine Guardian',
+    nameKo: '신전 수호자',
+    description: 'Open the path to the Flame Shrine.',
+    descriptionKo: '불의 신전으로 가는 길을 여세요.',
+    region: 'emberfall_grove',
+    requiresLevel: 8,
+    prerequisites: ['forest_fire'],
+    objectives: [
+      {
+        type: 'explore',
+        target: 'flame_shrine',
+        count: 1,
+        current: 0,
+        description: 'Reach the Flame Shrine',
+        descriptionKo: '불의 신전에 도달하기'
+      }
+    ],
+    rewards: {
+      gold: 800,
+      exp: 400
+    },
+    status: 'locked'
   },
   {
-    id: 'daily_item_use',
-    title: 'Prep Time',
-    description: 'Use 5 items.',
-    rewardGold: 150,
-    rewardExp: 75,
-    category: 'DAILY',
-    progressMax: 5
-  },
-  {
-    id: 'daily_item_use_10',
-    title: 'Inventory Check',
-    description: 'Use 10 items.',
-    rewardGold: 300,
-    rewardExp: 150,
-    category: 'DAILY',
-    progressMax: 10
-  },
-  {
-    id: 'daily_spend_100',
-    title: 'Local Customer',
-    description: 'Spend 100 gold at the shop.',
-    rewardGold: 50,
-    rewardExp: 50,
-    category: 'DAILY',
-    progressMax: 100
-  },
-  {
-    id: 'daily_spend_500',
-    title: 'Big Spender',
-    description: 'Spend 500 gold at the shop.',
-    rewardGold: 200,
-    rewardExp: 100,
-    category: 'DAILY',
-    progressMax: 500
-  },
-  {
-    id: 'daily_win_fire',
-    title: 'Extinguish Flames',
-    description: 'Defeat 3 Fire type monsters.',
-    rewardGold: 250,
-    rewardExp: 125,
-    category: 'DAILY',
-    progressMax: 3
-  },
-  {
-    id: 'daily_win_water',
-    title: 'Tame the Tides',
-    description: 'Defeat 3 Water type monsters.',
-    rewardGold: 250,
-    rewardExp: 125,
-    category: 'DAILY',
-    progressMax: 3
-  },
-  {
-    id: 'daily_win_grass',
-    title: 'Weed Out',
-    description: 'Defeat 3 Grass type monsters.',
-    rewardGold: 250,
-    rewardExp: 125,
-    category: 'DAILY',
-    progressMax: 3
-  },
-  {
-    id: 'daily_win_electric',
-    title: 'Ground the Current',
-    description: 'Defeat 3 Electric type monsters.',
-    rewardGold: 250,
-    rewardExp: 125,
-    category: 'DAILY',
-    progressMax: 3
-  },
-  {
-    id: 'daily_win_neutral',
-    title: 'Balance of Power',
-    description: 'Defeat 3 Neutral type monsters.',
-    rewardGold: 200,
-    rewardExp: 100,
-    category: 'DAILY',
-    progressMax: 3
-  },
-  {
-    id: 'daily_win_dark_light',
-    title: 'Twilight Duel',
-    description: 'Defeat 3 Dark or Light type monsters.',
-    rewardGold: 300,
-    rewardExp: 150,
-    category: 'DAILY',
-    progressMax: 3
-  },
-  {
-    id: 'daily_earn_500',
-    title: 'Profit Hunter',
-    description: 'Earn 500 gold from battles.',
-    rewardGold: 100,
-    rewardExp: 50,
-    category: 'DAILY',
-    progressMax: 500
-  },
-
-  // --- WEEKLY QUESTS (26-35) ---
-  {
-    id: 'weekly_monster_collector',
-    title: 'Master Collector',
-    description: 'Capture total 10 monsters this week.',
-    rewardGold: 2000,
-    rewardExp: 1000,
-    rewardItems: [{ itemId: 'monster_core', quantity: 5 }],
-    category: 'WEEKLY',
-    progressMax: 10
-  },
-  {
-    id: 'weekly_win_20',
-    title: 'Battle Marathon',
-    description: 'Win 20 battles against wild monsters.',
-    rewardGold: 1500,
-    rewardExp: 750,
-    category: 'WEEKLY',
-    progressMax: 20
-  },
-  {
-    id: 'weekly_win_50',
-    title: 'Grand Champion',
-    description: 'Win 50 battles against wild monsters.',
-    rewardGold: 4000,
-    rewardExp: 2000,
-    category: 'WEEKLY',
-    progressMax: 50
-  },
-  {
-    id: 'weekly_capture_5_rare',
-    title: 'Rare Specialist',
-    description: 'Capture 5 Rare or higher rarity monsters.',
-    rewardGold: 3000,
-    rewardExp: 1500,
-    rewardItems: [{ itemId: 'spirit_essence', quantity: 1 }],
-    category: 'WEEKLY',
-    progressMax: 5
-  },
-  {
-    id: 'weekly_spend_5000',
-    title: 'Market Roller',
-    description: 'Spend 5000 gold at the shop.',
-    rewardGold: 1000,
-    rewardExp: 500,
-    category: 'WEEKLY',
-    progressMax: 5000
-  },
-  {
-    id: 'weekly_evolve_3',
-    title: 'Evolutionary Peak',
-    description: 'Evolve 3 monsters.',
-    rewardGold: 2500,
-    rewardExp: 1250,
-    category: 'WEEKLY',
-    progressMax: 3
-  },
-  {
-    id: 'weekly_earn_5000',
-    title: 'Gold Tycoon',
-    description: 'Earn 5000 gold from battles.',
-    rewardGold: 1000,
-    rewardExp: 500,
-    category: 'WEEKLY',
-    progressMax: 5000
-  },
-  {
-    id: 'weekly_item_use_30',
-    title: 'Resourceful',
-    description: 'Use 30 items.',
-    rewardGold: 1000,
-    rewardExp: 500,
-    category: 'WEEKLY',
-    progressMax: 30
-  },
-  {
-    id: 'weekly_boss_slayer_3',
-    title: 'Titan Slayer',
-    description: 'Defeat 3 Alpha monsters (Bosses).',
-    rewardGold: 5000,
-    rewardExp: 2500,
-    rewardItems: [{ itemId: 'ancient_scrap', quantity: 5 }],
-    category: 'WEEKLY',
-    progressMax: 3
-  },
-  {
-    id: 'weekly_spend_10000',
-    title: 'Market Titan',
-    description: 'Spend 10000 gold at the shop.',
-    rewardGold: 2500,
-    rewardExp: 1000,
-    category: 'WEEKLY',
-    progressMax: 10000
-  },
-  {
-    id: 'weekly_completionist',
-    title: 'Weekly Completionist',
-    description: 'Complete 10 other quests this week.',
-    rewardGold: 5000,
-    rewardExp: 2500,
-    category: 'WEEKLY',
-    progressMax: 10
+    id: 'titans_fall',
+    type: 'main',
+    name: "Titan's Fall",
+    nameKo: '타이탄의 몰락',
+    description: 'Defeat the Pyroclast Titan and claim the Fire Fragment.',
+    descriptionKo: '화산 타이탄을 물리치고 불의 파편을 획득하세요.',
+    region: 'emberfall_grove',
+    requiresLevel: 10,
+    prerequisites: ['shrine_guardian'],
+    objectives: [
+      {
+        type: 'defeat',
+        target: 'pyroclast_titan',
+        count: 1,
+        current: 0,
+        description: 'Defeat Pyroclast Titan',
+        descriptionKo: '화산 타이탄 격파'
+      }
+    ],
+    rewards: {
+      gold: 1000,
+      exp: 500,
+      items: [{ itemId: 'fire_fragment', quantity: 1 }],
+      unlocks: ['portal_emberfall_to_hub', 'portal_hub_to_tidecrest']
+    },
+    status: 'locked'
   },
 
-  // --- CHALLENGE QUESTS (36-50) ---
+  // ===== TIDECREST SHORE (Region 2) - Main Story =====
   {
-    id: 'collector_beginner',
-    title: 'Collection 101',
-    description: 'Capture at least 3 different species of monsters.',
-    rewardGold: 300,
-    rewardExp: 150,
-    rewardItems: [{ itemId: 'capture_orb', quantity: 5 }],
-    category: 'CHALLENGE'
+    id: 'tides_of_change',
+    type: 'main',
+    name: 'Tides of Change',
+    nameKo: '변화의 조류',
+    description: 'Explore Coral Shores and meet Tide Priestess Nereia.',
+    descriptionKo: '산호 해변을 탐험하고 조수 여사제 네레이아를 만나세요.',
+    region: 'tidecrest_shore',
+    requiresLevel: 8,
+    prerequisites: ['titans_fall'],
+    objectives: [
+      {
+        type: 'explore',
+        target: 'coral_shores',
+        count: 1,
+        current: 0,
+        description: 'Explore Coral Shores',
+        descriptionKo: '산호 해변 탐험'
+      },
+      {
+        type: 'talk',
+        target: 'tide_priestess_nereia',
+        count: 1,
+        current: 0,
+        description: 'Talk to Tide Priestess Nereia',
+        descriptionKo: '조수 여사제 네레이아와 대화'
+      }
+    ],
+    rewards: {
+      gold: 1200,
+      exp: 600
+    },
+    npcGiver: 'tide_priestess_nereia',
+    status: 'locked'
   },
   {
-    id: 'collector_pro',
-    title: 'Collection Expert',
-    description: 'Capture at least 20 different species of monsters.',
-    rewardGold: 2000,
-    rewardExp: 1000,
-    rewardItems: [{ itemId: 'capture_orb', quantity: 20 }],
-    category: 'CHALLENGE'
+    id: 'fog_walker',
+    type: 'main',
+    name: 'Fog Walker',
+    nameKo: '안개 속의 방랑자',
+    description: 'Navigate through the Misty Isles.',
+    descriptionKo: '안개 낀 섬을 통과하세요.',
+    region: 'tidecrest_shore',
+    requiresLevel: 12,
+    prerequisites: ['tides_of_change'],
+    objectives: [
+      {
+        type: 'explore',
+        target: 'misty_isles',
+        count: 1,
+        current: 0,
+        description: 'Navigate through Misty Isles',
+        descriptionKo: '안개 섬 통과'
+      }
+    ],
+    rewards: {
+      gold: 1500,
+      exp: 800
+    },
+    status: 'locked'
   },
   {
-    id: 'collector_master',
-    title: 'Grand Master Explorer',
-    description: 'Capture at least 50 different species of monsters.',
-    rewardGold: 10000,
-    rewardExp: 5000,
-    category: 'CHALLENGE'
+    id: 'lost_treasure',
+    type: 'side',
+    name: 'Lost Treasure',
+    nameKo: '잃어버린 보물',
+    description: 'Find 3 Ancient Artifacts in the Sunken Ruins.',
+    descriptionKo: '수몰된 유적에서 고대 유물 3개를 찾으세요.',
+    region: 'tidecrest_shore',
+    requiresLevel: 15,
+    objectives: [
+      {
+        type: 'collect',
+        target: 'ancient_artifact',
+        count: 3,
+        current: 0,
+        description: 'Collect 3 Ancient Artifacts',
+        descriptionKo: '고대 유물 3개 수집'
+      }
+    ],
+    rewards: {
+      gold: 2000,
+      exp: 1000,
+      items: [{ itemId: 'water_data', quantity: 3 }]
+    },
+    status: 'locked'
   },
   {
-    id: 'gold_saver',
-    title: 'Thrifty Tamer',
-    description: 'Accumulate 1000 gold in your wallet.',
-    rewardGold: 200,
-    rewardExp: 100,
-    rewardItems: [{ itemId: 'potion', quantity: 3 }],
-    category: 'CHALLENGE'
+    id: 'temple_trial',
+    type: 'main',
+    name: 'Temple Trial',
+    nameKo: '신전의 시련',
+    description: "Pass Nereia's trial to enter the Ocean Temple.",
+    descriptionKo: '네레이아의 시련을 통과해 바다 신전에 들어가세요.',
+    region: 'tidecrest_shore',
+    requiresLevel: 16,
+    prerequisites: ['fog_walker'],
+    objectives: [
+      {
+        type: 'defeat',
+        target: 'water_type',
+        count: 20,
+        current: 0,
+        description: 'Defeat 20 Water-type monsters',
+        descriptionKo: '물 속성 몬스터 20마리 처치'
+      }
+    ],
+    rewards: {
+      gold: 2500,
+      exp: 1200
+    },
+    npcGiver: 'tide_priestess_nereia',
+    status: 'locked'
   },
   {
-    id: 'gold_millionaire',
-    title: 'Gold Hoarder',
-    description: 'Accumulate 100,000 gold in your wallet.',
-    rewardGold: 10000,
-    rewardExp: 5000,
-    category: 'CHALLENGE'
+    id: 'leviathans_wrath',
+    type: 'main',
+    name: "Leviathan's Wrath",
+    nameKo: '리바이어던의 분노',
+    description: "Defeat Leviathan's Echo and obtain the Water Fragment.",
+    descriptionKo: "리바이어던의 메아리를 물리치고 물의 파편을 획득하세요.",
+    region: 'tidecrest_shore',
+    requiresLevel: 18,
+    prerequisites: ['temple_trial'],
+    objectives: [
+      {
+        type: 'defeat',
+        target: 'leviathans_echo',
+        count: 1,
+        current: 0,
+        description: "Defeat Leviathan's Echo",
+        descriptionKo: '리바이어던의 메아리 격파'
+      }
+    ],
+    rewards: {
+      gold: 3000,
+      exp: 1500,
+      items: [{ itemId: 'water_fragment', quantity: 1 }],
+      unlocks: ['portal_tidecrest_to_stormwatch']
+    },
+    status: 'locked'
   },
+
+  // ===== Additional Starter Quests =====
   {
-    id: 'evolution_master',
-    title: 'Lord of Change',
-    description: 'Successfully evolve 10 monsters.',
-    rewardGold: 3000,
-    rewardExp: 1500,
-    category: 'CHALLENGE',
-    progressMax: 10
-  },
-  {
-    id: 'rare_hunter',
-    title: 'Rare Hunter',
-    description: 'Capture a monster with "Rare" or higher rarity.',
-    rewardGold: 1000,
-    rewardExp: 500,
-    category: 'CHALLENGE'
-  },
-  {
-    id: 'legendary_hunter',
-    title: 'Legendary Hunter',
-    description: 'Capture a monster with "Legendary" rarity.',
-    rewardGold: 10000,
-    rewardExp: 5000,
-    category: 'CHALLENGE'
-  },
-  {
-    id: 'faction_friend',
-    title: 'Trusted Ally',
-    description: 'Reach 100 Reputation with any faction.',
-    rewardGold: 1000,
-    rewardExp: 500,
-    category: 'CHALLENGE'
-  },
-  {
-    id: 'faction_hero',
-    title: 'Faction Hero',
-    description: 'Reach 500 Reputation with any faction.',
-    rewardGold: 5000,
-    rewardExp: 2500,
-    category: 'CHALLENGE'
-  },
-  {
-    id: 'skill_unlock_10',
-    title: 'Power Awakening',
-    description: 'Unlock 10 skill nodes across your monsters.',
-    rewardGold: 1000,
-    rewardExp: 500,
-    category: 'CHALLENGE',
-    progressMax: 10
-  },
-  {
-    id: 'skill_unlock_all',
-    title: 'Master of One',
-    description: 'Unlock all skill nodes for a single monster.',
-    rewardGold: 5000,
-    rewardExp: 2500,
-    category: 'CHALLENGE'
-  },
-  {
-    id: 'win_streak_10',
-    title: 'Unstoppable',
-    description: 'Win 10 battles in a row without losing a monster.',
-    rewardGold: 1000,
-    rewardExp: 500,
-    category: 'CHALLENGE',
-    progressMax: 10
-  },
-  {
-    id: 'win_streak_50',
-    title: 'God of Battle',
-    description: 'Win 50 battles in a row.',
-    rewardGold: 10000,
-    rewardExp: 5000,
-    category: 'CHALLENGE',
-    progressMax: 50
-  },
-  {
-    id: 'pesticide_specialist',
-    title: 'Pesticide Specialist',
-    description: 'Defeat 100 Puffles.',
-    rewardGold: 2000,
-    rewardExp: 1000,
-    category: 'CHALLENGE',
-    progressMax: 100
+    id: 'intro_evolution',
+    type: 'side',
+    name: 'Power of Evolution',
+    nameKo: '진화의 힘',
+    description: 'Evolve a monster for the first time.',
+    descriptionKo: '처음으로 몬스터를 진화시키세요.',
+    region: 'emberfall_grove',
+    requiresLevel: 15,
+    objectives: [
+      {
+        type: 'evolve',
+        target: 'any',
+        count: 1,
+        current: 0,
+        description: 'Evolve any monster',
+        descriptionKo: '몬스터 1마리 진화'
+      }
+    ],
+    rewards: {
+      gold: 1000,
+      exp: 500,
+      items: [{ itemId: 'evolution_stone', quantity: 1 }]
+    },
+    status: 'locked'
   }
 ];
+
+// Quick lookup by ID
+export const QUESTS: Record<string, Quest> = {};
+QUEST_DATA.forEach(q => QUESTS[q.id] = q);

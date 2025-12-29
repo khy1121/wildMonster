@@ -46,7 +46,19 @@ describe('Progression Logic', () => {
       lastLoginDate: '',
       consecutiveDays: 0,
       claimedToday: false
-    }
+    },
+    currentRegion: 'chronos_plaza',
+    unlockedRegions: ['chronos_plaza'],
+    unlockedPortals: [],
+    storyProgress: {
+      fragmentsCollected: 0,
+      bossesDefeated: [],
+      mainQuestsCompleted: [],
+      loreNotesFound: 0,
+      currentAct: 1
+    },
+    activeQuestObjectives: {},
+    foundLoreNotes: []
   };
 
   it('calculates stats correctly based on level', () => {

@@ -6,7 +6,9 @@ export enum ElementType {
   ELECTRIC = 'ELECTRIC',
   NEUTRAL = 'NEUTRAL',
   DARK = 'DARK',
-  LIGHT = 'LIGHT'
+  LIGHT = 'LIGHT',
+  ICE = 'ICE',
+  VOID = 'VOID'
 }
 
 export enum FactionType {
@@ -278,6 +280,13 @@ export interface GameState {
   incubators: IncubatorSlot[];
   // Phase 4
   dailyLogin: DailyLoginState;
+  // Phase 5: World Building
+  currentRegion: string;  // Current region ID
+  unlockedRegions: string[];  // Unlocked region IDs
+  unlockedPortals: string[];  // Unlocked portal IDs
+  storyProgress: StoryProgress;
+  activeQuestObjectives: Record<string, QuestObjective[]>;  // questId -> objectives
+  foundLoreNotes: string[];  // Lore note IDs
 }
 
 export type GameEvent =
@@ -321,4 +330,153 @@ export interface BattleState {
   playerMonsters: BattleEntity[];
   enemyMonsters: BattleEntity[];
   log: string[];
+}
+
+// ===== PHASE 5: World Building Types =====
+
+export type EnvironmentType = 'forest' | 'ocean' | 'mountain' | 'cave' | 'meadow' | 'frozen' | 'sky' | 'void';
+export type WeatherType = 'clear' | 'rain' | 'thunderstorm' | 'blizzard' | 'fog' | 'rainbow';
+export type MonsterRarity = 'common' | 'uncommon' | 'rare' | 'elite' | 'hidden' | 'mythic' | 'legendary';
+
+export interface Portal {
+  id: string;
+  name: string;
+  nameKo?: string;
+  fromRegion: string;
+  toRegion: string;
+  unlockLevel: number;
+  unlockQuest?: string;
+  bossRequired?: boolean;
+  icon: string;
+}
+
+export interface EncounterPool {
+  common: string[];      // 70% chance
+  uncommon: string[];    // 25% chance
+  rare: string[];        // 5% chance
+  elite?: string[];      // 2% from common/uncommon pool, 1.5x stats
+  hidden?: string[];     // Weather/time dependent
+  mythic?: string[];     // Very rare, 0.1% chance
+}
+
+export interface Region {
+  id: string;
+  name: string;
+  nameKo?: string;
+  description: string;
+  descriptionKo?: string;
+  element: ElementType;
+  levelRange: { tamer: { min: number; max: number }; wilder: { min: number; max: number } };
+  encounterPool: EncounterPool;
+  boss: string;  // Boss ID
+  quests: string[];  // Quest IDs
+  portals: string[];  // Portal IDs
+  npcs: string[];  // NPC IDs
+  loreNotes: string[];  // Lore Note IDs
+  bgMusic?: string;
+  environment: EnvironmentType;
+  weather?: WeatherType;
+  isSafeZone?: boolean;
+}
+
+export interface BossPhase {
+  hpThreshold: number;  // Percentage (0-100)
+  pattern: string[];
+  description: string;
+  descriptionKo?: string;
+}
+
+export interface BossEncounter {
+  id: string;
+  name: string;
+  nameKo?: string;
+  speciesId: string;  // Uses monster template
+  level: number;
+  maxHp: number;
+  phases: BossPhase[];
+  enrageTimer?: number;  // Milliseconds
+  guaranteedRewards: {
+    gold: number;
+    exp: number;
+    items: { itemId: string; quantity: number }[];
+    fragment?: string;  // Story fragment ID
+  };
+  icon: string;
+  defeated: boolean;
+}
+
+export type QuestType = 'main' | 'side' | 'lore' | 'hidden';
+export type QuestStatus = 'locked' | 'available' | 'active' | 'completed';
+
+export interface QuestObjective {
+  type: 'defeat' | 'collect' | 'talk' | 'explore' | 'evolve' | 'capture';
+  target: string;  // Monster ID, Item ID, NPC ID, Region ID
+  count: number;
+  current: number;
+  description: string;
+  descriptionKo?: string;
+}
+
+export interface Quest {
+  id: string;
+  type: QuestType;
+  name: string;
+  nameKo?: string;
+  description: string;
+  descriptionKo?: string;
+  region: string;
+  requiresLevel?: number;
+  prerequisites?: string[];  // Quest IDs
+  objectives: QuestObjective[];
+  rewards: {
+    gold: number;
+    exp: number;
+    items?: { itemId: string; quantity: number }[];
+    unlocks?: string[];  // Portal IDs, Region IDs
+  };
+  npcGiver?: string;
+  status: QuestStatus;
+}
+
+export interface NPC {
+  id: string;
+  name: string;
+  nameKo?: string;
+  role: string;
+  roleKo?: string;
+  region: string;
+  dialogue: {
+    greeting: string;
+    greetingKo?: string;
+    questAvailable?: string;
+    questAvailableKo?: string;
+    questActive?: string;
+    questActiveKo?: string;
+    questComplete?: string;
+    questCompleteKo?: string;
+  };
+  icon: string;
+  quests?: string[];  // Quest IDs this NPC gives
+}
+
+export interface LoreNote {
+  id: string;
+  title: string;
+  titleKo?: string;
+  content: string;
+  contentKo?: string;
+  region: string;
+  category: 'history' | 'character' | 'world' | 'fragment';
+  found: boolean;
+}
+
+export type EndingType = 'good' | 'true' | 'dark';
+
+export interface StoryProgress {
+  fragmentsCollected: number;
+  bossesDefeated: string[];
+  mainQuestsCompleted: string[];
+  loreNotesFound: number;
+  currentAct: number;
+  endingAchieved?: EndingType;
 }
