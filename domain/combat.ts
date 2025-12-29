@@ -1,6 +1,7 @@
 
 import { MonsterInstance, Stats } from './types';
 import { SKILL_DATA } from '../data/skills';
+import { StatusEffect, Weather } from './statusEffects';
 
 export interface BattleBuff {
   id: string;
@@ -23,6 +24,9 @@ export interface CombatEntity {
   buffs: BattleBuff[];
   enhancementLevel: number;
   heldItemId?: string;
+  // Status Effects
+  status: StatusEffect | null;
+  volatileStatus: string[]; // Temporary battle-only statuses
 }
 
 export function calculateDamage(attacker: CombatEntity, defender: CombatEntity, skillId: string): number {

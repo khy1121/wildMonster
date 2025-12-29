@@ -53,6 +53,26 @@ export interface Item {
   factionLock?: FactionType;
 }
 
+// Equipment System
+export type EquipmentSlot = 'weapon' | 'armor' | 'accessory1' | 'accessory2';
+
+export interface Equipment {
+  id: string;
+  name: string;
+  nameKo?: string;
+  description: string;
+  descriptionKo?: string;
+  slot: EquipmentSlot;
+  rarity: Rarity;
+  requiredLevel: number;
+  stats: Partial<Stats>;  // Stat bonuses
+  price: number;
+  icon: string;
+  allowedTypes?: ElementType[];
+  flavorText?: string;
+  factionLock?: FactionType;
+}
+
 export interface SkillNode {
   id: string;
   name: string;
@@ -167,15 +187,24 @@ export interface InventoryItem {
 
 export interface Quest {
   id: string;
-  title: string;
+  type: 'main' | 'side' | 'hidden' | 'lore'; // Replaces category
+  name: string;
+  nameKo?: string;
   description: string;
-  rewardGold: number;
-  rewardExp: number;
-  rewardItems?: InventoryItem[];
-  requiredFlag?: string;
-  requiredLevel?: number;
-  category: 'DAILY' | 'WEEKLY' | 'STORY' | 'CHALLENGE';
-  progressMax?: number; // For quests like "Catch 3 monsters"
+  descriptionKo?: string;
+  region: string;
+  requiresLevel?: number;
+  prerequisites?: string[];
+  objectives: QuestObjective[];
+  rewards: {
+    gold: number;
+    exp: number;
+    items?: { itemId: string; quantity: number }[];
+    unlocks?: string[];
+  };
+  npcGiver?: string;
+  status: QuestStatus;
+  progressMax?: number; // Kept for legacy compatibility if needed
 }
 
 export type AchievementCategory = 'combat' | 'collection' | 'progression' | 'economy';
@@ -259,6 +288,8 @@ export interface Tamer {
   // Phase 4: Expeditions
   activeExpeditions: ActiveExpedition[];
   expeditionSlots: number;  // default 1
+  // Equipment System
+  equippedItems: Partial<Record<EquipmentSlot, string>>;  // slot -> itemId
 }
 
 export interface GameState {

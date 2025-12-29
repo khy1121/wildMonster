@@ -29,7 +29,8 @@ describe('Evolution System', () => {
       achievementProgress: {},
       unlockedAchievements: [],
       activeExpeditions: [],
-      expeditionSlots: 1
+      expeditionSlots: 1,
+      equippedItems: {}
     },
     worldPosition: { x: 0, y: 0 },
     currentScene: 'BootScene',

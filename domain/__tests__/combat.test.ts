@@ -17,7 +17,9 @@ describe('Combat Logic', () => {
         skills: ['scratch', 'ember'],
         cooldowns: {},
         buffs: [],
-        enhancementLevel: 0
+        enhancementLevel: 0,
+        status: null,
+        volatileStatus: []
     };
 
     const mockDefender: CombatEntity = {
@@ -34,7 +36,9 @@ describe('Combat Logic', () => {
         skills: ['tackle', 'bubble'],
         cooldowns: {},
         buffs: [],
-        enhancementLevel: 0
+        enhancementLevel: 0,
+        status: null,
+        volatileStatus: []
     };
 
     it('calculates physical damage correctly', () => {

@@ -24,7 +24,7 @@ describe('Held Item System', () => {
 
     it('equips an item and boosts stats', () => {
         const initialAtk = monster.currentStats.attack;
-        const result = gsm.equipItem(monster.uid, 'attack_ring'); // +10 ATK
+        const result = gsm.equipMonsterItem(monster.uid, 'attack_ring'); // +10 ATK
 
         expect(result.success).toBe(true);
         expect(monster.heldItemId).toBe('attack_ring');
@@ -37,9 +37,9 @@ describe('Held Item System', () => {
 
     it('unequips an item and reverts stats', () => {
         const initialAtk = monster.currentStats.attack;
-        gsm.equipItem(monster.uid, 'attack_ring');
+        gsm.equipMonsterItem(monster.uid, 'attack_ring');
 
-        const result = gsm.unequipItem(monster.uid);
+        const result = gsm.unequipMonsterItem(monster.uid);
         expect(result.success).toBe(true);
         expect(monster.heldItemId).toBeUndefined();
         expect(monster.currentStats.attack).toBe(initialAtk);
@@ -51,10 +51,10 @@ describe('Held Item System', () => {
 
     it('swaps items automatically', () => {
         const initialHp = monster.currentStats.hp;
-        gsm.equipItem(monster.uid, 'attack_ring');
+        gsm.equipMonsterItem(monster.uid, 'attack_ring');
 
         // Swap to Health Necklace (+500 HP)
-        const result = gsm.equipItem(monster.uid, 'health_necklace');
+        const result = gsm.equipMonsterItem(monster.uid, 'health_necklace');
         expect(result.success).toBe(true);
         expect(monster.heldItemId).toBe('health_necklace');
         expect(monster.currentStats.hp).toBe(initialHp + 500);
@@ -67,7 +67,7 @@ describe('Held Item System', () => {
     });
 
     it('fails if item is not equipment', () => {
-        const result = gsm.equipItem(monster.uid, 'potion');
+        const result = gsm.equipMonsterItem(monster.uid, 'potion');
         expect(result.success).toBe(false);
         expect(result.message).toContain('Not an equipment');
     });

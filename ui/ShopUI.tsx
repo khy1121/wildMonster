@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { GameState } from '../domain/types';
 import { ITEM_DATA } from '../data/items';
+import { EQUIPMENT_DATA } from '../data/equipment';
 import { getTranslation, getFactionDiscount } from '../localization/strings';
 import { Modal } from './components/Modal';
 import { Button } from './components/Button';
@@ -29,15 +30,26 @@ const ShopUI: React.FC<ShopUIProps> = ({ state, onBuy, onClose }) => {
     });
   }
 
-  const [selectedItemId, setSelectedItemId] = useState<string>(Object.keys(ITEM_DATA)[0]);
-  const selectedItem = ITEM_DATA[selectedItemId];
+  // Helper to get item or equipment data
+  const getItemData = (id: string) => {
+    return ITEM_DATA[id] || EQUIPMENT_DATA.find(eq => eq.id === id);
+  };
 
-  const getTierColor = (tier?: string) => {
-    switch (tier) {
-      case 'S': return 'text-yellow-400 border-yellow-500/50 bg-yellow-950/20';
-      case 'A': return 'text-purple-400 border-purple-500/50 bg-purple-950/20';
-      case 'B': return 'text-blue-400 border-blue-500/50 bg-blue-950/20';
-      case 'C': return 'text-green-400 border-green-500/50 bg-green-950/20';
+  // Initialize selected item from shop stock or fallback to first item
+  const initialItemId = (state.shopStock && state.shopStock.length > 0)
+    ? state.shopStock[0]
+    : Object.keys(ITEM_DATA)[0];
+
+  const [selectedItemId, setSelectedItemId] = useState<string>(initialItemId);
+  const selectedItem = getItemData(selectedItemId) || ITEM_DATA[Object.keys(ITEM_DATA)[0]];
+
+  const getTierColor = (tierOrRarity?: string) => {
+    switch (tierOrRarity) {
+      case 'S': case 'Legendary': return 'text-yellow-400 border-yellow-500/50 bg-yellow-950/20';
+      case 'A': case 'Epic': return 'text-purple-400 border-purple-500/50 bg-purple-950/20';
+      case 'B': case 'Rare': return 'text-blue-400 border-blue-500/50 bg-blue-950/20';
+      case 'C': case 'Uncommon': return 'text-green-400 border-green-500/50 bg-green-950/20';
+      case 'Common': return 'text-slate-300 border-slate-600 bg-slate-800/20';
       default: return 'text-slate-400 border-slate-700 bg-slate-900/50';
     }
   };
@@ -67,11 +79,11 @@ const ShopUI: React.FC<ShopUIProps> = ({ state, onBuy, onClose }) => {
 
           <div className="grid grid-cols-1 gap-3 md:gap-4 overflow-y-auto pr-1 custom-scrollbar">
             {(state.shopStock || []).map(id => {
-              const item = ITEM_DATA[id];
+              const item = getItemData(id);
               if (!item) return null;
               const effectivePrice = getPrice(item.id);
               const isSelected = selectedItemId === item.id;
-              const tierStyle = getTierColor(item.tier);
+              const tierStyle = getTierColor(item.tier || ('rarity' in item ? item.rarity : undefined));
 
               return (
                 <div
@@ -81,17 +93,19 @@ const ShopUI: React.FC<ShopUIProps> = ({ state, onBuy, onClose }) => {
                 >
                   <div className="relative">
                     <span className="text-3xl md:text-4xl">{item.icon}</span>
-                    {item.tier && (
+                    {(item.tier || ('rarity' in item)) && (
                       <div className={`absolute -top-2 -right-2 w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-black border ${tierStyle}`}>
-                        {item.tier}
+                        {item.tier || ('rarity' in item ? item.rarity?.[0] : '')}
                       </div>
                     )}
                   </div>
                   <div className="flex-1 min-w-0 text-left">
                     <h4 className="text-white font-bold text-sm md:text-base truncate">
-                      {t.items[item.id as keyof typeof t.items] || item.name}
+                      {state.language === 'ko' && 'nameKo' in item ? item.nameKo : t.items[item.id as keyof typeof t.items] || item.name}
                     </h4>
-                    <p className="text-slate-500 text-[10px] uppercase tracking-widest truncate">{item.category}</p>
+                    <p className="text-slate-500 text-[10px] uppercase tracking-widest truncate">
+                      {'category' in item ? item.category : 'Equipment'}
+                    </p>
                   </div>
                   <div className="flex flex-col items-end shrink-0">
                     <div className="text-yellow-500 font-bold font-mono text-sm md:text-base">{effectivePrice} G</div>

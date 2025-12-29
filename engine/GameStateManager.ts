@@ -1,5 +1,5 @@
 
-import { GameState, Tamer, MonsterInstance, BattleRewards, InventoryItem, Language, FactionType, EvolutionOption, GameEvent, IncubatorSlot } from '../domain/types';
+import { GameState, Tamer, MonsterInstance, BattleRewards, InventoryItem, Language, FactionType, EvolutionOption, GameEvent, IncubatorSlot, Stats } from '../domain/types';
 import { MONSTER_DATA } from '../data/monsters';
 import { ITEM_DATA } from '../data/items';
 import { CHARACTER_DATA } from '../data/characters';
@@ -14,6 +14,7 @@ import { getFactionDiscount } from '../localization/strings';
 import { ACHIEVEMENTS } from '../data/achievements';
 import { getDailyReward } from '../data/dailyRewards';
 import { EXPEDITIONS } from '../data/expeditions';
+import { EQUIPMENT_DATA, EQUIPMENT } from '../data/equipment';
 
 const INITIAL_STATE: GameState = {
   version: 1,
@@ -29,15 +30,12 @@ const INITIAL_STATE: GameState = {
     inventory: [
       { itemId: 'capture_orb', quantity: 5 }
     ],
-    unlockedPartySlots: 6,
-    unlockedStorageSlots: 20,
-    unlockedSupportSkills: ['cheer'],
-    collection: [],
-    // Phase 4
     achievementProgress: {},
     unlockedAchievements: [],
     activeExpeditions: [],
-    expeditionSlots: 1
+    expeditionSlots: 1,
+    // Equipment System
+    equippedItems: {}  // No items equipped initially
   },
   worldPosition: { x: 400, y: 300 },
   currentScene: 'BootScene',
@@ -146,6 +144,11 @@ export class GameStateManager {
       this.state.foundLoreNotes = [];
     }
 
+    // Equipment System: Ensure equippedItems exists for old saves
+    if (!this.state.tamer.equippedItems) {
+      this.state.tamer.equippedItems = {};
+    }
+
     if (!this.state.shopStock || !this.state.shopNextRefresh) {
       this.refreshShopStock();
     } else {
@@ -181,12 +184,24 @@ export class GameStateManager {
       return item.category !== 'Material';
     });
 
-    const shuffled = [...allItems].sort(() => 0.5 - Math.random());
-    const selected = shuffled.slice(0, 4);
+    // Add equipment items to shop pool
+    const equipmentIds = EQUIPMENT_DATA.map(eq => eq.id);
+    const shopPool = [...allItems, ...equipmentIds];
+
+    const shuffled = [...shopPool].sort(() => 0.5 - Math.random());
+    const selected = shuffled.slice(0, 6);  // Increased from 4 to 6 to accommodate equipment
 
     // RPG Expansion: Ensure specialty items are in stock
     if (!selected.includes('storage_license')) selected.push('storage_license');
     if (!selected.includes('basic_incubator')) selected.push('basic_incubator');
+
+    // Ensure at least 1-2 equipment items in stock
+    const hasEquipment = selected.some(id => equipmentIds.includes(id));
+    if (!hasEquipment && equipmentIds.length > 0) {
+      // Replace a random item with equipment
+      const randomEquipment = equipmentIds[Math.floor(Math.random() * equipmentIds.length)];
+      selected[0] = randomEquipment;
+    }
 
     const refreshInterval = 4 * 60 * 60 * 1000;
     this.state.shopStock = selected;
@@ -232,7 +247,9 @@ export class GameStateManager {
   }
 
   getEffectivePrice(itemId: string): number {
-    const item = ITEM_DATA[itemId];
+    const item = ITEM_DATA[itemId] || EQUIPMENT[itemId];
+    if (!item) return 0;
+
     let maxDiscount = 0;
     Object.values(this.state.reputation).forEach(val => {
       maxDiscount = Math.max(maxDiscount, getFactionDiscount(val));
@@ -241,7 +258,7 @@ export class GameStateManager {
   }
 
   buyItem(itemId: string, quantity: number): boolean {
-    const item = ITEM_DATA[itemId];
+    const item = ITEM_DATA[itemId] || EQUIPMENT[itemId];
     if (!item) return false;
 
     if (item.factionLock) {
@@ -249,7 +266,7 @@ export class GameStateManager {
       if (rep < 100) return false;
     }
 
-    if (item.requiredMaterials) {
+    if ('requiredMaterials' in item && item.requiredMaterials) {
       for (const mat of item.requiredMaterials) {
         const invMat = this.state.tamer.inventory.find(i => i.itemId === mat.itemId);
         if (!invMat || invMat.quantity < mat.quantity * quantity) return false;
@@ -260,7 +277,7 @@ export class GameStateManager {
     if (this.state.tamer.gold < totalCost) return false;
 
     this.state.tamer.gold -= totalCost;
-    if (item.requiredMaterials) {
+    if ('requiredMaterials' in item && item.requiredMaterials) {
       item.requiredMaterials.forEach(mat => {
         this.state.tamer.inventory = consumeItem(this.state.tamer.inventory, mat.itemId, mat.quantity * quantity);
       });
@@ -334,7 +351,7 @@ export class GameStateManager {
     }
   }
 
-  equipItem(monsterUid: string, itemId: string): { success: boolean; message: string } {
+  equipMonsterItem(monsterUid: string, itemId: string): { success: boolean; message: string } {
     const monster = this.state.tamer.party.find(m => m.uid === monsterUid)
       || this.state.tamer.storage.find(m => m.uid === monsterUid);
     if (!monster) return { success: false, message: 'Monster not found' };
@@ -342,12 +359,20 @@ export class GameStateManager {
     const invItem = this.state.tamer.inventory.find(i => i.itemId === itemId);
     if (!invItem || invItem.quantity <= 0) return { success: false, message: 'Item not in inventory' };
 
-    const itemData = ITEM_DATA[itemId];
-    if (itemData.category !== 'Equipment') return { success: false, message: 'Not an equipment item' };
+    const itemData = ITEM_DATA[itemId] || EQUIPMENT[itemId];
+    if (!itemData) return { success: false, message: 'Item data not found' };
+
+    // Check category or slot. Equipment items from equipment.ts have 'slot' but may not have 'category' explicitly set to 'Equipment' in the check if it's strict.
+    // However, logic below checks category === 'Equipment'. 
+    // New equipment items don't have 'category' field in data/equipment.ts? Let's check.
+    // They have 'slot'. We should allow if it has 'slot' OR category === 'Equipment'.
+    const isEquipment = ('category' in itemData && itemData.category === 'Equipment') || ('slot' in itemData);
+
+    if (!isEquipment) return { success: false, message: 'Not an equipment item' };
 
     // Unequip current if any
     if (monster.heldItemId) {
-      this.unequipItem(monsterUid);
+      this.unequipMonsterItem(monsterUid);
     }
 
     // Equip new
@@ -359,7 +384,8 @@ export class GameStateManager {
     return { success: true, message: 'Item equipped' };
   }
 
-  unequipItem(monsterUid: string): { success: boolean; message: string } {
+
+  unequipMonsterItem(monsterUid: string): { success: boolean; message: string } {
     const monster = this.state.tamer.party.find(m => m.uid === monsterUid)
       || this.state.tamer.storage.find(m => m.uid === monsterUid);
     if (!monster) return { success: false, message: 'Monster not found' };
@@ -376,13 +402,16 @@ export class GameStateManager {
   }
 
   useItem(itemId: string): { success: boolean, message: string } {
-    const item = ITEM_DATA[itemId];
+    const item = ITEM_DATA[itemId] || EQUIPMENT[itemId];
     if (!item) return { success: false, message: 'Item not found' };
 
     const invItem = this.state.tamer.inventory.find(i => i.itemId === itemId);
     if (!invItem || invItem.quantity <= 0) return { success: false, message: 'No more items' };
 
-    if (item.category === 'Healing') {
+    // Check if it's a regular item with category (not equipment)
+    const isRegularItem = 'category' in item;
+
+    if (isRegularItem && item.category === 'Healing') {
       const activeMonster = this.state.tamer.party[0];
       if (!activeMonster) return { success: false, message: 'No monster to heal' };
       if (activeMonster.currentHp >= activeMonster.currentStats.maxHp) return { success: false, message: 'HP is already full' };
@@ -538,7 +567,9 @@ export class GameStateManager {
       achievementProgress: {},
       unlockedAchievements: [],
       activeExpeditions: [],
-      expeditionSlots: 1
+      expeditionSlots: 1,
+      // Equipment
+      equippedItems: {}
     };
 
     // Phase 4: Reset daily login for new game
@@ -566,10 +597,15 @@ export class GameStateManager {
       if (this.state.pendingRewards.includes(quest.id)) return;
 
       let satisfied = true;
-      if (quest.requiredLevel && this.state.tamer.level < quest.requiredLevel) satisfied = false;
-      if (quest.requiredFlag && !this.state.flags[quest.requiredFlag]) satisfied = false;
+      if (quest.requiresLevel && this.state.tamer.level < quest.requiresLevel) satisfied = false;
 
-      // Special conditional logic for certain quest IDs
+      // Check prerequisites
+      if (quest.prerequisites && quest.prerequisites.length > 0) {
+        const allMet = quest.prerequisites.every(pid => this.state.completedQuests.includes(pid));
+        if (!allMet) satisfied = false;
+      }
+
+      // Special conditional logic for certain quest IDs (Legacy/Defensive)
       if (quest.id === 'first_capture' && !this.state.flags['first_capture_done']) satisfied = false;
       if (quest.id === 'collector_beginner' && this.state.tamer.collection.length < 3) satisfied = false;
       if (quest.id === 'collector_pro' && this.state.tamer.collection.length < 20) satisfied = false;
@@ -628,12 +664,12 @@ export class GameStateManager {
     }
 
     // Grant rewards
-    this.state.tamer.gold += quest.rewardGold;
-    const { tamer } = addExpToTamer(this.state.tamer, quest.rewardExp);
+    this.state.tamer.gold += quest.rewards.gold;
+    const { tamer } = addExpToTamer(this.state.tamer, quest.rewards.exp);
     this.state.tamer = tamer;
 
-    if (quest.rewardItems) {
-      quest.rewardItems.forEach(ri => {
+    if (quest.rewards.items) {
+      quest.rewards.items.forEach(ri => {
         this.state.tamer.inventory = addToInventory(this.state.tamer.inventory, ri.itemId, ri.quantity);
       });
     }
@@ -650,10 +686,10 @@ export class GameStateManager {
     }
 
     const currentQuest = QUEST_DATA.find(q => q.id === questId);
-    if (!currentQuest || currentQuest.category === 'STORY') return; // Can't reroll story quests
+    if (!currentQuest || currentQuest.type === 'main') return; // Can't reroll story/main quests
 
     const availableQuests = QUEST_DATA.filter(q =>
-      q.category !== 'STORY' &&
+      q.type !== 'main' &&
       !this.state.activeQuests.includes(q.id) &&
       !this.state.completedQuests.includes(q.id)
     );
@@ -673,15 +709,15 @@ export class GameStateManager {
 
     let changed = false;
 
-    // Daily Refresh
+    // Daily Refresh (Disabled for Phase 5 initial rollout as data has no DAILY type)
     if (now - this.state.lastQuestRefresh > oneDay) {
       this.state.lastQuestRefresh = now;
       this.state.flags['rerolled_today'] = false;
-
-      const activeDailies = QUEST_DATA.filter(q => q.category === 'DAILY' && this.state.activeQuests.includes(q.id));
+      /*
+      const activeDailies = QUEST_DATA.filter(q => q.type === 'daily' && this.state.activeQuests.includes(q.id));
       if (activeDailies.length < 3) {
         const availableDailies = QUEST_DATA.filter(q =>
-          q.category === 'DAILY' &&
+          q.type === 'daily' &&
           !this.state.activeQuests.includes(q.id) &&
           !this.state.completedQuests.includes(q.id)
         );
@@ -690,25 +726,19 @@ export class GameStateManager {
           this.state.activeQuests.push(next.id);
         }
       }
+      */
       changed = true;
     }
 
-    // Weekly Refresh
+    // Weekly Refresh (Disabled)
     if (this.state.lastWeeklyRefresh === undefined || now - this.state.lastWeeklyRefresh > oneWeek) {
       this.state.lastWeeklyRefresh = now;
-
-      const activeWeeklies = QUEST_DATA.filter(q => q.category === 'WEEKLY' && this.state.activeQuests.includes(q.id));
+      /*
+      const activeWeeklies = QUEST_DATA.filter(q => q.type === 'weekly' && this.state.activeQuests.includes(q.id));
       if (activeWeeklies.length < 1) {
-        const availableWeeklies = QUEST_DATA.filter(q =>
-          q.category === 'WEEKLY' &&
-          !this.state.activeQuests.includes(q.id) &&
-          !this.state.completedQuests.includes(q.id)
-        );
-        if (availableWeeklies.length > 0) {
-          const next = availableWeeklies[Math.floor(Math.random() * availableWeeklies.length)];
-          this.state.activeQuests.push(next.id);
-        }
+        // ...
       }
+      */
       changed = true;
     }
 
@@ -1208,10 +1238,153 @@ export class GameStateManager {
     const now = Date.now();
     this.state.tamer.activeExpeditions.forEach(exp => {
       if (now >= exp.endTime) {
-        // Expedition is complete, could emit an event or set a flag
         bus.emitEvent({ type: 'LOG_MESSAGE', message: `Expedition complete! Claim your rewards.` });
       }
     });
+  }
+
+  // ===== EQUIPMENT SYSTEM =====
+
+  /**
+   * Check if tamer can equip an item
+   */
+  canEquipItem(itemId: string): { canEquip: boolean; reason?: string } {
+    const equipment = EQUIPMENT[itemId];
+    if (!equipment) {
+      return { canEquip: false, reason: 'Equipment not found' };
+    }
+
+    // Check level requirement
+    if (this.state.tamer.level < equipment.requiredLevel) {
+      return { canEquip: false, reason: `Level ${equipment.requiredLevel} required` };
+    }
+
+    // Check if tamer owns this item
+    const inventoryItem = this.state.tamer.inventory.find(i => i.itemId === itemId);
+    if (!inventoryItem || inventoryItem.quantity < 1) {
+      return { canEquip: false, reason: 'Item not in inventory' };
+    }
+
+    return { canEquip: true };
+  }
+
+  /**
+   * Equip an item to a slot
+   */
+  equipItem(itemId: string): { success: boolean; message: string } {
+    const canEquip = this.canEquipItem(itemId);
+    if (!canEquip.canEquip) {
+      return { success: false, message: canEquip.reason || 'Cannot equip' };
+    }
+
+    const equipment = EQUIPMENT[itemId];
+    const slot = equipment.slot;
+
+    // Unequip existing item in slot if any
+    const currentEquipped = this.state.tamer.equippedItems[slot];
+    if (currentEquipped) {
+      this.unequipItem(slot);
+    }
+
+    // Equip new item
+    this.state.tamer.equippedItems[slot] = itemId;
+
+    // Remove from inventory (equipment is "worn" not consumed)
+    // Actually, we should keep it in inventory but mark as equipped
+    // For simplicity, we'll just track in equippedItems
+
+    this.updateState({});
+    bus.emitEvent({
+      type: 'LOG_MESSAGE',
+      message: `Equipped ${equipment.name}!`
+    });
+
+    return { success: true, message: `Equipped ${equipment.name}` };
+  }
+
+  /**
+   * Unequip an item from a slot
+   */
+  unequipItem(slot: string): { success: boolean; message: string } {
+    const itemId = this.state.tamer.equippedItems[slot as keyof typeof this.state.tamer.equippedItems];
+
+    if (!itemId) {
+      return { success: false, message: 'No item equipped in this slot' };
+    }
+
+    const equipment = EQUIPMENT[itemId];
+
+    // Remove from equipped
+    delete this.state.tamer.equippedItems[slot as keyof typeof this.state.tamer.equippedItems];
+
+    // Add back to inventory (if we had removed it)
+    // Since we didn't remove it, no need to add back
+
+    this.updateState({});
+    bus.emitEvent({
+      type: 'LOG_MESSAGE',
+      message: `Unequipped ${equipment?.name || 'item'}`
+    });
+
+    return { success: true, message: 'Item unequipped' };
+  }
+
+  /**
+   * Get total stat bonuses from all equipped items
+   */
+  getEquippedStats(): Partial<Stats> {
+    const totalStats: Partial<Stats> = {};
+
+    Object.values(this.state.tamer.equippedItems).forEach(itemId => {
+      if (!itemId) return;
+
+      const equipment = EQUIPMENT[itemId];
+      if (!equipment || !equipment.stats) return;
+
+      // Add each stat
+      Object.entries(equipment.stats).forEach(([stat, value]) => {
+        const key = stat as keyof Stats;
+        if (typeof value === 'number') {
+          totalStats[key] = (totalStats[key] || 0) + value;
+        }
+      });
+    });
+
+    return totalStats;
+  }
+
+  /**
+   * Get tamer's effective stats including equipment bonuses
+   */
+  getTamerEffectiveStats(): Stats {
+    const baseStats: Stats = {
+      hp: 100,
+      maxHp: 100 + (this.state.tamer.level * 10),
+      attack: 10 + (this.state.tamer.level * 2),
+      defense: 10 + (this.state.tamer.level * 2),
+      specialAttack: 10 + (this.state.tamer.level * 2),
+      skillResistance: 10 + (this.state.tamer.level * 2),
+      speed: 50 + this.state.tamer.level
+    };
+
+    const equipBonus = this.getEquippedStats();
+
+    // Merge bonuses
+    Object.entries(equipBonus).forEach(([stat, value]) => {
+      const key = stat as keyof Stats;
+      if (typeof value === 'number' && baseStats[key] !== undefined) {
+        (baseStats[key] as number) += value;
+      }
+    });
+
+    return baseStats;
+  }
+
+  /**
+   * Get all equipment items (for shop/inventory UI)
+   */
+  getAllEquipment(): typeof EQUIPMENT_DATA {
+    return EQUIPMENT_DATA;
   }
 }
 

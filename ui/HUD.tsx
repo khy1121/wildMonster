@@ -19,9 +19,13 @@ interface HUDProps {
   // Phase 5
   onOpenWorldMap?: () => void;
   onOpenEnhancedQuests?: () => void;
+  onOpenEquipment?: () => void;
+  onOpenSaves?: () => void;
+  onOpenHelp?: () => void;
 }
 
-const HUD: React.FC<HUDProps> = ({ state, onOpenSkills, onOpenQuests, onOpenFactions, onOpenShop, onOpenSettings, onOpenInventory, onOpenIncubator, onOpenAchievements, onOpenExpeditions, onOpenWorldMap, onOpenEnhancedQuests }) => {
+
+const HUD: React.FC<HUDProps> = ({ state, onOpenSkills, onOpenQuests, onOpenFactions, onOpenShop, onOpenSettings, onOpenInventory, onOpenIncubator, onOpenAchievements, onOpenExpeditions, onOpenWorldMap, onOpenEnhancedQuests, onOpenEquipment, onOpenSaves, onOpenHelp }) => {
   const { tamer, language, reputation } = state;
   const t = getTranslation(language);
   const activeMonster = tamer.party[0];
@@ -145,6 +149,36 @@ const HUD: React.FC<HUDProps> = ({ state, onOpenSkills, onOpenQuests, onOpenFact
                 aria-label="Open Enhanced Quest Log"
               >
                 <i className="fa-solid fa-scroll"></i> <span className="hidden sm:inline">{language === 'ko' ? '퀘스트' : 'Quests'}</span>
+              </button>
+            )}
+
+            {onOpenEquipment && (
+              <button
+                onClick={onOpenEquipment}
+                className="btn-primary flex items-center justify-center gap-2 text-[9px] md:text-[10px] min-h-[40px] bg-emerald-600 hover:bg-emerald-500 border-emerald-500"
+                aria-label="Open Equipment"
+              >
+                <i className="fa-solid fa-shield"></i> <span className="hidden sm:inline">{language === 'ko' ? '장비' : 'Equipment'}</span>
+              </button>
+            )}
+
+            {onOpenSaves && (
+              <button
+                onClick={onOpenSaves}
+                className="btn-primary flex items-center justify-center gap-2 text-[9px] md:text-[10px] min-h-[40px] bg-purple-600 hover:bg-purple-500 border-purple-500"
+                aria-label="Open Save Management"
+              >
+                <i className="fa-solid fa-floppy-disk"></i> <span className="hidden sm:inline">{language === 'ko' ? '저장' : 'Save'}</span>
+              </button>
+            )}
+
+            {onOpenHelp && (
+              <button
+                onClick={onOpenHelp}
+                className="btn-primary flex items-center justify-center gap-2 text-[9px] md:text-[10px] min-h-[40px] bg-yellow-600 hover:bg-yellow-500 border-yellow-500"
+                aria-label="Open Help Manual"
+              >
+                <i className="fa-solid fa-question-circle"></i> <span className="hidden sm:inline">{language === 'ko' ? '도움말' : 'Help'}</span>
               </button>
             )}
           </div>

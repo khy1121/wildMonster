@@ -40,7 +40,8 @@ describe('Tamer Progression', () => {
       achievementProgress: {},
       unlockedAchievements: [],
       activeExpeditions: [],
-      expeditionSlots: 1
+      expeditionSlots: 1,
+      equippedItems: {}
     };
 
     const { tamer, leveledUp } = addExpToTamer(initialTamer, 100);

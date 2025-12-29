@@ -23,6 +23,15 @@ import { DailyLoginUI } from './ui/DailyLoginUI';
 // Phase 5
 import { WorldMapUI } from './ui/WorldMapUI';
 import { EnhancedQuestLogUI } from './ui/EnhancedQuestLogUI';
+// Equipment System
+import { EquipmentUI } from './ui/EquipmentUI';
+// Save System
+import { SaveManagementUI } from './ui/SaveManagementUI';
+import { saveManager } from './engine/SaveManager';
+// Tutorial System
+import { TutorialOverlay } from './ui/TutorialOverlay';
+import { HelpManualUI } from './ui/HelpManualUI';
+import { tutorialManager } from './engine/TutorialManager';
 import { GameState, EvolutionOption, MonsterInstance } from './domain/types';  // Removed Quest - using Phase 5 structure
 import { gameEvents } from './engine/EventBus';
 import { gameStateManager } from './engine/GameStateManager';
@@ -36,12 +45,13 @@ const App: React.FC = () => {
   const [gameState, setGameState] = useState<GameState>(gameStateManager.getState());
   const [evolutionData, setEvolutionData] = useState<{ monsterUid: string, options: EvolutionOption[] } | null>(null);
   // const [completedQuest, setCompletedQuest] = useState<Quest | null>(null);  // Disabled for Phase 5
-  const [overlay, setOverlay] = useState<'NONE' | 'SKILLS' | 'SHOP' | 'QUESTS' | 'DEBUG' | 'FACTIONS' | 'MENU' | 'INVENTORY' | 'INCUBATOR' | 'ACHIEVEMENTS' | 'EXPEDITIONS' | 'WORLDMAP' | 'ENHANCED_QUESTS'>('NONE');
+  const [overlay, setOverlay] = useState<'NONE' | 'SKILLS' | 'SHOP' | 'QUESTS' | 'DEBUG' | 'FACTIONS' | 'MENU' | 'INVENTORY' | 'INCUBATOR' | 'ACHIEVEMENTS' | 'EXPEDITIONS' | 'WORLDMAP' | 'ENHANCED_QUESTS' | 'EQUIPMENT' | 'SAVES' | 'HELP'>('NONE');
   const [showDailyLogin, setShowDailyLogin] = useState(false);
   const [activeMonsterUid, setActiveMonsterUid] = useState<string | null>(null);
   const [selectionStep, setSelectionStep] = useState<'CHARACTER' | 'STARTER' | 'NONE'>('NONE');
   const [selectedCharId, setSelectedCharId] = useState<string | null>(null);
   const [activeScene, setActiveScene] = useState<string>('BootScene');
+  const [tutorialProgress, setTutorialProgress] = useState(tutorialManager.getProgress());
 
   useEffect(() => {
     const unsub = gameEvents.subscribe('STATE_UPDATED', (event) => {
@@ -104,6 +114,10 @@ const App: React.FC = () => {
 
     return () => {
       unsub();
+      // Remove other listeners if needed or rely on component unmount
+      gameEvents.off('EVOLUTION_READY', () => { });
+      gameEvents.off('SCENE_CHANGED', () => { });
+      gameEvents.off('BATTLE_END', () => { });
       SafeArea.dispose();
     };
   }, []);
@@ -159,6 +173,9 @@ const App: React.FC = () => {
             onOpenExpeditions={() => setOverlay('EXPEDITIONS')}
             onOpenWorldMap={() => setOverlay('WORLDMAP')}
             onOpenEnhancedQuests={() => setOverlay('ENHANCED_QUESTS')}
+            onOpenEquipment={() => setOverlay('EQUIPMENT')}
+            onOpenSaves={() => setOverlay('SAVES')}
+            onOpenHelp={() => setOverlay('HELP')}
           />
 
           <button
@@ -298,6 +315,34 @@ const App: React.FC = () => {
       {overlay === 'ENHANCED_QUESTS' && (
         <EnhancedQuestLogUI
           gsm={gameStateManager}
+          onClose={() => setOverlay('NONE')}
+        />
+      )}
+
+      {overlay === 'EQUIPMENT' && (
+        <EquipmentUI
+          gsm={gameStateManager}
+          onClose={() => setOverlay('NONE')}
+        />
+      )}
+
+      {overlay === 'SAVES' && (
+        <SaveManagementUI
+          onClose={() => setOverlay('NONE')}
+          onLoadSave={(slotId) => {
+            const loadedState = saveManager.loadFromSlot(slotId);
+            if (loadedState) {
+              gameStateManager.setState(loadedState);
+              setGameState(loadedState);
+              setOverlay('NONE');
+            }
+          }}
+        />
+      )}
+
+      {overlay === 'HELP' && (
+        <HelpManualUI
+          language={gameState.language}
           onClose={() => setOverlay('NONE')}
         />
       )}
