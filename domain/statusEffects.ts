@@ -221,17 +221,18 @@ export function processStatusDamage(
 
     switch (status.type) {
         case 'burn':
-            return Math.floor(maxHp * effect.damagePercent);
+            return Math.floor(maxHp * STATUS_EFFECTS.burn.damagePercent);
 
         case 'poison':
-            const poisonDamage = effect.baseDamagePercent + (status.turnsActive * effect.damageIncrease);
+            const poisonEffect = STATUS_EFFECTS.poison;
+            const poisonDamage = poisonEffect.baseDamagePercent + (status.turnsActive * poisonEffect.damageIncrease);
             return Math.floor(maxHp * poisonDamage);
 
         case 'leech':
-            return Math.floor(maxHp * effect.drainPercent);
+            return Math.floor(maxHp * STATUS_EFFECTS.leech.drainPercent);
 
         case 'curse':
-            return Math.floor(maxHp * effect.damagePercent);
+            return Math.floor(maxHp * STATUS_EFFECTS.curse.damagePercent);
 
         default:
             return 0;
@@ -239,18 +240,16 @@ export function processStatusDamage(
 }
 
 export function shouldSkipTurn(status: StatusEffect): boolean {
-    const effect = STATUS_EFFECTS[status.type];
-
     switch (status.type) {
         case 'freeze':
             // Check if thaws
-            if (Math.random() < effect.thawChance) {
+            if (Math.random() < STATUS_EFFECTS.freeze.thawChance) {
                 return false; // Thawed!
             }
             return true;
 
         case 'paralysis':
-            return Math.random() < effect.skipChance;
+            return Math.random() < STATUS_EFFECTS.paralysis.skipChance;
 
         case 'sleep':
         case 'flinch':
@@ -267,15 +266,13 @@ export function getStatModifier(
 ): number {
     if (!status) return 1.0;
 
-    const effect = STATUS_EFFECTS[status.type];
-
     if (stat === 'attack' && status.type === 'burn') {
-        return effect.attackReduction;
+        return STATUS_EFFECTS.burn.attackReduction;
     }
 
     if (stat === 'speed') {
-        if (status.type === 'paralysis') return effect.speedReduction;
-        if (status.type === 'freeze') return effect.speedReduction;
+        if (status.type === 'paralysis') return STATUS_EFFECTS.paralysis.speedReduction;
+        if (status.type === 'freeze') return STATUS_EFFECTS.freeze.speedReduction;
     }
 
     return 1.0;

@@ -14,8 +14,7 @@ export const PHASE5_MONSTERS: Record<string, MonsterSpecies> = {
         baseStats: { hp: 45, maxHp: 45, attack: 12, specialAttack: 14, defense: 8, skillResistance: 7, speed: 14 },
         icon: '🦊',
         rarity: 'Common',
-        skills: { basic: 'scratch', special: 'ember' },
-        spriteKey: 'emberkit'
+        skills: { basic: 'scratch', special: 'ember' }
     },
     flarehound: {
         id: 'flarehound',

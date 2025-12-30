@@ -1,0 +1,313 @@
+{
+    "ignis": {
+        "id": "ignis",
+        "name": "Ignis",
+        "nameKo": "이그니스",
+        "type": "FIRE",
+        "faction": "EMBER_CLAN",
+        "evolutionStage": 1,
+        "baseStats": {
+            "hp": 50,
+            "maxHp": 50,
+            "attack": 14,
+            "specialAttack": 16,
+            "defense": 10,
+            "skillResistance": 8,
+            "speed": 12
+        },
+        "rarity": "Rare",
+        "icon": "🦖",
+        "spriteKey": "ignis",
+        "skills": {
+            "basic": "scratch",
+            "special": "ember"
+        },
+        "evolutions": [
+            {
+                "targetSpeciesId": "flarehide",
+                "levelThreshold": 15,
+                "description": "Evolves into a powerful fire beast",
+                "descriptionKo": "성장한 불꽃의 피부",
+                "previewSkills": [
+                    "tackle"
+                ]
+            }
+        ]
+    },
+    "flarehide": {
+        "id": "flarehide",
+        "name": "Flarehide",
+        "nameKo": "플레어하이드",
+        "type": "FIRE",
+        "faction": "EMBER_CLAN",
+        "evolutionStage": 2,
+        "baseStats": {
+            "hp": 120,
+            "maxHp": 120,
+            "attack": 35,
+            "specialAttack": 40,
+            "defense": 25,
+            "skillResistance": 20,
+            "speed": 30
+        },
+        "rarity": "Uncommon",
+        "icon": "🐉",
+        "spriteKey": "flarehide",
+        "skills": {
+            "basic": "tackle",
+            "special": "ember",
+            "ultimate": "fire_blast"
+        },
+        "evolutions": [
+            {
+                "targetSpeciesId": "volcadragon",
+                "levelThreshold": 35,
+                "description": "Becomes a legendary dragon",
+                "descriptionKo": "화염의 지배자",
+                "previewSkills": [
+                    "fire_blast"
+                ]
+            }
+        ]
+    },
+    "volcadragon": {
+        "id": "volcadragon",
+        "name": "Volcadragon",
+        "nameKo": "볼카드래곤",
+        "type": "FIRE",
+        "faction": "EMBER_CLAN",
+        "evolutionStage": 3,
+        "baseStats": {
+            "hp": 350,
+            "maxHp": 350,
+            "attack": 95,
+            "specialAttack": 110,
+            "defense": 75,
+            "skillResistance": 65,
+            "speed": 80
+        },
+        "rarity": "Legendary",
+        "icon": "🔥🐉",
+        "spriteKey": "volcadragon",
+        "skills": {
+            "basic": "tackle",
+            "special": "fire_blast",
+            "ultimate": "magma_surge"
+        },
+        "evolutions": [
+            {
+                "targetSpeciesId": "inferno_tyrant",
+                "levelThreshold": 60,
+                "description": "Ascends to ultimate form",
+                "descriptionKo": "심연의 지배자",
+                "previewSkills": [
+                    "inferno_doom"
+                ]
+            }
+        ]
+    },
+    "aqualo": {
+        "id": "aqualo",
+        "name": "Aqualo",
+        "nameKo": "아쿠알로",
+        "type": "WATER",
+        "faction": "TIDE_WATCHERS",
+        "evolutionStage": 1,
+        "baseStats": {
+            "hp": 60,
+            "maxHp": 60,
+            "attack": 10,
+            "specialAttack": 14,
+            "defense": 12,
+            "skillResistance": 12,
+            "speed": 10
+        },
+        "rarity": "Rare",
+        "icon": "🐡",
+        "spriteKey": "aqualo",
+        "skills": {
+            "basic": "tackle",
+            "special": "bubble"
+        },
+        "evolutions": [
+            {
+                "targetSpeciesId": "serpentform",
+                "levelThreshold": 15,
+                "description": "Transforms into a serpent",
+                "descriptionKo": "우아한 바다 뱀",
+                "previewSkills": [
+                    "ice_shard"
+                ]
+            }
+        ]
+    },
+    "voltwing": {
+        "id": "voltwing",
+        "name": "Voltwing",
+        "nameKo": "볼트윙",
+        "type": "ELECTRIC",
+        "faction": "STORM_HERDERS",
+        "evolutionStage": 1,
+        "baseStats": {
+            "hp": 45,
+            "maxHp": 45,
+            "attack": 12,
+            "specialAttack": 14,
+            "defense": 8,
+            "skillResistance": 6,
+            "speed": 16
+        },
+        "rarity": "Rare",
+        "icon": "🐥",
+        "spriteKey": "voltwing",
+        "skills": {
+            "basic": "scratch",
+            "special": "spark"
+        },
+        "evolutions": [
+            {
+                "targetSpeciesId": "stormhawk",
+                "levelThreshold": 15,
+                "description": "Grows into a storm hawk",
+                "descriptionKo": "번개만큼 빠른 매",
+                "previewSkills": [
+                    "tackle"
+                ]
+            }
+        ]
+    },
+    "pyrocat": {
+        "id": "pyrocat",
+        "name": "Pyrocat",
+        "nameKo": "파이로캣",
+        "type": "FIRE",
+        "faction": "EMBER_CLAN",
+        "evolutionStage": 1,
+        "baseStats": {
+            "hp": 50,
+            "maxHp": 50,
+            "attack": 12,
+            "specialAttack": 14,
+            "defense": 8,
+            "skillResistance": 6,
+            "speed": 10
+        },
+        "rarity": "Common",
+        "icon": "🔥",
+        "spriteKey": "pyrocat",
+        "skills": {
+            "basic": "scratch",
+            "special": "ember"
+        },
+        "evolutions": [
+            {
+                "targetSpeciesId": "flarelion",
+                "levelThreshold": 12,
+                "description": "Evolves into a brave lion",
+                "descriptionKo": "용맹한 사자로 진화",
+                "previewSkills": [
+                    "fire_blast"
+                ]
+            }
+        ]
+    },
+    "flarelion": {
+        "id": "flarelion",
+        "name": "Flarelion",
+        "nameKo": "플레어라이온",
+        "type": "FIRE",
+        "faction": "EMBER_CLAN",
+        "evolutionStage": 2,
+        "baseStats": {
+            "hp": 100,
+            "maxHp": 100,
+            "attack": 28,
+            "specialAttack": 32,
+            "defense": 15,
+            "skillResistance": 12,
+            "speed": 18
+        },
+        "rarity": "Uncommon",
+        "icon": "🦁",
+        "spriteKey": "flarelion",
+        "skills": {
+            "basic": "scratch",
+            "special": "fire_blast"
+        }
+    },
+    "inferno_tyrant": {
+        "id": "inferno_tyrant",
+        "name": "Inferno Tyrant",
+        "nameKo": "인페르노 타이런트",
+        "type": "FIRE",
+        "faction": "EMBER_CLAN",
+        "evolutionStage": 4,
+        "baseStats": {
+            "hp": 650,
+            "maxHp": 650,
+            "attack": 180,
+            "specialAttack": 220,
+            "defense": 140,
+            "skillResistance": 120,
+            "speed": 160
+        },
+        "rarity": "Legendary",
+        "icon": "⚔️🐉",
+        "spriteKey": "inferno_tyrant",
+        "skills": {
+            "basic": "scratch",
+            "special": "fire_blast",
+            "ultimate": "inferno_doom"
+        }
+    },
+    "serpentform": {
+        "id": "serpentform",
+        "name": "Serpentform",
+        "nameKo": "서펜트폼",
+        "type": "WATER",
+        "faction": "TIDE_WATCHERS",
+        "evolutionStage": 2,
+        "baseStats": {
+            "hp": 140,
+            "maxHp": 140,
+            "attack": 32,
+            "specialAttack": 38,
+            "defense": 28,
+            "skillResistance": 28,
+            "speed": 35
+        },
+        "rarity": "Uncommon",
+        "icon": "🐍",
+        "spriteKey": "serpentform",
+        "skills": {
+            "basic": "tackle",
+            "special": "bubble",
+            "ultimate": "ice_shard"
+        }
+    },
+    "stormhawk": {
+        "id": "stormhawk",
+        "name": "Stormhawk",
+        "nameKo": "스톰호크",
+        "type": "ELECTRIC",
+        "faction": "STORM_HERDERS",
+        "evolutionStage": 2,
+        "baseStats": {
+            "hp": 110,
+            "maxHp": 110,
+            "attack": 40,
+            "specialAttack": 45,
+            "defense": 20,
+            "skillResistance": 15,
+            "speed": 45
+        },
+        "rarity": "Uncommon",
+        "icon": "🦅",
+        "spriteKey": "stormhawk",
+        "skills": {
+            "basic": "scratch",
+            "special": "spark",
+            "ultimate": "thunderbolt"
+        }
+    }
+}

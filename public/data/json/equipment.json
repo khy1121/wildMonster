@@ -1,0 +1,148 @@
+{
+    "wooden_staff": {
+        "id": "wooden_staff",
+        "name": "Wooden Staff",
+        "nameKo": "나무 지팡이",
+        "description": "A simple wooden staff for beginner tamers.",
+        "descriptionKo": "초보 테이머를 위한 간단한 나무 지팡이입니다.",
+        "slot": "weapon",
+        "rarity": "Common",
+        "requiredLevel": 1,
+        "stats": {
+            "attack": 5,
+            "specialAttack": 8
+        },
+        "price": 100,
+        "icon": "🪵"
+    },
+    "iron_sword": {
+        "id": "iron_sword",
+        "name": "Iron Sword",
+        "nameKo": "철 검",
+        "description": "A sturdy iron sword that boosts physical power.",
+        "descriptionKo": "물리력을 높이는 튼튼한 철 검입니다.",
+        "slot": "weapon",
+        "rarity": "Common",
+        "requiredLevel": 5,
+        "stats": {
+            "attack": 12,
+            "defense": 3
+        },
+        "price": 300,
+        "icon": "⚔️"
+    },
+    "magic_wand": {
+        "id": "magic_wand",
+        "name": "Magic Wand",
+        "nameKo": "마법 지팡이",
+        "description": "Enhances special attack power.",
+        "descriptionKo": "특수 공격력을 강화합니다.",
+        "slot": "weapon",
+        "rarity": "Uncommon",
+        "requiredLevel": 10,
+        "stats": {
+            "specialAttack": 18,
+            "skillResistance": 5
+        },
+        "price": 800,
+        "icon": "🪄"
+    },
+    "cloth_robe": {
+        "id": "cloth_robe",
+        "name": "Cloth Robe",
+        "nameKo": "천 로브",
+        "description": "Basic protective clothing.",
+        "descriptionKo": "기본적인 방어복입니다.",
+        "slot": "armor",
+        "rarity": "Common",
+        "requiredLevel": 1,
+        "stats": {
+            "maxHp": 20,
+            "defense": 3,
+            "skillResistance": 3
+        },
+        "price": 150,
+        "icon": "👘"
+    },
+    "leather_armor": {
+        "id": "leather_armor",
+        "name": "Leather Armor",
+        "nameKo": "가죽 갑옷",
+        "description": "Light armor made from monster hide.",
+        "descriptionKo": "몬스터 가죽으로 만든 가벼운 갑옷입니다.",
+        "slot": "armor",
+        "rarity": "Common",
+        "requiredLevel": 5,
+        "stats": {
+            "maxHp": 40,
+            "defense": 8,
+            "speed": -2
+        },
+        "price": 400,
+        "icon": "🦺"
+    },
+    "power_ring": {
+        "id": "power_ring",
+        "name": "Power Ring",
+        "nameKo": "힘의 반지",
+        "description": "A ring that increases attack power.",
+        "descriptionKo": "공격력을 증가시키는 반지입니다.",
+        "slot": "accessory1",
+        "rarity": "Common",
+        "requiredLevel": 1,
+        "stats": {
+            "attack": 8
+        },
+        "price": 200,
+        "icon": "💍"
+    },
+    "speed_boots": {
+        "id": "speed_boots",
+        "name": "Speed Boots",
+        "nameKo": "스피드 부츠",
+        "description": "Boots that boost movement speed.",
+        "descriptionKo": "이동 속도를 높이는 부츠입니다.",
+        "slot": "accessory2",
+        "rarity": "Common",
+        "requiredLevel": 3,
+        "stats": {
+            "speed": 12
+        },
+        "price": 250,
+        "icon": "👢"
+    },
+    "dragon_slayer": {
+        "id": "dragon_slayer",
+        "name": "Dragon Slayer",
+        "nameKo": "용검",
+        "description": "A legendary sword forged to slay dragons.",
+        "descriptionKo": "용을 쓰러뜨리기 위해 단조된 전설의 검입니다.",
+        "slot": "weapon",
+        "rarity": "Rare",
+        "requiredLevel": 30,
+        "stats": {
+            "attack": 45,
+            "specialAttack": 30,
+            "defense": 10
+        },
+        "price": 8000,
+        "icon": "⚔️🐉"
+    },
+    "archmage_staff": {
+        "id": "archmage_staff",
+        "name": "Archmage Staff",
+        "nameKo": "대마법사의 지팡이",
+        "description": "The ultimate staff for powerful tamers.",
+        "descriptionKo": "강력한 테이머를 위한 최강 지팡이입니다.",
+        "slot": "weapon",
+        "rarity": "Legendary",
+        "requiredLevel": 40,
+        "stats": {
+            "specialAttack": 60,
+            "skillResistance": 20,
+            "speed": 10
+        },
+        "price": 20000,
+        "icon": "✨🪄"
+    }
+}

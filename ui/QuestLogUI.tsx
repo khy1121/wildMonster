@@ -37,24 +37,24 @@ const QuestLogUI: React.FC<QuestLogUIProps> = ({ state, onClose }) => {
           }`}
       >
         {/* Background Accent for Categories */}
-        <div className={`absolute top-0 right-0 w-32 h-32 -mr-16 -mt-16 rounded-full opacity-5 blur-3xl pointer-events-none ${quest.category === 'DAILY' ? 'bg-yellow-500' :
-          quest.category === 'WEEKLY' ? 'bg-purple-500' :
-            quest.category === 'STORY' ? 'bg-indigo-500' : 'bg-green-500'
+        <div className={`absolute top-0 right-0 w-32 h-32 -mr-16 -mt-16 rounded-full opacity-5 blur-3xl pointer-events-none ${quest.type === 'side' ? 'bg-yellow-500' :
+          quest.type === 'hidden' ? 'bg-purple-500' :
+            quest.type === 'main' ? 'bg-indigo-500' : 'bg-green-500'
           }`} />
 
         <div className="flex justify-between items-start mb-2 gap-2 relative z-10">
           <div className="flex flex-col gap-1">
-            <div className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border border-white/5 w-fit ${quest.category === 'DAILY' ? 'text-yellow-500 bg-yellow-500/10' :
-              quest.category === 'WEEKLY' ? 'text-purple-400 bg-purple-400/10' :
-                quest.category === 'STORY' ? 'text-indigo-400 bg-indigo-400/10' : 'text-green-500 bg-green-500/10'
+            <div className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border border-white/5 w-fit ${quest.type === 'side' ? 'text-yellow-500 bg-yellow-500/10' :
+              quest.type === 'hidden' ? 'text-purple-400 bg-purple-400/10' :
+                quest.type === 'main' ? 'text-indigo-400 bg-indigo-400/10' : 'text-green-500 bg-green-500/10'
               }`}>
-              {quest.category}
+              {quest.type}
             </div>
             <h3 className={`text-base md:text-xl font-bold ${isCompleted ? 'text-green-500' :
               isLocked ? 'text-slate-600' :
                 isPending ? 'text-indigo-400' : 'text-white'
               }`}>
-              {isLocked ? '???' : (t.quests[quest.id as keyof typeof t.quests] || quest.title)}
+              {isLocked ? '???' : (t.quests[quest.id as keyof typeof t.quests] || quest.name)}
               {isCompleted && ' ✓'}
             </h3>
           </div>
@@ -64,7 +64,7 @@ const QuestLogUI: React.FC<QuestLogUIProps> = ({ state, onClose }) => {
               {isCompleted ? t.ui.completed : isLocked ? t.ui.locked : isPending ? (t.ui.pending || 'Pending') : t.ui.active}
             </div>
 
-            {(status === 'ACTIVE' && quest.category !== 'STORY' && !state.flags['rerolled_today']) && (
+            {(status === 'ACTIVE' && quest.type !== 'main' && !state.flags['rerolled_today']) && (
               <button
                 onClick={() => gameStateManager.rerollQuest(quest.id)}
                 className="text-[10px] bg-slate-900 hover:bg-slate-800 border border-slate-800 px-2 py-1 rounded-lg text-slate-400 hover:text-white transition-colors flex items-center gap-1"
@@ -78,7 +78,7 @@ const QuestLogUI: React.FC<QuestLogUIProps> = ({ state, onClose }) => {
 
         <p className="text-slate-400 text-xs md:text-sm mb-4 leading-relaxed relative z-10">
           {isLocked
-            ? `${t.ui.tamer_lvl} ${quest.requiredLevel} ${t.ui.locked}`
+            ? `${t.ui.tamer_lvl} ${quest.requiresLevel} ${t.ui.locked}`
             : (t.quests[`${quest.id}_desc` as keyof typeof t.quests] || quest.description)
           }
         </p>
@@ -103,14 +103,14 @@ const QuestLogUI: React.FC<QuestLogUIProps> = ({ state, onClose }) => {
           {!isLocked && (
             <div className="flex flex-wrap gap-2 md:gap-4">
               <div className="text-[9px] md:text-[10px] bg-slate-900/80 px-3 py-1.5 rounded-full border border-slate-800 text-yellow-500 font-bold flex items-center gap-1">
-                <i className="fa-solid fa-coins"></i> {quest.rewardGold} G
+                <i className="fa-solid fa-coins"></i> {quest.rewards.gold} G
               </div>
               <div className="text-[9px] md:text-[10px] bg-slate-900/80 px-3 py-1.5 rounded-full border border-slate-800 text-indigo-400 font-bold flex items-center gap-1">
-                <i className="fa-solid fa-star"></i> {quest.rewardExp} EXP
+                <i className="fa-solid fa-star"></i> {quest.rewards.exp} EXP
               </div>
-              {quest.rewardItems && quest.rewardItems.length > 0 && (
+              {quest.rewards.items && quest.rewards.items.length > 0 && (
                 <div className="text-[9px] md:text-[10px] bg-slate-900/80 px-3 py-1.5 rounded-full border border-slate-800 text-green-400 font-bold flex items-center gap-1">
-                  <i className="fa-solid fa-box"></i> {quest.rewardItems.length} Items
+                  <i className="fa-solid fa-box"></i> {quest.rewards.items.length} Items
                 </div>
               )}
             </div>
@@ -125,7 +125,7 @@ const QuestLogUI: React.FC<QuestLogUIProps> = ({ state, onClose }) => {
             </button>
           )}
 
-          {status === 'ACTIVE' && quest.category !== 'STORY' && !state.flags['rerolled_today'] && (
+          {status === 'ACTIVE' && quest.type !== 'main' && !state.flags['rerolled_today'] && (
             <button
               onClick={() => gameStateManager.rerollQuest(quest.id)}
               className="p-2 bg-slate-800 hover:bg-red-900 border border-slate-700 text-slate-400 hover:text-white rounded-lg transition-all active:scale-90"
@@ -161,15 +161,16 @@ const QuestLogUI: React.FC<QuestLogUIProps> = ({ state, onClose }) => {
           )}
         </div>
 
+
         {/* Story/Locked Section */}
-        {QUEST_DATA.filter(q => q.category === 'STORY' && !state.activeQuests.includes(q.id) && !state.completedQuests.includes(q.id)).length > 0 && (
+        {QUEST_DATA.filter(q => q.type === 'main' && !state.activeQuests.includes(q.id) && !state.completedQuests.includes(q.id)).length > 0 && (
           <div className="space-y-3">
             <div className="flex items-center gap-2 mb-2">
               <div className="w-1.5 h-4 bg-slate-700 rounded-full"></div>
               <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Story & Locked</h4>
             </div>
-            {QUEST_DATA.filter(q => q.category === 'STORY' && !state.activeQuests.includes(q.id) && !state.completedQuests.includes(q.id)).map(q => {
-              const isLocked = q.requiredLevel && state.tamer.level < q.requiredLevel;
+            {QUEST_DATA.filter(q => q.type === 'main' && !state.activeQuests.includes(q.id) && !state.completedQuests.includes(q.id)).map(q => {
+              const isLocked = q.requiresLevel && state.tamer.level < q.requiresLevel;
               return renderQuestCard(q, isLocked ? 'LOCKED' : 'ACTIVE');
             })}
           </div>

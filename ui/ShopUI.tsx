@@ -83,7 +83,9 @@ const ShopUI: React.FC<ShopUIProps> = ({ state, onBuy, onClose }) => {
               if (!item) return null;
               const effectivePrice = getPrice(item.id);
               const isSelected = selectedItemId === item.id;
-              const tierStyle = getTierColor(item.tier || ('rarity' in item ? item.rarity : undefined));
+              const tierVal = 'tier' in item ? item.tier : undefined;
+              const rarityVal = 'rarity' in item ? item.rarity : undefined;
+              const tierStyle = getTierColor(tierVal || rarityVal);
 
               return (
                 <div
@@ -93,9 +95,9 @@ const ShopUI: React.FC<ShopUIProps> = ({ state, onBuy, onClose }) => {
                 >
                   <div className="relative">
                     <span className="text-3xl md:text-4xl">{item.icon}</span>
-                    {(item.tier || ('rarity' in item)) && (
+                    {('tier' in item || 'rarity' in item) && (
                       <div className={`absolute -top-2 -right-2 w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-black border ${tierStyle}`}>
-                        {item.tier || ('rarity' in item ? item.rarity?.[0] : '')}
+                        {('tier' in item ? item.tier : undefined) || ('rarity' in item ? item.rarity?.[0] : '')}
                       </div>
                     )}
                   </div>
@@ -157,7 +159,7 @@ const ShopUI: React.FC<ShopUIProps> = ({ state, onBuy, onClose }) => {
             </div>
 
             {/* Crafting Requirements */}
-            {selectedItem.requiredMaterials && (
+            {('requiredMaterials' in selectedItem && selectedItem.requiredMaterials) && (
               <div className="mb-4">
                 <p className="text-left text-[9px] text-slate-500 mb-2 font-black uppercase tracking-widest">{t.ui.required_item}</p>
                 <div className="grid grid-cols-2 gap-2">
@@ -187,7 +189,7 @@ const ShopUI: React.FC<ShopUIProps> = ({ state, onBuy, onClose }) => {
               <Button
                 variant={state.tamer.gold >= getPrice(selectedItemId) ? 'primary' : 'ghost'}
                 size="full"
-                disabled={state.tamer.gold < getPrice(selectedItemId) || (selectedItem.requiredMaterials?.some(m => (state.tamer.inventory.find(i => i.itemId === m.itemId)?.quantity || 0) < m.quantity))}
+                disabled={state.tamer.gold < getPrice(selectedItemId) || (('requiredMaterials' in selectedItem && selectedItem.requiredMaterials?.some(m => (state.tamer.inventory.find(i => i.itemId === m.itemId)?.quantity || 0) < m.quantity)))}
                 onClick={() => onBuy(selectedItemId, 1)}
               >
                 {t.ui.purchase}

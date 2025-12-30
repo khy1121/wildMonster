@@ -8,7 +8,18 @@ export enum ElementType {
   DARK = 'DARK',
   LIGHT = 'LIGHT',
   ICE = 'ICE',
-  VOID = 'VOID'
+
+  VOID = 'VOID',
+  GROUND = 'GROUND',
+  ROCK = 'ROCK',
+  STEEL = 'STEEL',
+  POISON = 'POISON',
+  BUG = 'BUG',
+  GHOST = 'GHOST',
+  DRAGON = 'DRAGON',
+  FLYING = 'FLYING',
+  FIGHTING = 'FIGHTING',
+  PSYCHIC = 'PSYCHIC'
 }
 
 export enum FactionType {
@@ -37,6 +48,11 @@ export interface Position {
   y: number;
 }
 
+export interface ItemEffect {
+  type: 'HEAL_HP' | 'HEAL_STATUS' | 'CAPTURE' | 'BOOST_STAT';
+  value: number;
+}
+
 export interface Item {
   id: string;
   name: string;
@@ -51,6 +67,7 @@ export interface Item {
   allowedTypes?: ElementType[];
   flavorText?: string;
   factionLock?: FactionType;
+  effect?: ItemEffect;
 }
 
 // Equipment System
@@ -131,7 +148,9 @@ export interface Skill {
   category: 'BASIC' | 'SPECIAL' | 'ULTIMATE';
   power: number;
   cooldown: number; // in milliseconds
+
   description: string;
+  vfxKey?: string; // Optional VFX key for 3D mode
 }
 
 export interface MonsterSpecies {
@@ -335,7 +354,10 @@ export type GameEvent =
   | { type: 'RETURN_TO_TITLE' }
   | { type: 'LOG_MESSAGE'; message: string }
   | { type: 'ACHIEVEMENT_UNLOCKED'; achievementId: string }
-  | { type: 'EXPEDITION_COMPLETE'; expeditionId: string };
+  | { type: 'EXPEDITION_COMPLETE'; expeditionId: string }
+  | { type: 'MONSTER_DEFEATED'; speciesId: string; level: number }
+  | { type: 'ITEM_COLLECTED'; itemId: string; quantity: number }
+  | { type: 'REGION_ENTERED'; regionId: string };
 
 export interface BattleRewards {
   exp: number;

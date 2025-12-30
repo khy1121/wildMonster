@@ -5,9 +5,13 @@ import { gameStateManager } from '../GameStateManager';
 import { MONSTER_DATA } from '../../data/monsters';
 import { SKILL_DATA, SKILL_TREES } from '../../data/skills';
 import { SUPPORT_SKILLS } from '../../data/tamer';
-import { CombatEntity, calculateDamage, updateCombatState } from '../../domain/combat';
-import { getAvailableSkillIds } from '../../domain/logic';
+import { CombatEntity, updateCombatState } from '../../domain/combat';
 import { getTranslation } from '../../localization/strings';
+import { BattleContext, BattleAction, BattleStateStack } from '../battle/BattleState';
+import { BattleInitState } from '../battle/BattleStates';
+import { eventManager } from '../EventManager';
+import { animationQueue } from '../CoroutineQueue';
+
 
 export interface BattleInitData {
   enemyId: string;
@@ -15,15 +19,20 @@ export interface BattleInitData {
   isBoss?: boolean;
 }
 
-export class BattleScene extends Phaser.Scene {
+export class BattleScene extends Phaser.Scene implements BattleContext {
   public add!: Phaser.GameObjects.GameObjectFactory;
   public cameras!: Phaser.Cameras.Scene2D.CameraManager;
   public scene!: Phaser.Scenes.ScenePlugin;
   public time!: Phaser.Time.Clock;
   public tweens!: Phaser.Tweens.TweenManager;
 
-  private playerEntity!: CombatEntity;
-  private enemyEntity!: CombatEntity;
+  // BattleContext properties
+  public playerEntity!: CombatEntity;
+  public enemyEntity!: CombatEntity;
+
+  private stack!: BattleStateStack;
+  private onActionSelected?: (action: BattleAction) => void;
+
   private enemySpeciesId!: string;
 
   private playerHpBar!: Phaser.GameObjects.Rectangle;
@@ -40,6 +49,11 @@ export class BattleScene extends Phaser.Scene {
   private tamerCooldowns: Record<string, number> = {};
   private particleTextureCreated = false;
 
+  // Dialog UI
+  private dialogContainer!: Phaser.GameObjects.Container;
+  private dialogText!: Phaser.GameObjects.Text;
+  private dialogVisible = false;
+
   constructor() {
     super('BattleScene');
   }
@@ -51,6 +65,8 @@ export class BattleScene extends Phaser.Scene {
     const { width, height } = this.cameras.main;
     this.battleEnded = false;
     this.tamerCooldowns = {};
+
+    animationQueue.clear();
 
     gameEvents.emitEvent({ type: 'SCENE_CHANGED', sceneKey: 'BattleScene' });
 
@@ -190,18 +206,25 @@ export class BattleScene extends Phaser.Scene {
     // handle resize events so UI reflows
     this.scale.on('resize', this.onResize, this);
 
-    this.time.addEvent({
-      delay: isBoss ? 1500 : 2000,
-      callback: this.enemyAIAction,
-      callbackScope: this,
-      loop: true
-    });
-
     // Create particle texture for VFX (do once)
     this.createParticleTexture();
+
+    // Dialog UI
+    this.createDialogUI(width, height);
+
+    // Initialize Battle State Machine
+    this.stack = new BattleStateStack(this);
+    this.stack.push(new BattleInitState(this, this.stack));
+
+    // Disable input initially
+    this.disablePlayerInput();
   }
 
   update(time: number, delta: number) {
+    if (this.stack) {
+      this.stack.update(delta);
+    }
+
     if (this.battleEnded) return;
     if (!this.playerEntity || !this.enemyEntity) return;
 
@@ -222,7 +245,8 @@ export class BattleScene extends Phaser.Scene {
       this.tamerCooldowns[key] = Math.max(0, this.tamerCooldowns[key] - delta);
     }
 
-    this.updateUI();
+    // UI update handled by Context methods mostly, but keeping passive updates
+    // this.updateUI(); // Optional if we want passive UI sync
   }
 
   createHpBar(container: Phaser.GameObjects.Container, x: number, y: number, name: string) {
@@ -429,56 +453,18 @@ export class BattleScene extends Phaser.Scene {
   }
 
   useSkill(skillId: string) {
-    if (this.battleEnded || (this.playerEntity.cooldowns[skillId] || 0) > 0) return;
-    const damage = calculateDamage(this.playerEntity, this.enemyEntity, skillId);
-    this.enemyEntity.hp = Math.max(0, this.enemyEntity.hp - damage);
-    this.playerEntity.cooldowns[skillId] = SKILL_DATA[skillId].cooldown;
+    if (this.battleEnded || !this.onActionSelected) return;
 
-    const attackerX = this.cameras.main.width * 0.25;
-    const attackerY = this.cameras.main.height * 0.4;
-    const targetX = this.cameras.main.width * 0.75;
-    const targetY = this.cameras.main.height * 0.4;
+    // Validate cooldown? State handles logic usually, but UI feedback useful
+    if ((this.playerEntity.cooldowns[skillId] || 0) > 0) return;
 
-    // Trigger element-specific VFX
-    switch (skillId) {
-      case 'fire_blast':
-        this.playFireBlastVfx(attackerX, attackerY);
-        this.playHitFlash(targetX, targetY);
-        this.cameras.main.shake(200, 0.004);
-        break;
-      case 'ember':
-        this.playEmberVfx(attackerX, attackerY);
-        this.playHitFlash(targetX, targetY);
-        this.cameras.main.shake(100, 0.002);
-        break;
-      case 'bubble':
-        this.playBubbleVfx(attackerX, attackerY);
-        break;
-      case 'scratch':
-        this.playScratchVfx(targetX, targetY);
-        this.cameras.main.shake(80, 0.0025);
-        break;
-      case 'tackle':
-        this.playTackleVfx(targetX, targetY);
-        this.cameras.main.shake(150, 0.003);
-        break;
-      case 'dark_pulse':
-        this.playDarkPulseVfx(attackerX, attackerY);
-        this.cameras.main.shake(120, 0.0025);
-        break;
-      case 'ice_shard':
-        this.playIceShardVfx(attackerX, attackerY);
-        this.playHitFlash(targetX, targetY);
-        this.cameras.main.shake(100, 0.002);
-        break;
+    const skill = SKILL_DATA[skillId];
+    if (skill) {
+      this.onActionSelected({ type: 'ATTACK', skill });
+      // Set cooldown? State Machine should ideally handle this in AttackCommand
+      // But for visual feedback we can set it here or updated by State
+      // this.playerEntity.cooldowns[skillId] = skill.cooldown; 
     }
-
-    this.showVfx(targetX, targetY, `-${damage}`, 0xef4444);
-
-    // Delay end condition check to allow HP UI to update first
-    this.time.delayedCall(50, () => {
-      this.checkEndConditions();
-    });
   }
 
   useCaptureOrb() {
@@ -505,19 +491,214 @@ export class BattleScene extends Phaser.Scene {
     });
   }
 
-  enemyAIAction() {
-    if (this.battleEnded || !this.enemyEntity || !this.playerEntity) return;
-    const skillId = Phaser.Utils.Array.GetRandom(this.enemyEntity.skills);
-    if (!skillId) return;
+  // --- BattleContext Implementation ---
 
-    const damage = calculateDamage(this.enemyEntity, this.playerEntity, skillId);
-    this.playerEntity.hp = Math.max(0, this.playerEntity.hp - damage);
-    this.showVfx(this.cameras.main.width * 0.25, this.cameras.main.height * 0.4, `-${damage}`, 0xef4444);
+  async showDialog(text: string): Promise<void> {
+    // Queue the dialog to show
+    animationQueue.enqueue({
+      id: `dialog-${Date.now()}`,
+      priority: 5,
+      execute: async () => {
+        if (!this.scene.isActive()) return; // Safety check
 
-    // Delay end condition check to allow HP UI to update first
-    this.time.delayedCall(50, () => {
-      this.checkEndConditions();
+        this.dialogVisible = true;
+        this.dialogContainer.setVisible(true);
+        this.dialogText.setText(text);
+
+        eventManager.emit({
+          type: 'DIALOG_SHOW',
+          message: text,
+          priority: 'NORMAL',
+          duration: 1500
+        });
+
+        // Wait for 1.5 seconds
+        await new Promise<void>(resolve => {
+          this.time.delayedCall(1500, () => {
+            resolve();
+          });
+        });
+      }
     });
+
+    // Return immediately so logic proceeds, visuals are queued
+    return Promise.resolve();
+  }
+
+  hideDialog() {
+    this.dialogVisible = false;
+    this.dialogContainer.setVisible(false);
+  }
+
+  async updateHealthUI(target: 'PLAYER' | 'ENEMY', newHp: number, maxHp: number): Promise<void> {
+    const bar = target === 'PLAYER' ? this.playerHpBar : this.enemyHpBar;
+    if (!bar) return;
+
+    animationQueue.enqueue({
+      id: `hp-update-${target}-${Date.now()}`,
+      priority: 4,
+      execute: async () => {
+        if (!this.scene.isActive()) return;
+
+        // Emit event
+        eventManager.emit({
+          type: 'HEALTH_CHANGED',
+          entityId: target === 'PLAYER' ? this.playerEntity.uid : this.enemyEntity.uid,
+          newHP: newHp,
+          maxHP: maxHp,
+          delta: 0 // We don't have delta here easily, but component handles newHP
+        });
+
+        // Play local animation
+        this.tweens.add({
+          targets: bar,
+          width: 160 * (newHp / maxHp),
+          duration: 500,
+          ease: 'Power2'
+        });
+
+        const pct = newHp / maxHp;
+        const color = pct > 0.5 ? 0x22c55e : pct > 0.2 ? 0xeab308 : 0xef4444;
+        bar.setFillStyle(color);
+
+        await new Promise<void>(resolve => this.time.delayedCall(500, resolve));
+      }
+    });
+
+    return Promise.resolve();
+  }
+
+  async playAnimation(key: string, target: 'PLAYER' | 'ENEMY'): Promise<void> {
+    const targetX = target === 'ENEMY' ? this.cameras.main.width * 0.75 : this.cameras.main.width * 0.25;
+    const targetY = this.cameras.main.height * 0.4;
+    const attackerX = target === 'ENEMY' ? this.cameras.main.width * 0.25 : this.cameras.main.width * 0.75;
+    const attackerY = this.cameras.main.height * 0.4;
+
+    animationQueue.enqueue({
+      id: `vfx-${key}`,
+      priority: 6,
+      execute: async () => {
+        if (!this.scene.isActive()) return;
+
+        // Map keys to existing VFX functions
+        switch (key) {
+          case 'fire_blast': await this.chain(() => { this.playFireBlastVfx(attackerX, attackerY); this.playHitFlash(targetX, targetY); this.cameras.main.shake(200, 0.004); }, 1000); break;
+          case 'ember': await this.chain(() => { this.playEmberVfx(attackerX, attackerY); this.playHitFlash(targetX, targetY); this.cameras.main.shake(100, 0.002); }, 800); break;
+          case 'bubble': await this.chain(() => this.playBubbleVfx(attackerX, attackerY), 800); break;
+          case 'scratch': await this.chain(() => { this.playScratchVfx(targetX, targetY); this.cameras.main.shake(80, 0.0025); }, 500); break;
+          case 'tackle': await this.chain(() => { this.playTackleVfx(targetX, targetY); this.cameras.main.shake(150, 0.003); }, 500); break;
+          case 'dark_pulse': await this.chain(() => { this.playDarkPulseVfx(attackerX, attackerY); this.cameras.main.shake(120, 0.0025); }, 800); break;
+          case 'ice_shard': await this.chain(() => { this.playIceShardVfx(attackerX, attackerY); this.playHitFlash(targetX, targetY); this.cameras.main.shake(100, 0.002); }, 800); break;
+          case 'heal_effect': await this.chain(() => { this.playHealVfx(targetX, targetY); }, 1000); break;
+          default:
+            // Fallback
+            await this.chain(() => { this.playTackleVfx(targetX, targetY); }, 500);
+        }
+      }
+    });
+
+    return Promise.resolve();
+  }
+
+  private chain(fn: () => void, duration: number): Promise<void> {
+    fn();
+    return new Promise(resolve => this.time.delayedCall(duration, resolve));
+  }
+
+  showDamageNumber(target: 'PLAYER' | 'ENEMY', amount: number, isCritical: boolean, type: string): void {
+    const x = target === 'PLAYER' ? this.cameras.main.width * 0.25 : this.cameras.main.width * 0.75;
+    const y = this.cameras.main.height * 0.4;
+    const color = type === 'SuperEffective' ? 0xfacc15 : 0xef4444;
+
+    animationQueue.enqueue({
+      id: `dmg-${Date.now()}`,
+      priority: 5,
+      execute: async () => {
+        if (!this.scene.isActive()) return;
+
+        eventManager.emit({
+          type: 'DAMAGE_DEALT',
+          targetId: target === 'PLAYER' ? this.playerEntity.uid : this.enemyEntity.uid,
+          damage: amount,
+          isCritical: isCritical,
+          element: type
+        });
+
+        // Visual
+        this.showVfx(x, y, `-${amount}`, color);
+        await new Promise<void>(resolve => this.time.delayedCall(300, resolve));
+      }
+    });
+  }
+
+  enablePlayerInput(onActionSelected: (action: BattleAction) => void): void {
+    this.onActionSelected = onActionSelected;
+    this.toggleButtons(true);
+    this.dialogContainer.setVisible(false); // Hide dialog when acting
+  }
+
+  disablePlayerInput(): void {
+    this.onActionSelected = undefined;
+    this.toggleButtons(false);
+  }
+
+  isBattleOver(): boolean {
+    return this.battleEnded;
+  }
+
+  setBattleOver(winner: 'PLAYER' | 'ENEMY' | 'CAPTURED'): void {
+    this.battleEnded = true;
+
+    // Legacy support
+    gameEvents.emitEvent({ type: 'BATTLE_END', winner });
+
+    // New Event System
+    eventManager.emit({ type: 'BATTLE_END', winner });
+
+    animationQueue.enqueue({
+      id: 'battle-end',
+      priority: 0,
+      execute: async () => {
+        if (!this.scene.isActive()) return;
+
+        await new Promise<void>(resolve => this.time.delayedCall(2000, resolve));
+
+        if (winner === 'CAPTURED') {
+          this.scene.stop();
+          this.scene.resume('OverworldScene');
+        } else {
+          this.scene.stop();
+          this.scene.resume('OverworldScene');
+        }
+      }
+    });
+  }
+
+  log(message: string): void {
+    console.log(`[BattleScene] ${message}`);
+  }
+
+  // Helper for buttons
+  private toggleButtons(enabled: boolean) {
+    const alpha = enabled ? 1 : 0.5;
+    this.skillButtons.forEach(btn => {
+      btn.setAlpha(alpha);
+      const bg = btn.getAt(0) as Phaser.GameObjects.Rectangle;
+      if (enabled) bg.setInteractive();
+      else bg.disableInteractive();
+    });
+    // Same for tamer buttons
+    this.tamerButtons.forEach(btn => btn.setAlpha(alpha));
+    this.captureButton.setAlpha(alpha);
+  }
+
+  private createDialogUI(width: number, height: number) {
+    this.dialogContainer = this.add.container(width / 2, height - 100);
+    const bg = this.add.rectangle(0, 0, width * 0.6, 60, 0x000000, 0.8).setStrokeStyle(2, 0xffffff);
+    this.dialogText = this.add.text(0, 0, "", { fontSize: '20px', color: '#ffffff' }).setOrigin(0.5);
+    this.dialogContainer.add([bg, this.dialogText]);
+    this.dialogContainer.setVisible(false);
+    this.dialogContainer.setDepth(100);
   }
 
   showVfx(x: number, y: number, text: string, color: number) {
@@ -935,6 +1116,24 @@ export class BattleScene extends Phaser.Scene {
       burst.destroy();
       smoke.destroy();
     });
+  }
+
+  /**
+   * Play simple heal VFX
+   */
+  private playHealVfx(x: number, y: number) {
+    if (!this.textures.exists('glowParticle')) return;
+    const emitter = this.add.particles(x, y, 'glowParticle', {
+      speed: { min: 20, max: 50 },
+      angle: { min: 0, max: 360 },
+      scale: { start: 1, end: 0 },
+      alpha: { start: 1, end: 0 },
+      tint: 0x22c55e,
+      lifespan: 1000,
+      quantity: 20,
+      emitting: false
+    });
+    emitter.explode();
   }
 
   /** Dark Pulse: Shadow wave - ENHANCED */

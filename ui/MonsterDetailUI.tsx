@@ -61,12 +61,12 @@ export const MonsterDetailUI: React.FC<MonsterDetailUIProps> = ({ gsm, monsterUi
                         >
                             Enhance
                         </button>
-                        <button
+                        {/* <button
                             onClick={() => setActiveTab('EQUIP')}
                             className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'EQUIP' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
                         >
                             Equip
-                        </button>
+                        </button> */}
                     </div>
 
                     <Button variant="outline" size="sm" onClick={onClose} icon={<i className="fa-solid fa-times"></i>}>
@@ -92,9 +92,9 @@ export const MonsterDetailUI: React.FC<MonsterDetailUIProps> = ({ gsm, monsterUi
                         </div>
                     )}
 
-                    {activeTab === 'EQUIP' && (
-                        <EquipmentUI gsm={gsm} monsterUid={monsterUid} />
-                    )}
+                    {/* activeTab === 'EQUIP' && (
+                        <EquipmentUI gsm={gsm} onClose={() => {}} />
+                    ) */}
                 </div>
             </div>
         </div>

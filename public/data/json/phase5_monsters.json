@@ -1,0 +1,1549 @@
+{
+  "emberkit": {
+    "id": "emberkit",
+    "name": "Emberkit",
+    "type": "FIRE",
+    "faction": "EMBER_CLAN",
+    "evolutionStage": 1,
+    "baseStats": {
+      "hp": 45,
+      "maxHp": 45,
+      "attack": 12,
+      "specialAttack": 14,
+      "defense": 8,
+      "skillResistance": 7,
+      "speed": 14
+    },
+    "icon": "🦊",
+    "rarity": "Common",
+    "skills": {
+      "basic": "scratch",
+      "special": "ember"
+    },
+    "spriteKey": "emberkit"
+  },
+  "flarehound": {
+    "id": "flarehound",
+    "name": "Flarehound",
+    "type": "FIRE",
+    "faction": "EMBER_CLAN",
+    "evolutionStage": 1,
+    "baseStats": {
+      "hp": 70,
+      "maxHp": 70,
+      "attack": 20,
+      "specialAttack": 18,
+      "defense": 12,
+      "skillResistance": 10,
+      "speed": 16
+    },
+    "icon": "🐕‍🦺",
+    "rarity": "Uncommon",
+    "skills": {
+      "basic": "bite",
+      "special": "ember"
+    }
+  },
+  "blazewing": {
+    "id": "blazewing",
+    "name": "Blazewing",
+    "type": "FIRE",
+    "faction": "EMBER_CLAN",
+    "evolutionStage": 1,
+    "baseStats": {
+      "hp": 55,
+      "maxHp": 55,
+      "attack": 15,
+      "specialAttack": 22,
+      "defense": 9,
+      "skillResistance": 11,
+      "speed": 20
+    },
+    "icon": "🦅",
+    "rarity": "Uncommon",
+    "skills": {
+      "basic": "peck",
+      "special": "fire_blast"
+    }
+  },
+  "volcatrice": {
+    "id": "volcatrice",
+    "name": "Volcatrice",
+    "type": "FIRE",
+    "faction": "EMBER_CLAN",
+    "evolutionStage": 2,
+    "baseStats": {
+      "hp": 100,
+      "maxHp": 100,
+      "attack": 30,
+      "specialAttack": 35,
+      "defense": 18,
+      "skillResistance": 20,
+      "speed": 25
+    },
+    "icon": "🐓🔥",
+    "rarity": "Rare",
+    "skills": {
+      "basic": "scratch",
+      "special": "fire_blast",
+      "ultimate": "magma_surge"
+    }
+  },
+  "magmurtle": {
+    "id": "magmurtle",
+    "name": "Magmurtle",
+    "type": "FIRE",
+    "faction": "EMBER_CLAN",
+    "evolutionStage": 2,
+    "baseStats": {
+      "hp": 130,
+      "maxHp": 130,
+      "attack": 25,
+      "specialAttack": 28,
+      "defense": 35,
+      "skillResistance": 30,
+      "speed": 8
+    },
+    "icon": "🐢",
+    "rarity": "Rare",
+    "skills": {
+      "basic": "tackle",
+      "special": "ember",
+      "ultimate": "lava_shell"
+    }
+  },
+  "inferno_sprite": {
+    "id": "inferno_sprite",
+    "name": "Inferno Sprite",
+    "type": "FIRE",
+    "faction": "EMBER_CLAN",
+    "evolutionStage": 2,
+    "baseStats": {
+      "hp": 85,
+      "maxHp": 85,
+      "attack": 35,
+      "specialAttack": 45,
+      "defense": 15,
+      "skillResistance": 18,
+      "speed": 35
+    },
+    "icon": "🧚‍♀️🔥",
+    "rarity": "Common",
+    "skills": {
+      "basic": "magic_bolt",
+      "special": "fire_blast",
+      "ultimate": "inferno"
+    }
+  },
+  "bubblefin": {
+    "id": "bubblefin",
+    "name": "Bubblefin",
+    "type": "WATER",
+    "faction": "TIDE_WATCHERS",
+    "evolutionStage": 1,
+    "baseStats": {
+      "hp": 50,
+      "maxHp": 50,
+      "attack": 10,
+      "specialAttack": 16,
+      "defense": 10,
+      "skillResistance": 14,
+      "speed": 12
+    },
+    "icon": "🐠",
+    "rarity": "Common",
+    "skills": {
+      "basic": "tackle",
+      "special": "bubble"
+    }
+  },
+  "aquaglide": {
+    "id": "aquaglide",
+    "name": "Aquaglide",
+    "type": "WATER",
+    "faction": "TIDE_WATCHERS",
+    "evolutionStage": 1,
+    "baseStats": {
+      "hp": 65,
+      "maxHp": 65,
+      "attack": 18,
+      "specialAttack": 20,
+      "defense": 14,
+      "skillResistance": 16,
+      "speed": 18
+    },
+    "icon": "🐙",
+    "rarity": "Uncommon",
+    "skills": {
+      "basic": "tentacle",
+      "special": "bubble",
+      "ultimate": "ice_shard"
+    }
+  },
+  "coralclaw": {
+    "id": "coralclaw",
+    "name": "Coralclaw",
+    "type": "WATER",
+    "faction": "TIDE_WATCHERS",
+    "evolutionStage": 1,
+    "baseStats": {
+      "hp": 75,
+      "maxHp": 75,
+      "attack": 22,
+      "specialAttack": 18,
+      "defense": 20,
+      "skillResistance": 15,
+      "speed": 14
+    },
+    "icon": "🦀",
+    "rarity": "Uncommon",
+    "skills": {
+      "basic": "pinch",
+      "special": "bubble"
+    }
+  },
+  "wavemane": {
+    "id": "wavemane",
+    "name": "Wavemane",
+    "type": "WATER",
+    "faction": "TIDE_WATCHERS",
+    "evolutionStage": 2,
+    "baseStats": {
+      "hp": 110,
+      "maxHp": 110,
+      "attack": 28,
+      "specialAttack": 32,
+      "defense": 22,
+      "skillResistance": 25,
+      "speed": 26
+    },
+    "icon": "🐴🌊",
+    "rarity": "Uncommon",
+    "skills": {
+      "basic": "kick",
+      "special": "ice_shard",
+      "ultimate": "tidal_wave"
+    }
+  },
+  "aquadrake": {
+    "id": "aquadrake",
+    "name": "Aquadrake",
+    "type": "WATER",
+    "faction": "TIDE_WATCHERS",
+    "evolutionStage": 3,
+    "baseStats": {
+      "hp": 200,
+      "maxHp": 200,
+      "attack": 50,
+      "specialAttack": 65,
+      "defense": 45,
+      "skillResistance": 50,
+      "speed": 40
+    },
+    "icon": "🐉🌊",
+    "rarity": "Rare",
+    "skills": {
+      "basic": "bite",
+      "special": "tidal_wave",
+      "ultimate": "hydro_cannon"
+    }
+  },
+  "sea_serpent": {
+    "id": "sea_serpent",
+    "name": "Sea Serpent",
+    "type": "WATER",
+    "faction": "TIDE_WATCHERS",
+    "evolutionStage": 3,
+    "baseStats": {
+      "hp": 180,
+      "maxHp": 180,
+      "attack": 55,
+      "specialAttack": 60,
+      "defense": 40,
+      "skillResistance": 45,
+      "speed": 50
+    },
+    "icon": "🐍🌊",
+    "rarity": "Rare",
+    "skills": {
+      "basic": "constrict",
+      "special": "ice_shard",
+      "ultimate": "ocean_rage"
+    }
+  },
+  "tidehowler": {
+    "id": "tidehowler",
+    "name": "Tidehowler",
+    "type": "WATER",
+    "faction": "TIDE_WATCHERS",
+    "evolutionStage": 3,
+    "baseStats": {
+      "hp": 190,
+      "maxHp": 190,
+      "attack": 52,
+      "specialAttack": 58,
+      "defense": 42,
+      "skillResistance": 48,
+      "speed": 45
+    },
+    "icon": "🐺🌊",
+    "rarity": "Rare",
+    "skills": {
+      "basic": "howl",
+      "special": "tidal_wave",
+      "ultimate": "tsunami"
+    }
+  },
+  "kraken_spawn": {
+    "id": "kraken_spawn",
+    "name": "Kraken Spawn",
+    "type": "WATER",
+    "faction": "TIDE_WATCHERS",
+    "evolutionStage": 3,
+    "baseStats": {
+      "hp": 220,
+      "maxHp": 220,
+      "attack": 65,
+      "specialAttack": 70,
+      "defense": 55,
+      "skillResistance": 60,
+      "speed": 38
+    },
+    "icon": "🦑",
+    "rarity": "Common",
+    "skills": {
+      "basic": "tentacle_crush",
+      "special": "whirlpool",
+      "ultimate": "kraken_wrath"
+    }
+  },
+  "oceanid": {
+    "id": "oceanid",
+    "name": "Oceanid",
+    "type": "WATER",
+    "faction": "TIDE_WATCHERS",
+    "evolutionStage": 2,
+    "baseStats": {
+      "hp": 140,
+      "maxHp": 140,
+      "attack": 35,
+      "specialAttack": 55,
+      "defense": 30,
+      "skillResistance": 45,
+      "speed": 48
+    },
+    "icon": "💧✨",
+    "rarity": "Uncommon",
+    "skills": {
+      "basic": "water_jet",
+      "special": "ice_shard",
+      "ultimate": "rain_dance"
+    }
+  },
+  "sparkling": {
+    "id": "sparkling",
+    "name": "Sparkling",
+    "type": "ELECTRIC",
+    "faction": "STORM_HERDERS",
+    "evolutionStage": 1,
+    "baseStats": {
+      "hp": 48,
+      "maxHp": 48,
+      "attack": 14,
+      "specialAttack": 18,
+      "defense": 9,
+      "skillResistance": 12,
+      "speed": 16
+    },
+    "icon": "⚡",
+    "rarity": "Common",
+    "skills": {
+      "basic": "tackle",
+      "special": "spark"
+    }
+  },
+  "voltkit": {
+    "id": "voltkit",
+    "name": "Voltkit",
+    "type": "ELECTRIC",
+    "faction": "STORM_HERDERS",
+    "evolutionStage": 1,
+    "baseStats": {
+      "hp": 52,
+      "maxHp": 52,
+      "attack": 16,
+      "specialAttack": 20,
+      "defense": 10,
+      "skillResistance": 13,
+      "speed": 18
+    },
+    "icon": "🐱⚡",
+    "rarity": "Common",
+    "skills": {
+      "basic": "scratch",
+      "special": "spark"
+    }
+  },
+  "boltmane": {
+    "id": "boltmane",
+    "name": "Boltmane",
+    "type": "ELECTRIC",
+    "faction": "STORM_HERDERS",
+    "evolutionStage": 2,
+    "baseStats": {
+      "hp": 95,
+      "maxHp": 95,
+      "attack": 35,
+      "specialAttack": 40,
+      "defense": 22,
+      "skillResistance": 28,
+      "speed": 35
+    },
+    "icon": "🦁⚡",
+    "rarity": "Uncommon",
+    "skills": {
+      "basic": "bite",
+      "special": "thunder_shock",
+      "ultimate": "lightning_fang"
+    }
+  },
+  "shockwing": {
+    "id": "shockwing",
+    "name": "Shockwing",
+    "type": "ELECTRIC",
+    "faction": "STORM_HERDERS",
+    "evolutionStage": 2,
+    "baseStats": {
+      "hp": 85,
+      "maxHp": 85,
+      "attack": 30,
+      "specialAttack": 45,
+      "defense": 18,
+      "skillResistance": 25,
+      "speed": 42
+    },
+    "icon": "🦅⚡",
+    "rarity": "Uncommon",
+    "skills": {
+      "basic": "peck",
+      "special": "thunder_shock",
+      "ultimate": "storm_dive"
+    }
+  },
+  "voltiger": {
+    "id": "voltiger",
+    "name": "Voltiger",
+    "type": "ELECTRIC",
+    "faction": "STORM_HERDERS",
+    "evolutionStage": 2,
+    "baseStats": {
+      "hp": 100,
+      "maxHp": 100,
+      "attack": 40,
+      "specialAttack": 38,
+      "defense": 25,
+      "skillResistance": 23,
+      "speed": 45
+    },
+    "icon": "🐯⚡",
+    "rarity": "Uncommon",
+    "skills": {
+      "basic": "claw",
+      "special": "spark",
+      "ultimate": "volt_tackle"
+    }
+  },
+  "voltrex": {
+    "id": "voltrex",
+    "name": "Voltrex",
+    "type": "ELECTRIC",
+    "faction": "STORM_HERDERS",
+    "evolutionStage": 3,
+    "baseStats": {
+      "hp": 180,
+      "maxHp": 180,
+      "attack": 70,
+      "specialAttack": 75,
+      "defense": 50,
+      "skillResistance": 55,
+      "speed": 65
+    },
+    "icon": "🦖⚡",
+    "rarity": "Rare",
+    "skills": {
+      "basic": "thunder_punch",
+      "special": "thunder_bolt",
+      "ultimate": "thunder_storm"
+    }
+  },
+  "stormbeast": {
+    "id": "stormbeast",
+    "name": "Stormbeast",
+    "type": "ELECTRIC",
+    "faction": "STORM_HERDERS",
+    "evolutionStage": 3,
+    "baseStats": {
+      "hp": 190,
+      "maxHp": 190,
+      "attack": 65,
+      "specialAttack": 70,
+      "defense": 45,
+      "skillResistance": 52,
+      "speed": 60
+    },
+    "icon": "🐺⚡",
+    "rarity": "Rare",
+    "skills": {
+      "basic": "bite",
+      "special": "thunder_bolt",
+      "ultimate": "wild_charge"
+    }
+  },
+  "lightningfang": {
+    "id": "lightningfang",
+    "name": "Lightningfang",
+    "type": "ELECTRIC",
+    "faction": "STORM_HERDERS",
+    "evolutionStage": 3,
+    "baseStats": {
+      "hp": 170,
+      "maxHp": 170,
+      "attack": 75,
+      "specialAttack": 68,
+      "defense": 48,
+      "skillResistance": 50,
+      "speed": 70
+    },
+    "icon": "🐉⚡",
+    "rarity": "Rare",
+    "skills": {
+      "basic": "lightning_fang",
+      "special": "thunder_shock",
+      "ultimate": "plasma_burst"
+    }
+  },
+  "thunder_wyvern": {
+    "id": "thunder_wyvern",
+    "name": "Thunder Wyvern",
+    "type": "ELECTRIC",
+    "faction": "STORM_HERDERS",
+    "evolutionStage": 4,
+    "baseStats": {
+      "hp": 240,
+      "maxHp": 240,
+      "attack": 95,
+      "specialAttack": 110,
+      "defense": 70,
+      "skillResistance": 85,
+      "speed": 90
+    },
+    "icon": "🐲⚡",
+    "rarity": "Common",
+    "skills": {
+      "basic": "sky_attack",
+      "special": "thunder_storm",
+      "ultimate": "divine_bolt"
+    }
+  },
+  "raiju": {
+    "id": "raiju",
+    "name": "Raiju",
+    "type": "ELECTRIC",
+    "faction": "STORM_HERDERS",
+    "evolutionStage": 3,
+    "baseStats": {
+      "hp": 160,
+      "maxHp": 160,
+      "attack": 80,
+      "specialAttack": 85,
+      "defense": 55,
+      "skillResistance": 60,
+      "speed": 85
+    },
+    "icon": "🐾⚡",
+    "rarity": "Uncommon",
+    "skills": {
+      "basic": "lightning_strike",
+      "special": "thunder_bolt",
+      "ultimate": "storm_call"
+    }
+  },
+  "ancient_voltasaur": {
+    "id": "ancient_voltasaur",
+    "name": "Ancient Voltasaur",
+    "type": "ELECTRIC",
+    "faction": "STORM_HERDERS",
+    "evolutionStage": 4,
+    "baseStats": {
+      "hp": 280,
+      "maxHp": 280,
+      "attack": 105,
+      "specialAttack": 100,
+      "defense": 90,
+      "skillResistance": 95,
+      "speed": 55
+    },
+    "icon": "🦕⚡",
+    "rarity": "Rare",
+    "skills": {
+      "basic": "ancient_power",
+      "special": "thunder_storm",
+      "ultimate": "prehistoric_rage"
+    }
+  },
+  "shadowkit": {
+    "id": "shadowkit",
+    "name": "Shadowkit",
+    "type": "DARK",
+    "faction": "GLOOM_STALKERS",
+    "evolutionStage": 1,
+    "baseStats": {
+      "hp": 50,
+      "maxHp": 50,
+      "attack": 15,
+      "specialAttack": 17,
+      "defense": 11,
+      "skillResistance": 13,
+      "speed": 17
+    },
+    "icon": "🐱🌑",
+    "rarity": "Common",
+    "skills": {
+      "basic": "scratch",
+      "special": "shadow_sneak"
+    }
+  },
+  "gloomfang": {
+    "id": "gloomfang",
+    "name": "Gloomfang",
+    "type": "DARK",
+    "faction": "GLOOM_STALKERS",
+    "evolutionStage": 1,
+    "baseStats": {
+      "hp": 60,
+      "maxHp": 60,
+      "attack": 18,
+      "specialAttack": 16,
+      "defense": 13,
+      "skillResistance": 12,
+      "speed": 15
+    },
+    "icon": "🦇",
+    "rarity": "Common",
+    "skills": {
+      "basic": "bite",
+      "special": "shadow_sneak"
+    }
+  },
+  "duskpaw": {
+    "id": "duskpaw",
+    "name": "Duskpaw",
+    "type": "DARK",
+    "faction": "GLOOM_STALKERS",
+    "evolutionStage": 1,
+    "baseStats": {
+      "hp": 65,
+      "maxHp": 65,
+      "attack": 20,
+      "specialAttack": 18,
+      "defense": 14,
+      "skillResistance": 15,
+      "speed": 18
+    },
+    "icon": "🐺🌑",
+    "rarity": "Common",
+    "skills": {
+      "basic": "claw",
+      "special": "dark_pulse"
+    }
+  },
+  "voidclaw": {
+    "id": "voidclaw",
+    "name": "Voidclaw",
+    "type": "DARK",
+    "faction": "GLOOM_STALKERS",
+    "evolutionStage": 2,
+    "baseStats": {
+      "hp": 105,
+      "maxHp": 105,
+      "attack": 42,
+      "specialAttack": 38,
+      "defense": 28,
+      "skillResistance": 32,
+      "speed": 35
+    },
+    "icon": "🦅🌑",
+    "rarity": "Uncommon",
+    "skills": {
+      "basic": "slash",
+      "special": "dark_pulse",
+      "ultimate": "void_strike"
+    }
+  },
+  "abyssling": {
+    "id": "abyssling",
+    "name": "Abyssling",
+    "type": "DARK",
+    "faction": "GLOOM_STALKERS",
+    "evolutionStage": 2,
+    "baseStats": {
+      "hp": 110,
+      "maxHp": 110,
+      "attack": 40,
+      "specialAttack": 45,
+      "defense": 30,
+      "skillResistance": 35,
+      "speed": 32
+    },
+    "icon": "👻",
+    "rarity": "Uncommon",
+    "skills": {
+      "basic": "ghost_touch",
+      "special": "shadow_ball",
+      "ultimate": "nightmare"
+    }
+  },
+  "dark_phantom": {
+    "id": "dark_phantom",
+    "name": "Dark Phantom",
+    "type": "DARK",
+    "faction": "GLOOM_STALKERS",
+    "evolutionStage": 3,
+    "baseStats": {
+      "hp": 170,
+      "maxHp": 170,
+      "attack": 65,
+      "specialAttack": 75,
+      "defense": 50,
+      "skillResistance": 60,
+      "speed": 55
+    },
+    "icon": "👤🌑",
+    "rarity": "Rare",
+    "skills": {
+      "basic": "phantom_force",
+      "special": "shadow_ball",
+      "ultimate": "dark_void"
+    }
+  },
+  "eclipsewing": {
+    "id": "eclipsewing",
+    "name": "Eclipsewing",
+    "type": "DARK",
+    "faction": "GLOOM_STALKERS",
+    "evolutionStage": 3,
+    "baseStats": {
+      "hp": 180,
+      "maxHp": 180,
+      "attack": 70,
+      "specialAttack": 72,
+      "defense": 48,
+      "skillResistance": 55,
+      "speed": 62
+    },
+    "icon": "🦅🌑",
+    "rarity": "Rare",
+    "skills": {
+      "basic": "dark_wing",
+      "special": "shadow_ball",
+      "ultimate": "eclipse"
+    }
+  },
+  "void_stalker": {
+    "id": "void_stalker",
+    "name": "Void Stalker",
+    "type": "DARK",
+    "faction": "GLOOM_STALKERS",
+    "evolutionStage": 4,
+    "baseStats": {
+      "hp": 250,
+      "maxHp": 250,
+      "attack": 95,
+      "specialAttack": 105,
+      "defense": 75,
+      "skillResistance": 85,
+      "speed": 80
+    },
+    "icon": "🐆🌑",
+    "rarity": "Common",
+    "skills": {
+      "basic": "void_slash",
+      "special": "dark_void",
+      "ultimate": "oblivion"
+    }
+  },
+  "umbral_spirit": {
+    "id": "umbral_spirit",
+    "name": "Umbral Spirit",
+    "type": "DARK",
+    "faction": "GLOOM_STALKERS",
+    "evolutionStage": 3,
+    "baseStats": {
+      "hp": 155,
+      "maxHp": 155,
+      "attack": 55,
+      "specialAttack": 85,
+      "defense": 45,
+      "skillResistance": 70,
+      "speed": 70
+    },
+    "icon": "🔮🌑",
+    "rarity": "Uncommon",
+    "skills": {
+      "basic": "spirit_drain",
+      "special": "shadow_ball",
+      "ultimate": "umbral_curse"
+    }
+  },
+  "leafling": {
+    "id": "leafling",
+    "name": "Leafling",
+    "type": "GRASS",
+    "faction": "GLADE_KEEPERS",
+    "evolutionStage": 1,
+    "baseStats": {
+      "hp": 55,
+      "maxHp": 55,
+      "attack": 12,
+      "specialAttack": 16,
+      "defense": 14,
+      "skillResistance": 15,
+      "speed": 10
+    },
+    "icon": "🍃",
+    "rarity": "Common",
+    "skills": {
+      "basic": "vine_whip",
+      "special": "absorb"
+    }
+  },
+  "vinewhip": {
+    "id": "vinewhip",
+    "name": "Vinewhip",
+    "type": "GRASS",
+    "faction": "GLADE_KEEPERS",
+    "evolutionStage": 1,
+    "baseStats": {
+      "hp": 60,
+      "maxHp": 60,
+      "attack": 18,
+      "specialAttack": 15,
+      "defense": 16,
+      "skillResistance": 14,
+      "speed": 12
+    },
+    "icon": "🌿",
+    "rarity": "Common",
+    "skills": {
+      "basic": "vine_whip",
+      "special": "absorb"
+    }
+  },
+  "bloomtail": {
+    "id": "bloomtail",
+    "name": "Bloomtail",
+    "type": "GRASS",
+    "faction": "GLADE_KEEPERS",
+    "evolutionStage": 2,
+    "baseStats": {
+      "hp": 110,
+      "maxHp": 110,
+      "attack": 35,
+      "specialAttack": 40,
+      "defense": 38,
+      "skillResistance": 42,
+      "speed": 28
+    },
+    "icon": "🦊🌸",
+    "rarity": "Uncommon",
+    "skills": {
+      "basic": "petal_dance",
+      "special": "absorb",
+      "ultimate": "solar_beam"
+    }
+  },
+  "fernwolf": {
+    "id": "fernwolf",
+    "name": "Fernwolf",
+    "type": "GRASS",
+    "faction": "GLADE_KEEPERS",
+    "evolutionStage": 2,
+    "baseStats": {
+      "hp": 120,
+      "maxHp": 120,
+      "attack": 45,
+      "specialAttack": 38,
+      "defense": 35,
+      "skillResistance": 38,
+      "speed": 32
+    },
+    "icon": "🐺🌿",
+    "rarity": "Uncommon",
+    "skills": {
+      "basic": "bite",
+      "special": "leaf_blade",
+      "ultimate": "wood_hammer"
+    }
+  },
+  "moss_golem": {
+    "id": "moss_golem",
+    "name": "Moss Golem",
+    "type": "GRASS",
+    "faction": "GLADE_KEEPERS",
+    "evolutionStage": 2,
+    "baseStats": {
+      "hp": 150,
+      "maxHp": 150,
+      "attack": 40,
+      "specialAttack": 35,
+      "defense": 55,
+      "skillResistance": 50,
+      "speed": 15
+    },
+    "icon": "🗿🌿",
+    "rarity": "Uncommon",
+    "skills": {
+      "basic": "rock_throw",
+      "special": "absorb",
+      "ultimate": "earth_power"
+    }
+  },
+  "verdanica": {
+    "id": "verdanica",
+    "name": "Verdanica",
+    "type": "GRASS",
+    "faction": "GLADE_KEEPERS",
+    "evolutionStage": 3,
+    "baseStats": {
+      "hp": 200,
+      "maxHp": 200,
+      "attack": 60,
+      "specialAttack": 75,
+      "defense": 70,
+      "skillResistance": 75,
+      "speed": 45
+    },
+    "icon": "🦌🌿",
+    "rarity": "Rare",
+    "skills": {
+      "basic": "nature_strike",
+      "special": "solar_beam",
+      "ultimate": "forest_blessing"
+    }
+  },
+  "forest_guardian": {
+    "id": "forest_guardian",
+    "name": "Forest Guardian",
+    "type": "GRASS",
+    "faction": "GLADE_KEEPERS",
+    "evolutionStage": 3,
+    "baseStats": {
+      "hp": 210,
+      "maxHp": 210,
+      "attack": 65,
+      "specialAttack": 70,
+      "defense": 75,
+      "skillResistance": 72,
+      "speed": 42
+    },
+    "icon": "🦁🌿",
+    "rarity": "Rare",
+    "skills": {
+      "basic": "guardian_strike",
+      "special": "leaf_storm",
+      "ultimate": "nature_fury"
+    }
+  },
+  "ancient_treant": {
+    "id": "ancient_treant",
+    "name": "Ancient Treant",
+    "type": "GRASS",
+    "faction": "GLADE_KEEPERS",
+    "evolutionStage": 4,
+    "baseStats": {
+      "hp": 280,
+      "maxHp": 280,
+      "attack": 75,
+      "specialAttack": 85,
+      "defense": 100,
+      "skillResistance": 95,
+      "speed": 25
+    },
+    "icon": "🌳",
+    "rarity": "Rare",
+    "skills": {
+      "basic": "root_slam",
+      "special": "solar_beam",
+      "ultimate": "forest_wrath"
+    }
+  },
+  "celestial_stag": {
+    "id": "celestial_stag",
+    "name": "Celestial Stag",
+    "type": "GRASS",
+    "faction": "GLADE_KEEPERS",
+    "evolutionStage": 4,
+    "baseStats": {
+      "hp": 260,
+      "maxHp": 260,
+      "attack": 90,
+      "specialAttack": 95,
+      "defense": 85,
+      "skillResistance": 90,
+      "speed": 75
+    },
+    "icon": "🦌✨",
+    "rarity": "Common",
+    "skills": {
+      "basic": "horn_attack",
+      "special": "leaf_storm",
+      "ultimate": "celestial_charge"
+    }
+  },
+  "dryad_nymph": {
+    "id": "dryad_nymph",
+    "name": "Dryad Nymph",
+    "type": "GRASS",
+    "faction": "GLADE_KEEPERS",
+    "evolutionStage": 3,
+    "baseStats": {
+      "hp": 180,
+      "maxHp": 180,
+      "attack": 50,
+      "specialAttack": 90,
+      "defense": 60,
+      "skillResistance": 85,
+      "speed": 65
+    },
+    "icon": "🧚‍♀️🌿",
+    "rarity": "Rare",
+    "skills": {
+      "basic": "fairy_wind",
+      "special": "solar_beam",
+      "ultimate": "nature_blessing"
+    }
+  },
+  "fairy_dragon": {
+    "id": "fairy_dragon",
+    "name": "Fairy Dragon",
+    "type": "GRASS",
+    "faction": "GLADE_KEEPERS",
+    "evolutionStage": 3,
+    "baseStats": {
+      "hp": 170,
+      "maxHp": 170,
+      "attack": 55,
+      "specialAttack": 85,
+      "defense": 58,
+      "skillResistance": 80,
+      "speed": 72
+    },
+    "icon": "🐉🌈",
+    "rarity": "Uncommon",
+    "skills": {
+      "basic": "dragon_breath",
+      "special": "leaf_storm",
+      "ultimate": "rainbow_blast"
+    }
+  },
+  "frostkit": {
+    "id": "frostkit",
+    "name": "Frostkit",
+    "type": "ICE",
+    "faction": "GLADE_KEEPERS",
+    "evolutionStage": 1,
+    "baseStats": {
+      "hp": 52,
+      "maxHp": 52,
+      "attack": 14,
+      "specialAttack": 18,
+      "defense": 12,
+      "skillResistance": 14,
+      "speed": 14
+    },
+    "icon": "🦊❄️",
+    "rarity": "Common",
+    "skills": {
+      "basic": "scratch",
+      "special": "ice_shard"
+    }
+  },
+  "snowpaw": {
+    "id": "snowpaw",
+    "name": "Snowpaw",
+    "type": "ICE",
+    "faction": "GLADE_KEEPERS",
+    "evolutionStage": 1,
+    "baseStats": {
+      "hp": 58,
+      "maxHp": 58,
+      "attack": 16,
+      "specialAttack": 20,
+      "defense": 14,
+      "skillResistance": 16,
+      "speed": 16
+    },
+    "icon": "🐻❄️",
+    "rarity": "Common",
+    "skills": {
+      "basic": "claw",
+      "special": "ice_shard"
+    }
+  },
+  "iciclaw": {
+    "id": "iciclaw",
+    "name": "Iciclaw",
+    "type": "ICE",
+    "faction": "GLADE_KEEPERS",
+    "evolutionStage": 1,
+    "baseStats": {
+      "hp": 62,
+      "maxHp": 62,
+      "attack": 20,
+      "specialAttack": 18,
+      "defense": 16,
+      "skillResistance": 15,
+      "speed": 18
+    },
+    "icon": "🦅❄️",
+    "rarity": "Common",
+    "skills": {
+      "basic": "peck",
+      "special": "ice_beam"
+    }
+  },
+  "blizzardmane": {
+    "id": "blizzardmane",
+    "name": "Blizzardmane",
+    "type": "ICE",
+    "faction": "GLADE_KEEPERS",
+    "evolutionStage": 2,
+    "baseStats": {
+      "hp": 115,
+      "maxHp": 115,
+      "attack": 42,
+      "specialAttack": 48,
+      "defense": 35,
+      "skillResistance": 40,
+      "speed": 38
+    },
+    "icon": "🦁❄️",
+    "rarity": "Uncommon",
+    "skills": {
+      "basic": "frost_bite",
+      "special": "ice_beam",
+      "ultimate": "blizzard"
+    }
+  },
+  "crystalwing": {
+    "id": "crystalwing",
+    "name": "Crystalwing",
+    "type": "ICE",
+    "faction": "GLADE_KEEPERS",
+    "evolutionStage": 2,
+    "baseStats": {
+      "hp": 105,
+      "maxHp": 105,
+      "attack": 38,
+      "specialAttack": 52,
+      "defense": 32,
+      "skillResistance": 45,
+      "speed": 45
+    },
+    "icon": "🦋❄️",
+    "rarity": "Uncommon",
+    "skills": {
+      "basic": "crystal_slash",
+      "special": "ice_beam",
+      "ultimate": "aurora_veil"
+    }
+  },
+  "glacier_golem": {
+    "id": "glacier_golem",
+    "name": "Glacier Golem",
+    "type": "ICE",
+    "faction": "GLADE_KEEPERS",
+    "evolutionStage": 2,
+    "baseStats": {
+      "hp": 140,
+      "maxHp": 140,
+      "attack": 45,
+      "specialAttack": 40,
+      "defense": 60,
+      "skillResistance": 55,
+      "speed": 20
+    },
+    "icon": "🗿❄️",
+    "rarity": "Uncommon",
+    "skills": {
+      "basic": "ice_punch",
+      "special": "ice_shard",
+      "ultimate": "glaciate"
+    }
+  },
+  "frost_wyvern": {
+    "id": "frost_wyvern",
+    "name": "Frost Wyvern",
+    "type": "ICE",
+    "faction": "GLADE_KEEPERS",
+    "evolutionStage": 3,
+    "baseStats": {
+      "hp": 210,
+      "maxHp": 210,
+      "attack": 70,
+      "specialAttack": 80,
+      "defense": 60,
+      "skillResistance": 70,
+      "speed": 55
+    },
+    "icon": "🐲❄️",
+    "rarity": "Rare",
+    "skills": {
+      "basic": "dragon_claw",
+      "special": "blizzard",
+      "ultimate": "sheer_cold"
+    }
+  },
+  "ice_phoenix": {
+    "id": "ice_phoenix",
+    "name": "Ice Phoenix",
+    "type": "ICE",
+    "faction": "GLADE_KEEPERS",
+    "evolutionStage": 3,
+    "baseStats": {
+      "hp": 190,
+      "maxHp": 190,
+      "attack": 65,
+      "specialAttack": 90,
+      "defense": 55,
+      "skillResistance": 75,
+      "speed": 70
+    },
+    "icon": "🦅❄️",
+    "rarity": "Rare",
+    "skills": {
+      "basic": "ice_wing",
+      "special": "ice_beam",
+      "ultimate": "frost_nova"
+    }
+  },
+  "permafrost_beast": {
+    "id": "permafrost_beast",
+    "name": "Permafrost Beast",
+    "type": "ICE",
+    "faction": "GLADE_KEEPERS",
+    "evolutionStage": 3,
+    "baseStats": {
+      "hp": 230,
+      "maxHp": 230,
+      "attack": 85,
+      "specialAttack": 75,
+      "defense": 70,
+      "skillResistance": 68,
+      "speed": 45
+    },
+    "icon": "🐻❄️",
+    "rarity": "Rare",
+    "skills": {
+      "basic": "ice_fang",
+      "special": "blizzard",
+      "ultimate": "eternal_winter"
+    }
+  },
+  "absolute_zero": {
+    "id": "absolute_zero",
+    "name": "Absolute Zero",
+    "type": "ICE",
+    "faction": "GLADE_KEEPERS",
+    "evolutionStage": 4,
+    "baseStats": {
+      "hp": 270,
+      "maxHp": 270,
+      "attack": 100,
+      "specialAttack": 120,
+      "defense": 85,
+      "skillResistance": 95,
+      "speed": 65
+    },
+    "icon": "❄️✨",
+    "rarity": "Common",
+    "skills": {
+      "basic": "zero_strike",
+      "special": "ice_beam",
+      "ultimate": "absolute_zero"
+    }
+  },
+  "sparkle": {
+    "id": "sparkle",
+    "name": "Sparkle",
+    "type": "LIGHT",
+    "faction": "GLADE_KEEPERS",
+    "evolutionStage": 1,
+    "baseStats": {
+      "hp": 48,
+      "maxHp": 48,
+      "attack": 12,
+      "specialAttack": 20,
+      "defense": 10,
+      "skillResistance": 16,
+      "speed": 18
+    },
+    "icon": "✨",
+    "rarity": "Common",
+    "skills": {
+      "basic": "dazzle",
+      "special": "light_beam"
+    }
+  },
+  "glowwing": {
+    "id": "glowwing",
+    "name": "Glowwing",
+    "type": "LIGHT",
+    "faction": "GLADE_KEEPERS",
+    "evolutionStage": 1,
+    "baseStats": {
+      "hp": 52,
+      "maxHp": 52,
+      "attack": 14,
+      "specialAttack": 22,
+      "defense": 12,
+      "skillResistance": 18,
+      "speed": 20
+    },
+    "icon": "🦋✨",
+    "rarity": "Common",
+    "skills": {
+      "basic": "flash",
+      "special": "light_beam"
+    }
+  },
+  "lightbringer": {
+    "id": "lightbringer",
+    "name": "Lightbringer",
+    "type": "LIGHT",
+    "faction": "GLADE_KEEPERS",
+    "evolutionStage": 1,
+    "baseStats": {
+      "hp": 55,
+      "maxHp": 55,
+      "attack": 16,
+      "specialAttack": 24,
+      "defense": 14,
+      "skillResistance": 20,
+      "speed": 22
+    },
+    "icon": "🕊️",
+    "rarity": "Common",
+    "skills": {
+      "basic": "holy_strike",
+      "special": "light_ray"
+    }
+  },
+  "lumina": {
+    "id": "lumina",
+    "name": "Lumina",
+    "type": "LIGHT",
+    "faction": "GLADE_KEEPERS",
+    "evolutionStage": 2,
+    "baseStats": {
+      "hp": 100,
+      "maxHp": 100,
+      "attack": 35,
+      "specialAttack": 50,
+      "defense": 30,
+      "skillResistance": 45,
+      "speed": 42
+    },
+    "icon": "🦄✨",
+    "rarity": "Uncommon",
+    "skills": {
+      "basic": "horn_beam",
+      "special": "light_ray",
+      "ultimate": "holy_light"
+    }
+  },
+  "radiance_beast": {
+    "id": "radiance_beast",
+    "name": "Radiance Beast",
+    "type": "LIGHT",
+    "faction": "GLADE_KEEPERS",
+    "evolutionStage": 2,
+    "baseStats": {
+      "hp": 110,
+      "maxHp": 110,
+      "attack": 40,
+      "specialAttack": 48,
+      "defense": 35,
+      "skillResistance": 42,
+      "speed": 45
+    },
+    "icon": "🦁✨",
+    "rarity": "Uncommon",
+    "skills": {
+      "basic": "radiant_slash",
+      "special": "light_beam",
+      "ultimate": "divine_roar"
+    }
+  },
+  "holywing": {
+    "id": "holywing",
+    "name": "Holywing",
+    "type": "LIGHT",
+    "faction": "GLADE_KEEPERS",
+    "evolutionStage": 2,
+    "baseStats": {
+      "hp": 105,
+      "maxHp": 105,
+      "attack": 38,
+      "specialAttack": 52,
+      "defense": 32,
+      "skillResistance": 48,
+      "speed": 50
+    },
+    "icon": "🦅✨",
+    "rarity": "Uncommon",
+    "skills": {
+      "basic": "sky_attack",
+      "special": "light_ray",
+      "ultimate": "heaven_wing"
+    }
+  },
+  "celestial_lion": {
+    "id": "celestial_lion",
+    "name": "Celestial Lion",
+    "type": "LIGHT",
+    "faction": "GLADE_KEEPERS",
+    "evolutionStage": 3,
+    "baseStats": {
+      "hp": 200,
+      "maxHp": 200,
+      "attack": 75,
+      "specialAttack": 80,
+      "defense": 65,
+      "skillResistance": 70,
+      "speed": 60
+    },
+    "icon": "🦁☀️",
+    "rarity": "Rare",
+    "skills": {
+      "basic": "celestial_claw",
+      "special": "holy_light",
+      "ultimate": "solar_flare"
+    }
+  },
+  "seraph_hound": {
+    "id": "seraph_hound",
+    "name": "Seraph Hound",
+    "type": "LIGHT",
+    "faction": "GLADE_KEEPERS",
+    "evolutionStage": 3,
+    "baseStats": {
+      "hp": 190,
+      "maxHp": 190,
+      "attack": 80,
+      "specialAttack": 75,
+      "defense": 60,
+      "skillResistance": 68,
+      "speed": 65
+    },
+    "icon": "🐕✨",
+    "rarity": "Rare",
+    "skills": {
+      "basic": "divine_fang",
+      "special": "light_beam",
+      "ultimate": "judgment"
+    }
+  },
+  "aurora_phoenix": {
+    "id": "aurora_phoenix",
+    "name": "Aurora Phoenix",
+    "type": "LIGHT",
+    "faction": "GLADE_KEEPERS",
+    "evolutionStage": 4,
+    "baseStats": {
+      "hp": 220,
+      "maxHp": 220,
+      "attack": 70,
+      "specialAttack": 110,
+      "defense": 70,
+      "skillResistance": 90,
+      "speed": 85
+    },
+    "icon": "🦅🌈",
+    "rarity": "Rare",
+    "skills": {
+      "basic": "aurora wing",
+      "special": "holy_light",
+      "ultimate": "resurrection"
+    }
+  },
+  "divine_guardian": {
+    "id": "divine_guardian",
+    "name": "Divine Guardian",
+    "type": "LIGHT",
+    "faction": "GLADE_KEEPERS",
+    "evolutionStage": 4,
+    "baseStats": {
+      "hp": 280,
+      "maxHp": 280,
+      "attack": 95,
+      "specialAttack": 105,
+      "defense": 90,
+      "skillResistance": 100,
+      "speed": 70
+    },
+    "icon": "🛡️✨",
+    "rarity": "Common",
+    "skills": {
+      "basic": "guardian_strike",
+      "special": "holy_light",
+      "ultimate": "divine_protection"
+    }
+  },
+  "angel_of_aetheria": {
+    "id": "angel_of_aetheria",
+    "name": "Angel of Aetheria",
+    "type": "LIGHT",
+    "faction": "GLADE_KEEPERS",
+    "evolutionStage": 4,
+    "baseStats": {
+      "hp": 260,
+      "maxHp": 260,
+      "attack": 90,
+      "specialAttack": 120,
+      "defense": 85,
+      "skillResistance": 110,
+      "speed": 80
+    },
+    "icon": "👼",
+    "rarity": "Legendary",
+    "skills": {
+      "basic": "angel_strike",
+      "special": "judgment_ray",
+      "ultimate": "heavenly_descent"
+    }
+  },
+  "elder_god": {
+    "id": "elder_god",
+    "name": "Elder God Fragment",
+    "type": "VOID",
+    "faction": "GLADE_KEEPERS",
+    "evolutionStage": 4,
+    "baseStats": {
+      "hp": 1000,
+      "maxHp": 1000,
+      "attack": 150,
+      "specialAttack": 180,
+      "defense": 120,
+      "skillResistance": 140,
+      "speed": 100
+    },
+    "icon": "💀",
+    "rarity": "Legendary",
+    "skills": {
+      "basic": "chaos_strike",
+      "special": "void_blast",
+      "ultimate": "oblivion"
+    }
+  }
+}

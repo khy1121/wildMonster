@@ -31,7 +31,7 @@ const QuestRewardPopup: React.FC<QuestRewardPopupProps> = ({ quest, language, on
                     </div>
 
                     <div className="bg-slate-950/50 p-6 rounded-2xl border border-white/5">
-                        <h3 className="text-xl font-bold text-indigo-400 mb-2">{quest.title}</h3>
+                        <h3 className="text-xl font-bold text-indigo-400 mb-2">{quest.name}</h3>
                         <p className="text-slate-400 text-sm leading-relaxed">{quest.description}</p>
                     </div>
 
@@ -39,14 +39,14 @@ const QuestRewardPopup: React.FC<QuestRewardPopupProps> = ({ quest, language, on
                         <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Rewards Received</p>
                         <div className="flex justify-center gap-4">
                             <div className="bg-slate-950 px-4 py-3 rounded-2xl border border-slate-800 flex flex-col items-center min-w-[80px]">
-                                <span className="text-yellow-500 text-xl font-bold">{quest.rewardGold}</span>
+                                <span className="text-yellow-500 text-xl font-bold">{quest.rewards.gold}</span>
                                 <span className="text-[10px] text-slate-500 font-bold">GOLD</span>
                             </div>
                             <div className="bg-slate-950 px-4 py-3 rounded-2xl border border-slate-800 flex flex-col items-center min-w-[80px]">
-                                <span className="text-indigo-400 text-xl font-bold">{quest.rewardExp}</span>
+                                <span className="text-indigo-400 text-xl font-bold">{quest.rewards.exp}</span>
                                 <span className="text-[10px] text-slate-500 font-bold">EXP</span>
                             </div>
-                            {quest.rewardItems?.map((item, idx) => (
+                            {quest.rewards.items?.map((item, idx) => (
                                 <div key={idx} className="bg-slate-950 px-4 py-3 rounded-2xl border border-slate-800 flex flex-col items-center min-w-[80px]">
                                     <span className="text-green-400 text-xl font-bold">x{item.quantity}</span>
                                     <span className="text-[10px] text-slate-500 font-bold uppercase truncate max-w-[60px]">{item.itemId}</span>

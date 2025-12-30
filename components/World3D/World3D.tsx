@@ -4,6 +4,7 @@ import { World3DHUD } from './World3DHUD';
 import { NPC3D, QuestMarker3D } from '../../engine/Three/NPCAndMarkers';
 import { gameStateManager } from '../../engine/GameStateManager';
 import { gameEvents } from '../../engine/EventBus';
+import { eventManager } from '../../engine/EventManager';
 import { MonsterDetailUI } from '../../ui/MonsterDetailUI';
 import ShopUI from '../../ui/ShopUI';
 import { FactionUI } from '../../ui/AppOverlays';
@@ -610,6 +611,13 @@ export const World3D: React.FC<World3DProps> = ({ onClose }) => {
                     }
 
                     setPlayerPos({ x: playerRef.current.position.x, z: playerRef.current.position.z });
+
+                    // Emit for Global HUD
+                    eventManager.emit({
+                        type: 'PLAYER_MOVE',
+                        position: { x: playerRef.current.position.x, y: playerRef.current.position.y, z: playerRef.current.position.z },
+                        rotation: playerRef.current.rotation.y
+                    });
                 } else {
                     // Idle state - reset animations
                     playerRef.current.position.y = 0;
@@ -694,6 +702,7 @@ export const World3D: React.FC<World3DProps> = ({ onClose }) => {
                     }
                 }
 
+                let interactionTarget = null;
                 // Update NPCs
                 for (const npc of npcsRef.current) {
                     npc.update(delta);
@@ -702,6 +711,16 @@ export const World3D: React.FC<World3DProps> = ({ onClose }) => {
                     if (npc.isPlayerNear(playerRef.current.position, 5)) {
                         npc.lookAt(playerRef.current.position);
                     }
+
+                    if (npc.isPlayerNear(playerRef.current.position, 2)) {
+                        interactionTarget = npc;
+                    }
+                }
+
+                if (interactionTarget) {
+                    eventManager.emit({ type: 'INTERACTION_SHOW', label: `Talk to ${interactionTarget.name}`, targetId: interactionTarget.name }); // using name as ID for now
+                } else {
+                    eventManager.emit({ type: 'INTERACTION_HIDE' });
                 }
 
                 // Update quest markers
@@ -767,7 +786,7 @@ export const World3D: React.FC<World3DProps> = ({ onClose }) => {
         <div className="fixed inset-0 z-50">
             <div ref={containerRef} className="w-full h-full" />
 
-            <World3DHUD
+            {/* <World3DHUD
                 playerPos={playerPos}
                 partnerPos={partnerPos}
                 buildings={buildingLocations.current}
@@ -778,9 +797,10 @@ export const World3D: React.FC<World3DProps> = ({ onClose }) => {
                     setActiveOverlay(type);
                 }}
                 onClose={onClose}
-            />
+            /> */}
 
-            {/* Overlay UIs */}
+            {/* Overlay UIs - DISABLED: Managed by App.tsx Layer 20 */}
+            {/*
             {activeOverlay === 'SKILLS' && activeMonsterUid && (
                 <MonsterDetailUI
                     gsm={gameStateManager}
@@ -875,6 +895,7 @@ export const World3D: React.FC<World3DProps> = ({ onClose }) => {
                     }}
                 />
             )}
+            */}
         </div>
     );
 };

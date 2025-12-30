@@ -4,6 +4,7 @@ import Phaser from 'phaser';
 import { createGameConfig } from './engine/GameConfig';
 import { SafeArea } from './engine/SafeArea';
 import HUD from './ui/HUD';
+import { GameHUD } from './ui/GameHUD';
 import EvolutionChoice from './ui/EvolutionChoice';
 import { MonsterDetailUI } from './ui/MonsterDetailUI';
 import ShopUI from './ui/ShopUI';
@@ -35,13 +36,19 @@ import { tutorialManager } from './engine/TutorialManager';
 // 3D World
 import { World3D } from './components/World3D/World3D';
 import { TestWorld3D } from './components/World3D/TestWorld3D';
+import { R3FWorld } from './components/World3D/R3FWorld';
+import { BattleOverlay } from './ui/BattleOverlay';
 import { GameState, EvolutionOption, MonsterInstance } from './domain/types';  // Removed Quest - using Phase 5 structure
 import { gameEvents } from './engine/EventBus';
 import { gameStateManager } from './engine/GameStateManager';
 import { getTranslation } from './localization/strings';
+import { Minimap } from './ui/Minimap';
+import { InteractionPrompt } from './ui/InteractionPrompt';
+// Data Management System
+import { dataManager } from './engine/DataManager';
 // import { QUEST_DATA } from './data/quests';  // Disabled for Phase 5 - using EnhancedQuestLogUI
 
-const App: React.FC = () => {
+export const App: React.FC = () => {
   const gameRef = useRef<Phaser.Game | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -55,8 +62,28 @@ const App: React.FC = () => {
   const [selectedCharId, setSelectedCharId] = useState<string | null>(null);
   const [activeScene, setActiveScene] = useState<string>('BootScene');
   const [tutorialProgress, setTutorialProgress] = useState(tutorialManager.getProgress());
+  const [dataLoaded, setDataLoaded] = useState(false);
+
+  // Load game data on mount
+  useEffect(() => {
+    const initData = async () => {
+      try {
+        console.log('🎮 Loading game data...');
+        await dataManager.loadAllData();
+        setDataLoaded(true);
+        console.log('✅ Game data loaded successfully');
+      } catch (error) {
+        console.error('❌ Failed to load game data:', error);
+        // Continue anyway with fallback data
+        setDataLoaded(true);
+      }
+    };
+
+    initData();
+  }, []);
 
   useEffect(() => {
+    if (!dataLoaded) return; // Wait for data to load
     const unsub = gameEvents.subscribe('STATE_UPDATED', (event) => {
       if (event.type === 'STATE_UPDATED') {
         setGameState({ ...event.state });
@@ -105,25 +132,34 @@ const App: React.FC = () => {
     }
 
     const win = window as any;
+    console.log('[App] Checking initialization...', { gameRef: !!gameRef.current, containerRef: !!containerRef.current });
+
     if (!gameRef.current && containerRef.current) {
       if (win.__PHASER__ && win.__PHASER__ instanceof Phaser.Game) {
+        console.log('[App] Resuming existing global Phaser instance');
         gameRef.current = win.__PHASER__;
       } else {
+        console.log('[App] Creating new Phaser Game instance');
         const config = createGameConfig('phaser-root');
         gameRef.current = new Phaser.Game(config);
         win.__PHASER__ = gameRef.current;
+        console.log('[App] Game instance created', gameRef.current);
       }
+    } else {
+      console.warn('[App] Skipping initialization. Refs state:', { gameRef: !!gameRef.current, containerRef: !!containerRef.current });
     }
 
     return () => {
       unsub();
       // Remove other listeners if needed or rely on component unmount
       gameEvents.off('EVOLUTION_READY', () => { });
-      gameEvents.off('SCENE_CHANGED', () => { });
-      gameEvents.off('BATTLE_END', () => { });
-      SafeArea.dispose();
+      if (gameRef.current) {
+        gameRef.current.destroy(true);
+        gameRef.current = null;
+        (window as any).__PHASER__ = null;
+      }
     };
-  }, []);
+  }, [dataLoaded]);
 
   const handleCharSelect = (id: string) => {
     setSelectedCharId(id);
@@ -149,220 +185,222 @@ const App: React.FC = () => {
     ? gameState.tamer.party.find(m => m.uid === activeMonsterUid)
     : null;
 
+  const [viewMode, setViewMode] = useState<'PHASER' | '3D' | 'TEST_3D'>('PHASER');
+
+  const handleOpen3DWorld = () => setViewMode('3D');
+  const handleOpenTest3D = () => setViewMode('TEST_3D');
+  const handleClose3D = () => setViewMode('PHASER');
+
   return (
     <div id="game-root" className="relative w-full h-full bg-black overflow-hidden font-sans select-none">
-      <div id="phaser-root" ref={containerRef} className="w-full h-full" />
 
-      {selectionStep === 'CHARACTER' && (
-        <CharacterSelectionUI onSelect={handleCharSelect} />
-      )}
+      {/* --- LAYER 0: WORLD (Z-0) --- */}
+      <div className="absolute inset-0 z-0">
+        <div id="phaser-root" ref={containerRef} className={`w-full h-full ${viewMode !== 'PHASER' ? 'hidden' : ''}`} />
 
-      {selectionStep === 'STARTER' && (
-        <StarterSelectionUI onSelect={handleStarterSelect} />
-      )}
+        {/* 3D Worlds - Mounted here as base layer components */}
+        {viewMode === '3D' && (
+          <World3D onClose={handleClose3D} />
+        )}
+        {viewMode === 'TEST_3D' && (
+          <TestWorld3D onClose={handleClose3D} />
+        )}
+      </div>
 
-      {selectionStep === 'NONE' && (activeScene === 'OverworldScene' || activeScene === 'MenuScene') && (
-        <>
-          <HUD
-            state={gameState}
-            onOpenSkills={(uid) => { setActiveMonsterUid(uid); setOverlay('SKILLS'); }}
-            onOpenQuests={() => setOverlay('QUESTS')}
-            onOpenFactions={() => setOverlay('FACTIONS')}
-            onOpenShop={() => setOverlay('SHOP')}
-            onOpenSettings={() => setOverlay('MENU')}
-            onOpenInventory={() => setOverlay('INVENTORY')}
-            onOpenIncubator={() => setOverlay('INCUBATOR')}
-            onOpenAchievements={() => setOverlay('ACHIEVEMENTS')}
-            onOpenExpeditions={() => setOverlay('EXPEDITIONS')}
-            onOpenWorldMap={() => setOverlay('WORLDMAP')}
-            onOpenEnhancedQuests={() => setOverlay('ENHANCED_QUESTS')}
-            onOpenEquipment={() => setOverlay('EQUIPMENT')}
-            onOpenSaves={() => setOverlay('SAVES')}
-            onOpenHelp={() => setOverlay('HELP')}
-            onOpen3DWorld={() => setOverlay('3D_WORLD')}
-            onOpenTest3D={() => setOverlay('TEST_3D')}
-          />
+      {/* --- LAYER 10: HUD (Z-10) --- */}
+      <div className="absolute inset-0 z-10 pointer-events-none">
+        {selectionStep === 'NONE' && (activeScene === 'OverworldScene' || activeScene === 'MenuScene' || viewMode !== 'PHASER') && (
+          <GameHUD>
+            <HUD
+              state={gameState}
+              onOpenSkills={(uid) => { setActiveMonsterUid(uid); setOverlay('SKILLS'); }}
+              onOpenQuests={() => setOverlay('QUESTS')}
+              onOpenFactions={() => setOverlay('FACTIONS')}
+              onOpenShop={() => setOverlay('SHOP')}
+              onOpenSettings={() => setOverlay('MENU')}
+              onOpenInventory={() => setOverlay('INVENTORY')}
+              onOpenIncubator={() => setOverlay('INCUBATOR')}
+              onOpenAchievements={() => setOverlay('ACHIEVEMENTS')}
+              onOpenExpeditions={() => setOverlay('EXPEDITIONS')}
+              onOpenWorldMap={() => setOverlay('WORLDMAP')}
+              onOpenEnhancedQuests={() => setOverlay('ENHANCED_QUESTS')}
+              onOpenEquipment={() => setOverlay('EQUIPMENT')}
+              onOpenSaves={() => setOverlay('SAVES')}
+              onOpenHelp={() => setOverlay('HELP')}
+              onOpen3DWorld={handleOpen3DWorld}
+              onOpenTest3D={handleOpenTest3D}
+            />
+            <button
+              onClick={() => setOverlay('DEBUG')}
+              className={`absolute bottom-4 right-4 w-10 h-10 bg-red-950/50 hover:bg-red-900 border border-red-900 text-red-600 rounded-full flex items-center justify-center transition shadow-lg z-[50] active:scale-90 pointer-events-auto`}
+            >
+              <i className="fa-solid fa-bug"></i>
+            </button>
+            <Minimap />
+            <InteractionPrompt />
+          </GameHUD>
+        )}
 
-          <button
-            onClick={() => setOverlay('DEBUG')}
-            className={`absolute bottom-4 right-4 w-10 h-10 bg-red-950/50 hover:bg-red-900 border border-red-900 text-red-600 rounded-full flex items-center justify-center transition shadow-lg z-[50] active:scale-90`}
-          >
-            <i className="fa-solid fa-bug"></i>
-          </button>
-        </>
-      )}
+        {/* Battle HUD */}
+        {activeScene === 'BattleScene' && viewMode === 'PHASER' && (
+          <BattleOverlay />
+        )}
+      </div>
 
-      {evolutionData && gameState.tamer.party.find(m => m.uid === evolutionData.monsterUid) && (
-        <EvolutionChoice
-          monster={gameState.tamer.party.find(m => m.uid === evolutionData.monsterUid)!}
-          options={evolutionData.options}
-          onChoose={handleChooseEvolution}
-          onCancel={() => setEvolutionData(null)}
-          language={gameState.language}
-        />
-      )}
+      {/* --- LAYER 20: MODALS (Z-20) --- */}
+      <div className="absolute inset-0 z-20 pointer-events-none">
+        {/* Initialization Flows */}
+        {selectionStep === 'CHARACTER' && (
+          <div className="pointer-events-auto w-full h-full"><CharacterSelectionUI onSelect={handleCharSelect} /></div>
+        )}
 
-      {overlay === 'SKILLS' && activeMonsterUid && (
-        <MonsterDetailUI
-          gsm={gameStateManager}
-          monsterUid={activeMonsterUid}
-          language={gameState.language}
-          onClose={() => setOverlay('NONE')}
-        />
-      )}
+        {selectionStep === 'STARTER' && (
+          <div className="pointer-events-auto w-full h-full"><StarterSelectionUI onSelect={handleStarterSelect} /></div>
+        )}
 
-      {(overlay === 'SHOP' || gameState.flags['open_shop']) && (
-        <ShopUI
-          state={gameState}
-          onBuy={(id, q) => gameStateManager.buyItem(id, q)}
-          onClose={() => {
-            setOverlay('NONE');
-            if (gameState.flags['open_shop']) {
-              gameStateManager.updateState({ flags: { ...gameState.flags, open_shop: false } });
-            }
-          }}
-        />
-      )}
+        {/* Overlays - Wrappers ensure pointer-events-auto where needed */}
+        {/* Note: Most UI components handle their own layout/background, so we just render them.
+            We assume they have pointer-events-auto on their containers or we wrap them if they strictly don't.
+            Most existing UIs here seem to be full screen or modal-like. */}
 
-      {/* Old Quest System - Replaced by ENHANCED_QUESTS */}
-      {/* {overlay === 'QUESTS' && (
-        <QuestLogUI
-          state={gameState}
-          onClose={() => setOverlay('NONE')}
-        />
-      )} */}
+        {evolutionData && gameState.tamer.party.find(m => m.uid === evolutionData.monsterUid) && (
+          <div className="pointer-events-auto absolute inset-0">
+            <EvolutionChoice
+              monster={gameState.tamer.party.find(m => m.uid === evolutionData.monsterUid)!}
+              options={evolutionData.options}
+              onChoose={handleChooseEvolution}
+              onCancel={() => setEvolutionData(null)}
+              language={gameState.language}
+            />
+          </div>
+        )}
 
-      {overlay === 'FACTIONS' && (
-        <FactionUI
-          state={gameState}
-          onClose={() => setOverlay('NONE')}
-        />
-      )}
+        {overlay === 'SKILLS' && activeMonsterUid && (
+          <div className="pointer-events-auto absolute inset-0">
+            <MonsterDetailUI
+              gsm={gameStateManager}
+              monsterUid={activeMonsterUid}
+              language={gameState.language}
+              onClose={() => setOverlay('NONE')}
+            />
+          </div>
+        )}
 
-      {overlay === 'MENU' && (
-        <MenuUI
-          state={gameState}
-          onClose={() => setOverlay('NONE')}
-        />
-      )}
+        {(overlay === 'SHOP' || gameState.flags['open_shop']) && (
+          <div className="pointer-events-auto absolute inset-0">
+            <ShopUI
+              state={gameState}
+              onBuy={(id, q) => gameStateManager.buyItem(id, q)}
+              onClose={() => {
+                setOverlay('NONE');
+                if (gameState.flags['open_shop']) {
+                  gameStateManager.updateState({ flags: { ...gameState.flags, open_shop: false } });
+                }
+              }}
+            />
+          </div>
+        )}
 
-      {overlay === 'DEBUG' && (
-        <DebugPanel
-          state={gameState}
-          onAddGold={(a) => gameStateManager.addGold(a)}
-          onAddMonster={(id) => gameStateManager.addDebugMonster(id)}
-          onCompleteQuest={(id) => gameStateManager.completeQuest(id)}
-          onClose={() => setOverlay('NONE')}
-        />
-      )}
+        {overlay === 'FACTIONS' && (
+          <div className="pointer-events-auto absolute inset-0">
+            <FactionUI state={gameState} onClose={() => setOverlay('NONE')} />
+          </div>
+        )}
 
-      {overlay === 'INVENTORY' && (
-        <InventoryUI
-          state={gameState}
-          onClose={() => setOverlay('NONE')}
-        />
-      )}
+        {overlay === 'MENU' && (
+          <div className="pointer-events-auto absolute inset-0">
+            <MenuUI state={gameState} onClose={() => setOverlay('NONE')} />
+          </div>
+        )}
 
-      {overlay === 'INCUBATOR' && (
-        <IncubatorUI
-          state={gameState}
-          onClose={() => setOverlay('NONE')}
-        />
-      )}
+        {overlay === 'DEBUG' && (
+          <div className="pointer-events-auto absolute inset-0">
+            <DebugPanel
+              state={gameState}
+              onAddGold={(a) => gameStateManager.addGold(a)}
+              onAddMonster={(id) => gameStateManager.addDebugMonster(id)}
+              onCompleteQuest={(id) => gameStateManager.completeQuest(id)}
+              onClose={() => setOverlay('NONE')}
+            />
+          </div>
+        )}
 
-      {/* Old Quest Reward Popup - Disabled for Phase 5 */}
-      {/* {completedQuest && (
-        <QuestRewardPopup
-          quest={completedQuest}
-          language={gameState.language}
-          onClaim={() => {
-            gameStateManager.claimQuestReward(completedQuest.id);
-            setCompletedQuest(null);
-          }}
-        />
-      )} */}
+        {overlay === 'INVENTORY' && (
+          <div className="pointer-events-auto absolute inset-0">
+            <InventoryUI state={gameState} onClose={() => setOverlay('NONE')} />
+          </div>
+        )}
 
-      {/* Phase 4 UIs */}
-      {overlay === 'ACHIEVEMENTS' && (
-        <AchievementsUI
-          gsm={gameStateManager}
-          onClose={() => setOverlay('NONE')}
-        />
-      )}
+        {overlay === 'INCUBATOR' && (
+          <div className="pointer-events-auto absolute inset-0">
+            <IncubatorUI state={gameState} onClose={() => setOverlay('NONE')} />
+          </div>
+        )}
 
-      {overlay === 'EXPEDITIONS' && (
-        <ExpeditionUI
-          gsm={gameStateManager}
-          onClose={() => setOverlay('NONE')}
-        />
-      )}
+        {overlay === 'ACHIEVEMENTS' && (
+          <div className="pointer-events-auto absolute inset-0">
+            <AchievementsUI gsm={gameStateManager} onClose={() => setOverlay('NONE')} />
+          </div>
+        )}
 
-      {showDailyLogin && (
-        <DailyLoginUI
-          gsm={gameStateManager}
-          onClose={() => setShowDailyLogin(false)}
-        />
-      )}
+        {overlay === 'EXPEDITIONS' && (
+          <div className="pointer-events-auto absolute inset-0">
+            <ExpeditionUI gsm={gameStateManager} onClose={() => setOverlay('NONE')} />
+          </div>
+        )}
 
-      {/* Phase 5 UIs */}
-      {overlay === 'WORLDMAP' && (
-        <WorldMapUI
-          gsm={gameStateManager}
-          onClose={() => setOverlay('NONE')}
-          onTravelToRegion={(regionId) => {
-            // WorldMapUI will handle region travel logic internally
-            // Just close the overlay for now
-            setOverlay('NONE');
-          }}
-        />
-      )}
+        {showDailyLogin && (
+          <div className="pointer-events-auto absolute inset-0">
+            <DailyLoginUI gsm={gameStateManager} onClose={() => setShowDailyLogin(false)} />
+          </div>
+        )}
 
-      {overlay === 'ENHANCED_QUESTS' && (
-        <EnhancedQuestLogUI
-          gsm={gameStateManager}
-          onClose={() => setOverlay('NONE')}
-        />
-      )}
+        {overlay === 'WORLDMAP' && (
+          <div className="pointer-events-auto absolute inset-0">
+            <WorldMapUI
+              gsm={gameStateManager}
+              onClose={() => setOverlay('NONE')}
+              onTravelToRegion={(regionId) => { setOverlay('NONE'); }}
+            />
+          </div>
+        )}
 
-      {overlay === 'EQUIPMENT' && (
-        <EquipmentUI
-          gsm={gameStateManager}
-          onClose={() => setOverlay('NONE')}
-        />
-      )}
+        {overlay === 'ENHANCED_QUESTS' && (
+          <div className="pointer-events-auto absolute inset-0">
+            <EnhancedQuestLogUI gsm={gameStateManager} onClose={() => setOverlay('NONE')} />
+          </div>
+        )}
 
-      {overlay === 'SAVES' && (
-        <SaveManagementUI
-          onClose={() => setOverlay('NONE')}
-          onLoadSave={(slotId) => {
-            const loadedState = saveManager.loadFromSlot(slotId);
-            if (loadedState) {
-              gameStateManager.setState(loadedState);
-              setGameState(loadedState);
-              setOverlay('NONE');
-            }
-          }}
-        />
-      )}
+        {overlay === 'EQUIPMENT' && (
+          <div className="pointer-events-auto absolute inset-0">
+            <EquipmentUI gsm={gameStateManager} onClose={() => setOverlay('NONE')} />
+          </div>
+        )}
 
-      {overlay === 'HELP' && (
-        <HelpManualUI
-          language={gameState.language}
-          onClose={() => setOverlay('NONE')}
-        />
-      )}
+        {overlay === 'SAVES' && (
+          <div className="pointer-events-auto absolute inset-0">
+            <SaveManagementUI
+              onClose={() => setOverlay('NONE')}
+              onLoadSave={(slotId) => {
+                const loadedState = saveManager.loadFromSlot(slotId);
+                if (loadedState) {
+                  gameStateManager.setState(loadedState);
+                  setGameState(loadedState);
+                  setOverlay('NONE');
+                }
+              }}
+            />
+          </div>
+        )}
 
-      {overlay === '3D_WORLD' && (
-        <World3D
-          onClose={() => setOverlay('NONE')}
-        />
-      )}
+        {overlay === 'HELP' && (
+          <div className="pointer-events-auto absolute inset-0">
+            <HelpManualUI language={gameState.language} onClose={() => setOverlay('NONE')} />
+          </div>
+        )}
+      </div>
 
-      {overlay === 'TEST_3D' && (
-        <TestWorld3D onClose={() => setOverlay('NONE')} />
-      )}
-
-      <div className="absolute bottom-2 left-4 text-[7px] text-slate-600 font-mono pointer-events-none uppercase tracking-[0.2em] hidden md:block">
+      <div className="absolute bottom-2 left-4 text-[7px] text-slate-600 font-mono pointer-events-none uppercase tracking-[0.2em] hidden md:block z-30">
         EonTamers Alpha v0.15 • Built with Gemini Engine
       </div>
     </div>

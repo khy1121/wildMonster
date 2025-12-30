@@ -3,6 +3,7 @@ import React from 'react';
 import { GameState, FactionType } from '../domain/types';
 import { MONSTER_DATA } from '../data/monsters';
 import { getTranslation, getReputationTier } from '../localization/strings';
+import { HealthBar } from './components/HealthBar';
 
 interface HUDProps {
   state: GameState;
@@ -25,7 +26,6 @@ interface HUDProps {
   onOpen3DWorld?: () => void;
   onOpenTest3D?: () => void;
 }
-
 
 const HUD: React.FC<HUDProps> = ({ state, onOpenSkills, onOpenQuests, onOpenFactions, onOpenShop, onOpenSettings, onOpenInventory, onOpenIncubator, onOpenAchievements, onOpenExpeditions, onOpenWorldMap, onOpenEnhancedQuests, onOpenEquipment, onOpenSaves, onOpenHelp, onOpen3DWorld, onOpenTest3D }) => {
   const { tamer, language, reputation } = state;
@@ -236,12 +236,12 @@ const HUD: React.FC<HUDProps> = ({ state, onOpenSkills, onOpenQuests, onOpenFact
                 <span className="group-hover:text-indigo-400 transition truncate">{t.species[activeMonster.speciesId as keyof typeof t.species] || species.name}</span>
                 <span>LV.{activeMonster.level}</span>
               </div>
-              <div className="w-full h-1.5 md:h-2 bg-slate-800 rounded-full overflow-hidden border border-slate-700">
-                <div
-                  className="h-full bg-green-500 transition-all duration-300"
-                  style={{ width: `${(activeMonster.currentHp / activeMonster.currentStats.maxHp) * 100}%` }}
-                />
-              </div>
+              <HealthBar
+                entityId={activeMonster.uid}
+                currentHp={activeMonster.currentHp}
+                maxHp={activeMonster.currentStats.maxHp}
+                showText={false}
+              />
               <div className="flex justify-between mt-0.5">
                 <span className="text-[7px] md:text-[8px] text-indigo-500 font-bold">{activeMonster.skillPoints} SP</span>
                 <p className="text-[7px] md:text-[8px] text-slate-500 font-mono">

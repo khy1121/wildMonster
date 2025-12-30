@@ -15,6 +15,11 @@ import { ACHIEVEMENTS } from '../data/achievements';
 import { getDailyReward } from '../data/dailyRewards';
 import { EXPEDITIONS } from '../data/expeditions';
 import { EQUIPMENT_DATA, EQUIPMENT } from '../data/equipment';
+// Service Layer
+import { battleService } from './services/BattleService';
+import { shopService } from './services/ShopService';
+import { questService } from './services/QuestService';
+
 
 const INITIAL_STATE: GameState = {
   version: 1,
@@ -35,18 +40,23 @@ const INITIAL_STATE: GameState = {
     activeExpeditions: [],
     expeditionSlots: 1,
     // Equipment System
-    equippedItems: {}  // No items equipped initially
+    unlockedPartySlots: 3,
+    unlockedStorageSlots: 20, // Added
+    unlockedSupportSkills: [],
+
+    collection: [],
+    equippedItems: {}   // Added
   },
   worldPosition: { x: 400, y: 300 },
-  currentScene: 'BootScene',
+  currentScene: 'world_map',
   flags: {},
-  gameTime: 1200,
-  language: (navigator.language.startsWith('ko') ? 'ko' : 'en') as Language,
+  gameTime: 0,
+  language: 'en',
   activeQuests: [],
   completedQuests: [],
   pendingRewards: [],
   reputation: {},
-  lastQuestRefresh: Date.now(),
+  lastQuestRefresh: 0,
   incubators: [],
   // Phase 4
   dailyLogin: {
@@ -156,6 +166,9 @@ export class GameStateManager {
     }
 
     this.normalizeState();
+
+    // Initialize Quest Service Hooks
+    questService.init(() => this.state);
   }
 
   normalizeState() {
@@ -178,40 +191,25 @@ export class GameStateManager {
     this.updateState({});
   }
 
+  /**
+   * @deprecated Use shopService.refreshShopStock() directly for new code
+   */
   refreshShopStock() {
-    const allItems = Object.keys(ITEM_DATA).filter(id => {
-      const item = ITEM_DATA[id];
-      return item.category !== 'Material';
-    });
-
-    // Add equipment items to shop pool
-    const equipmentIds = EQUIPMENT_DATA.map(eq => eq.id);
-    const shopPool = [...allItems, ...equipmentIds];
-
-    const shuffled = [...shopPool].sort(() => 0.5 - Math.random());
-    const selected = shuffled.slice(0, 6);  // Increased from 4 to 6 to accommodate equipment
-
-    // RPG Expansion: Ensure specialty items are in stock
-    if (!selected.includes('storage_license')) selected.push('storage_license');
-    if (!selected.includes('basic_incubator')) selected.push('basic_incubator');
-
-    // Ensure at least 1-2 equipment items in stock
-    const hasEquipment = selected.some(id => equipmentIds.includes(id));
-    if (!hasEquipment && equipmentIds.length > 0) {
-      // Replace a random item with equipment
-      const randomEquipment = equipmentIds[Math.floor(Math.random() * equipmentIds.length)];
-      selected[0] = randomEquipment;
-    }
-
-    const refreshInterval = 4 * 60 * 60 * 1000;
-    this.state.shopStock = selected;
-    this.state.shopNextRefresh = Date.now() + refreshInterval;
-    this.updateState({});
+    shopService.refreshShopStock(this.state);
+    this.checkQuests();
+    this.autoSave();
+    bus.emitEvent({ type: 'STATE_UPDATED', state: this.state });
   }
 
+  /**
+   * @deprecated Use shopService.checkShopRefresh() directly for new code
+   */
   checkShopRefresh() {
-    if (this.state.shopNextRefresh && Date.now() > this.state.shopNextRefresh) {
-      this.refreshShopStock();
+    const refreshed = shopService.checkShopRefresh(this.state);
+    if (refreshed) {
+      this.checkQuests();
+      this.autoSave();
+      bus.emitEvent({ type: 'STATE_UPDATED', state: this.state });
     }
   }
 
@@ -246,59 +244,24 @@ export class GameStateManager {
     this.updateState({});
   }
 
+  /**
+   * @deprecated Use shopService.getEffectivePrice() directly for new code
+   */
   getEffectivePrice(itemId: string): number {
-    const item = ITEM_DATA[itemId] || EQUIPMENT[itemId];
-    if (!item) return 0;
-
-    let maxDiscount = 0;
-    Object.values(this.state.reputation).forEach(val => {
-      maxDiscount = Math.max(maxDiscount, getFactionDiscount(val));
-    });
-    return Math.floor(item.price * (1 - maxDiscount));
+    return shopService.getEffectivePrice(this.state, itemId);
   }
 
+  /**
+   * @deprecated Use shopService.buyItem() directly for new code
+   */
   buyItem(itemId: string, quantity: number): boolean {
-    const item = ITEM_DATA[itemId] || EQUIPMENT[itemId];
-    if (!item) return false;
-
-    if (item.factionLock) {
-      const rep = this.state.reputation[item.factionLock] || 0;
-      if (rep < 100) return false;
+    const success = shopService.buyItem(this.state, itemId, quantity);
+    if (success) {
+      this.checkQuests();
+      this.autoSave();
+      bus.emitEvent({ type: 'STATE_UPDATED', state: this.state });
     }
-
-    if ('requiredMaterials' in item && item.requiredMaterials) {
-      for (const mat of item.requiredMaterials) {
-        const invMat = this.state.tamer.inventory.find(i => i.itemId === mat.itemId);
-        if (!invMat || invMat.quantity < mat.quantity * quantity) return false;
-      }
-    }
-
-    const totalCost = this.getEffectivePrice(itemId) * quantity;
-    if (this.state.tamer.gold < totalCost) return false;
-
-    this.state.tamer.gold -= totalCost;
-    if ('requiredMaterials' in item && item.requiredMaterials) {
-      item.requiredMaterials.forEach(mat => {
-        this.state.tamer.inventory = consumeItem(this.state.tamer.inventory, mat.itemId, mat.quantity * quantity);
-      });
-    }
-
-    this.state.tamer.inventory = addToInventory(this.state.tamer.inventory, itemId, quantity);
-
-    // Special handling for Storage Expansion
-    if (itemId === 'storage_license') {
-      this.state.tamer.unlockedStorageSlots += 10 * quantity;
-      this.state.tamer.inventory = consumeItem(this.state.tamer.inventory, itemId, quantity);
-    }
-
-    // Track spend progress
-    ['daily_spend_100', 'daily_spend_500', 'weekly_spend_5000'].forEach(qid => {
-      const key = `quest_progress_${qid}`;
-      this.state.flags[key] = ((this.state.flags[key] as number) || 0) + totalCost;
-    });
-
-    this.updateState({});
-    return true;
+    return success;
   }
 
   enhanceMonster(monsterUid: string, cloneItemId: string, useBackup: boolean): { success: boolean; message: string } {
@@ -471,73 +434,23 @@ export class GameStateManager {
     return { success: false, message: 'Unknown skill' };
   }
 
+  /**
+   * @deprecated Use battleService.attemptCapture() directly for new code
+   */
   attemptCapture(enemySpeciesId: string, enemyLevel: number, currentHp: number, maxHp: number): boolean {
-    const inv = this.state.tamer.inventory;
-    const orbIndex = inv.findIndex(i => i.itemId === 'capture_orb');
-    if (orbIndex === -1 || inv[orbIndex].quantity <= 0) return false;
-
-    this.state.tamer.inventory = consumeItem(this.state.tamer.inventory, 'capture_orb', 1);
-
-    const chance = calculateCaptureChance(enemySpeciesId, currentHp, maxHp);
-    const success = gameRNG.chance(chance);
-
-    if (success) {
-      const monster = createMonsterInstance(enemySpeciesId, enemyLevel);
-      if (this.state.tamer.party.length < this.state.tamer.unlockedPartySlots) {
-        this.state.tamer.party.push(monster);
-      } else if (this.state.tamer.storage.length < this.state.tamer.unlockedStorageSlots) {
-        this.state.tamer.storage.push(monster);
-      } else {
-        // Storage full!
-        bus.emitEvent({ type: 'LOG_MESSAGE', message: 'Storage is full! Captured monster escaped.' });
-        this.updateState({});
-        return true; // Still technically a "successful" capture act but result is loss
-      }
-
-      if (!this.state.tamer.collection.includes(enemySpeciesId)) {
-        this.state.tamer.collection.push(enemySpeciesId);
-      }
-
-      const enemyData = MONSTER_DATA[enemySpeciesId];
-      if (enemyData) {
-        this.updateReputation(enemyData.faction, 5);
-
-        // Track Rare Hunter progress
-        const isRareOrHigher = ['Rare', 'Epic', 'Legendary'].includes(enemyData.rarity);
-        if (isRareOrHigher) {
-          this.state.flags['captured_rare_or_higher'] = true;
-        }
-        if (enemyData.rarity === 'Legendary') {
-          this.state.flags['captured_legendary'] = true;
-        }
-      }
-
-      // First Capture story quest flag
-      this.state.flags['first_capture_done'] = true;
-
-      // Track weekly monster capture progress
-      ['daily_capture_1', 'daily_capture_3', 'weekly_monster_collector', 'weekly_capture_5_rare'].forEach(qid => {
-        if (qid === 'weekly_capture_5_rare' && !['Rare', 'Epic', 'Legendary'].includes(enemyData?.rarity || '')) return;
-        const captureKey = `quest_progress_${qid}`;
-        this.state.flags[captureKey] = ((this.state.flags[captureKey] as number) || 0) + 1;
-      });
-
-      // Captures count as wins for streaks
-      ['daily_win_3', 'daily_win_5', 'weekly_win_20', 'weekly_win_50', 'win_streak_10', 'win_streak_50'].forEach(qid => {
-        const key = `quest_progress_${qid}`;
-        this.state.flags[key] = ((this.state.flags[key] as number) || 0) + 1;
-      });
-
-      // Phase 4: Track Achievements
-      this.trackAchievement('collection_first_capture', 1);
-      this.trackAchievement('collection_' + this.state.tamer.collection.length + '_species', 0); // Update collection count
-      // Track based on unique species count
-      const speciesCount = this.state.tamer.collection.length;
-      if (speciesCount >= 5) this.trackAchievement('collection_5_species', 0);
-      if (speciesCount >= 10) this.trackAchievement('collection_10_species', 0);
-    }
-
-    this.updateState({});
+    const success = battleService.attemptCapture(
+      this.state,
+      enemySpeciesId,
+      enemyLevel,
+      currentHp,
+      maxHp,
+      (faction: string, delta: number) => this.updateReputation(faction as FactionType, delta)
+    );
+    // Don't call updateState({}) here - it creates a shallow copy that loses the mutations
+    // Instead, manually trigger events and save
+    this.checkQuests();
+    this.autoSave();
+    bus.emitEvent({ type: 'STATE_UPDATED', state: this.state });
     return success;
   }
 
@@ -589,257 +502,89 @@ export class GameStateManager {
     bus.emitEvent({ type: 'STATE_UPDATED', state: this.state });
   }
 
+  /**
+   * @deprecated Use questService.checkQuests() directly for new code
+   */
   checkQuests() {
-    QUEST_DATA.forEach(quest => {
-      // Only check if it's currently active and not yet completed or pending
-      if (!this.state.activeQuests.includes(quest.id)) return;
-      if (this.state.completedQuests.includes(quest.id)) return;
-      if (this.state.pendingRewards.includes(quest.id)) return;
-
-      let satisfied = true;
-      if (quest.requiresLevel && this.state.tamer.level < quest.requiresLevel) satisfied = false;
-
-      // Check prerequisites
-      if (quest.prerequisites && quest.prerequisites.length > 0) {
-        const allMet = quest.prerequisites.every(pid => this.state.completedQuests.includes(pid));
-        if (!allMet) satisfied = false;
-      }
-
-      // Special conditional logic for certain quest IDs (Legacy/Defensive)
-      if (quest.id === 'first_capture' && !this.state.flags['first_capture_done']) satisfied = false;
-      if (quest.id === 'collector_beginner' && this.state.tamer.collection.length < 3) satisfied = false;
-      if (quest.id === 'collector_pro' && this.state.tamer.collection.length < 20) satisfied = false;
-      if (quest.id === 'collector_master' && this.state.tamer.collection.length < 50) satisfied = false;
-      if (quest.id === 'story_capture_5' && this.state.tamer.collection.length < 5) satisfied = false;
-      if (quest.id === 'gold_saver' && this.state.tamer.gold < 1000) satisfied = false;
-      if (quest.id === 'gold_millionaire' && this.state.tamer.gold < 100000) satisfied = false;
-      if (quest.id === 'rare_hunter' && !this.state.flags['captured_rare_or_higher']) satisfied = false;
-      if (quest.id === 'legendary_hunter' && !this.state.flags['captured_legendary']) satisfied = false;
-      if (quest.id === 'faction_friend' && !Object.values(this.state.reputation).some(r => r >= 100)) satisfied = false;
-      if (quest.id === 'faction_hero' && !Object.values(this.state.reputation).some(r => r >= 500)) satisfied = false;
-      if (quest.id === 'skill_unlock_all' && !this.state.tamer.party.some(m => {
-        const tree = SKILL_TREES[m.speciesId];
-        return tree && m.unlockedNodes.length >= tree.nodes.length;
-      })) satisfied = false;
-
-      // Progress tracking for specific quests
-      if (quest.progressMax) {
-        const progress = (this.state.flags[`quest_progress_${quest.id}`] as number) || 0;
-        if (progress < quest.progressMax) satisfied = false;
-      }
-
-      if (satisfied) this.completeQuest(quest.id);
-    });
+    const completed = questService.checkQuests(this.state);
+    if (completed.length > 0) {
+      this.autoSave();
+      bus.emitEvent({ type: 'STATE_UPDATED', state: this.state });
+    }
   }
 
+  /**
+   * @deprecated Use questService.completeQuest() directly for new code
+   */
   completeQuest(questId: string) {
-    const quest = QUEST_DATA.find(q => q.id === questId);
-    if (!quest) return;
-    if (this.state.completedQuests.includes(questId)) return;
-    if (this.state.pendingRewards.includes(questId)) return;
-
-    this.state.pendingRewards.push(questId);
-
-    // Track weekly completionist progress
-    if (quest.id !== 'weekly_completionist') {
-      const key = 'quest_progress_weekly_completionist';
-      this.state.flags[key] = ((this.state.flags[key] as number) || 0) + 1;
-    }
-
-    bus.emitEvent({ type: 'QUEST_COMPLETED', questId });
+    questService.completeQuest(this.state, questId);
+    this.checkQuests(); // Check if this completion triggers others
     this.updateState({});
   }
 
+  /**
+   * @deprecated Use questService.claimQuestReward() directly for new code
+   */
   claimQuestReward(questId: string) {
-    const quest = QUEST_DATA.find(q => q.id === questId);
-    if (!quest || !this.state.pendingRewards.includes(questId)) return;
-
-    // Remove from pending and active
-    this.state.pendingRewards = this.state.pendingRewards.filter(id => id !== questId);
-    this.state.activeQuests = this.state.activeQuests.filter(id => id !== questId);
-
-    // Add to completed
-    if (!this.state.completedQuests.includes(questId)) {
-      this.state.completedQuests.push(questId);
-    }
-
-    // Grant rewards
-    this.state.tamer.gold += quest.rewards.gold;
-    const { tamer } = addExpToTamer(this.state.tamer, quest.rewards.exp);
-    this.state.tamer = tamer;
-
-    if (quest.rewards.items) {
-      quest.rewards.items.forEach(ri => {
-        this.state.tamer.inventory = addToInventory(this.state.tamer.inventory, ri.itemId, ri.quantity);
-      });
-    }
-
-    this.updateState({});
-  }
-
-  rerollQuest(questId: string) {
-    if (!this.state.activeQuests.includes(questId)) return;
-
-    // Hearthstone-like reroll: once per day (checking simple flag for simplicity in this demo)
-    if (this.state.flags['rerolled_today']) {
-      return;
-    }
-
-    const currentQuest = QUEST_DATA.find(q => q.id === questId);
-    if (!currentQuest || currentQuest.type === 'main') return; // Can't reroll story/main quests
-
-    const availableQuests = QUEST_DATA.filter(q =>
-      q.type !== 'main' &&
-      !this.state.activeQuests.includes(q.id) &&
-      !this.state.completedQuests.includes(q.id)
-    );
-
-    if (availableQuests.length > 0) {
-      const nextQuest = availableQuests[Math.floor(Math.random() * availableQuests.length)];
-      this.state.activeQuests = this.state.activeQuests.map(id => id === questId ? nextQuest.id : id);
-      this.state.flags['rerolled_today'] = true;
+    const result = questService.claimQuestReward(this.state, questId);
+    if (result.success) {
       this.updateState({});
     }
   }
 
+  /**
+   * @deprecated Use questService.rerollQuest() directly for new code
+   */
+  rerollQuest(questId: string) {
+    const success = questService.rerollQuest(this.state, questId);
+    if (success) {
+      this.updateState({});
+    }
+  }
+
+  /**
+   * @deprecated Use questService.refreshDailyQuests() directly for new code
+   */
   refreshDailyQuests() {
-    const now = Date.now();
-    const oneDay = 24 * 60 * 60 * 1000;
-    const oneWeek = 7 * oneDay;
-
-    let changed = false;
-
-    // Daily Refresh (Disabled for Phase 5 initial rollout as data has no DAILY type)
-    if (now - this.state.lastQuestRefresh > oneDay) {
-      this.state.lastQuestRefresh = now;
-      this.state.flags['rerolled_today'] = false;
-      /*
-      const activeDailies = QUEST_DATA.filter(q => q.type === 'daily' && this.state.activeQuests.includes(q.id));
-      if (activeDailies.length < 3) {
-        const availableDailies = QUEST_DATA.filter(q =>
-          q.type === 'daily' &&
-          !this.state.activeQuests.includes(q.id) &&
-          !this.state.completedQuests.includes(q.id)
-        );
-        if (availableDailies.length > 0) {
-          const next = availableDailies[Math.floor(Math.random() * availableDailies.length)];
-          this.state.activeQuests.push(next.id);
-        }
-      }
-      */
-      changed = true;
-    }
-
-    // Weekly Refresh (Disabled)
-    if (this.state.lastWeeklyRefresh === undefined || now - this.state.lastWeeklyRefresh > oneWeek) {
-      this.state.lastWeeklyRefresh = now;
-      /*
-      const activeWeeklies = QUEST_DATA.filter(q => q.type === 'weekly' && this.state.activeQuests.includes(q.id));
-      if (activeWeeklies.length < 1) {
-        // ...
-      }
-      */
-      changed = true;
-    }
-
+    const changed = questService.refreshDailyQuests(this.state);
     if (changed) {
       this.updateState({});
     }
   }
 
+  /**
+   * @deprecated Use battleService.handleBattleEnd() directly for new code
+   */
   handleBattleEnd(winner: 'PLAYER' | 'ENEMY' | 'CAPTURED', enemySpeciesId: string, enemyLevel: number, isBoss: boolean) {
+    battleService.handleBattleEnd(this.state, winner, enemySpeciesId, enemyLevel, isBoss);
+
     if (winner === 'PLAYER') {
-      this.grantRewards(enemySpeciesId, enemyLevel, isBoss);
-
-      // Story flags for specific bosses
-      if (isBoss) {
-        if (enemySpeciesId === 'flarelion') this.state.flags['boss_flarelion_defeated'] = true;
-        if (enemySpeciesId === 'krakenwhale') this.state.flags['boss_krakenwhale_defeated'] = true;
-      }
-
-      // Phase 4: Track Combat Achievements
-      this.trackAchievement('combat_first_victory', 1);
-      this.trackAchievement('combat_10_victories', 1);
-      this.trackAchievement('combat_50_victories', 1);
-      this.trackAchievement('combat_100_victories', 1);
-
-      // Track regular wins vs elements (already in grantRewards)
-    } else if (winner === 'ENEMY') {
-      // Reset win streaks
-      this.state.flags['quest_progress_win_streak_10'] = 0;
-      this.state.flags['quest_progress_win_streak_50'] = 0;
+      bus.emitEvent({ type: 'MONSTER_DEFEATED', speciesId: enemySpeciesId, level: enemyLevel });
     }
-    // CAPTURED is already handled by attemptCapture
 
-    this.updateState({});
+    this.checkQuests();
+    this.autoSave();
+    bus.emitEvent({ type: 'STATE_UPDATED', state: this.state });
   }
 
+  /**
+   * @deprecated Use battleService.grantRewards() directly for new code
+   */
   grantRewards(enemySpeciesId: string, enemyLevel: number, isBoss: boolean = false) {
-    const rewards = rollLoot(enemySpeciesId, gameRNG);
-    const enemyData = MONSTER_DATA[enemySpeciesId];
-
-    const levelMult = 1 + (enemyLevel - 1) * 0.1;
-    rewards.exp = Math.floor(rewards.exp * levelMult);
-    rewards.gold = Math.floor(rewards.gold * levelMult);
-
-    if (this.state.tamer.party.length > 0) {
-      this.grantExp(this.state.tamer.party[0].uid, rewards.exp);
-    }
-
-    const { tamer: newTamer, leveledUp } = addExpToTamer(this.state.tamer, rewards.exp);
-    newTamer.gold += rewards.gold;
-
-    let updatedInventory = [...newTamer.inventory];
-    for (const item of rewards.items) {
-      updatedInventory = addToInventory(updatedInventory, item.itemId, item.quantity);
-    }
-    newTamer.inventory = updatedInventory;
-
-    this.state.tamer = newTamer;
-
-    // Track quest progress (Wins)
-    ['daily_win_3', 'daily_win_5', 'weekly_win_20', 'weekly_win_50', 'win_streak_10', 'win_streak_50'].forEach(qid => {
-      const key = `quest_progress_${qid}`;
-      this.state.flags[key] = ((this.state.flags[key] as number) || 0) + 1;
-    });
-
-    if (enemyData) {
-      if (enemyData.type === 'FIRE') this.state.flags['quest_progress_daily_win_fire'] = ((this.state.flags['quest_progress_daily_win_fire'] as number) || 0) + 1;
-      if (enemyData.type === 'WATER') this.state.flags['quest_progress_daily_win_water'] = ((this.state.flags['quest_progress_daily_win_water'] as number) || 0) + 1;
-      if (enemyData.type === 'GRASS') this.state.flags['quest_progress_daily_win_grass'] = ((this.state.flags['quest_progress_daily_win_grass'] as number) || 0) + 1;
-      if (enemyData.type === 'ELECTRIC') this.state.flags['quest_progress_daily_win_electric'] = ((this.state.flags['quest_progress_daily_win_electric'] as number) || 0) + 1;
-      if (enemyData.type === 'NEUTRAL') this.state.flags['quest_progress_daily_win_neutral'] = ((this.state.flags['quest_progress_daily_win_neutral'] as number) || 0) + 1;
-      if (enemyData.type === 'DARK' || enemyData.type === 'LIGHT') this.state.flags['quest_progress_daily_win_dark_light'] = ((this.state.flags['quest_progress_daily_win_dark_light'] as number) || 0) + 1;
-
-      if (enemySpeciesId === 'puffle') this.state.flags['quest_progress_pesticide_specialist'] = ((this.state.flags['quest_progress_pesticide_specialist'] as number) || 0) + 1;
-    }
-
-    if (isBoss) {
-      this.state.flags['quest_progress_weekly_boss_slayer_3'] = ((this.state.flags['quest_progress_weekly_boss_slayer_3'] as number) || 0) + 1;
-    }
-
-    const goldKey = 'quest_progress_daily_earn_500';
-    this.state.flags[goldKey] = ((this.state.flags[goldKey] as number) || 0) + rewards.gold;
-    const weeklyGoldKey = 'quest_progress_weekly_earn_5000';
-    this.state.flags[weeklyGoldKey] = ((this.state.flags[weeklyGoldKey] as number) || 0) + rewards.gold;
-
-    this.updateState({});
-    bus.emitEvent({ type: 'REWARD_EARNED', rewards });
+    battleService.grantRewards(this.state, enemySpeciesId, enemyLevel, isBoss);
+    this.checkQuests();
+    this.autoSave();
+    bus.emitEvent({ type: 'STATE_UPDATED', state: this.state });
   }
 
+  /**
+   * @deprecated Use battleService.grantExp() directly for new code
+   */
   grantExp(monsterUid: string, amount: number) {
-    const partyIndex = this.state.tamer.party.findIndex(m => m.uid === monsterUid);
-    if (partyIndex !== -1) {
-      const { monster, leveledUp } = addExpToMonster(this.state.tamer.party[partyIndex], amount, this.state);
-      this.state.tamer.party[partyIndex] = monster;
-      if (leveledUp) {
-        const options = checkEvolution(monster, this.state);
-        if (options.length > 0) {
-          bus.emitEvent({ type: 'EVOLUTION_READY', monsterUid, options });
-        }
-      }
-      this.updateState({});
-    }
+    battleService.grantExp(this.state, monsterUid, amount);
+    this.checkQuests();
+    this.autoSave();
+    bus.emitEvent({ type: 'STATE_UPDATED', state: this.state });
   }
 
   evolveMonster(monsterUid: string, targetSpeciesId: string) {
@@ -1385,6 +1130,14 @@ export class GameStateManager {
    */
   getAllEquipment(): typeof EQUIPMENT_DATA {
     return EQUIPMENT_DATA;
+  }
+
+  /**
+   * Replace entire state (e.g. loading from save)
+   */
+  setState(newState: GameState): void {
+    this.state = newState;
+    bus.emitEvent({ type: 'STATE_UPDATED', state: this.state });
   }
 }
 

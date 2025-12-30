@@ -2,8 +2,7 @@
 import Phaser from 'phaser';
 import { gameEvents } from '../EventBus';
 import { gameStateManager } from '../GameStateManager';
-import { WORLD_ZONES } from '../../data/zones';
-import { MONSTER_DATA } from '../../data/monsters';
+import { dataManager } from '../DataManager';
 import { validateSpawn } from '../../domain/logic';
 import { getTranslation } from '../../localization/strings';
 import { ThreeOverlayRenderer } from '../ThreeOverlayRenderer';
@@ -25,6 +24,7 @@ export class OverworldScene extends Phaser.Scene {
 
   private isBossActive: boolean = false;
   private bossInstance?: Phaser.GameObjects.Container;
+  private currentRegionId: string = 'emberfall_grove'; // Default starting region
 
   constructor() {
     super('OverworldScene');
@@ -40,6 +40,11 @@ export class OverworldScene extends Phaser.Scene {
       gameEvents.emitEvent({ type: 'SCENE_CHANGED', sceneKey: 'OverworldScene' });
       // Clear any remaining 3D artifacts just in case
       ThreeOverlayRenderer.forceCleanup('game-root');
+    });
+
+    // Begin loading region data
+    dataManager.loadRegion(this.currentRegionId).then(() => {
+      console.log(`Region ${this.currentRegionId} loaded successfully`);
     });
 
     this.scale.on('resize', this.onResize, this);
@@ -118,6 +123,11 @@ export class OverworldScene extends Phaser.Scene {
   }
 
   onResize(gameSize: Phaser.Structs.Size) {
+    // Guard against resize events during scene initialization/cleanup
+    if (!this.cameras || !this.cameras.main) {
+      return;
+    }
+
     const width = gameSize.width;
     const height = gameSize.height;
     this.cameras.main.setSize(width, height);
@@ -229,7 +239,7 @@ export class OverworldScene extends Phaser.Scene {
     const spawnX = Phaser.Math.Clamp(this.player.x + Math.cos(angle) * dist, 200, 3000);
     const spawnY = Phaser.Math.Clamp(this.player.y + Math.sin(angle) * dist, 200, 3000);
 
-    const species = MONSTER_DATA[speciesId];
+    const species = dataManager.getMonsterSpecies(speciesId);
     if (!species) {
       this.isBossActive = false;
       return;
@@ -337,21 +347,24 @@ export class OverworldScene extends Phaser.Scene {
     const spawnX = Phaser.Math.Clamp(this.player.x + Math.cos(angle) * dist, 100, 3100);
     const spawnY = Phaser.Math.Clamp(this.player.y + Math.sin(angle) * dist, 100, 3100);
 
-    const zone = WORLD_ZONES['starter_fields'];
-    const state = gameStateManager.getState();
+    const region = dataManager.getRegion(this.currentRegionId);
+    if (!region) return;
 
-    const validPool = zone.spawnPool.filter(id => {
-      const species = MONSTER_DATA[id];
-      return validateSpawn(species, state);
+    const state = gameStateManager.getState();
+    const spawnPool = [...region.encounterPool.common, ...region.encounterPool.uncommon]; // Simplified pool
+
+    const validPool = spawnPool.filter(id => {
+      const species = dataManager.getMonsterSpecies(id);
+      return species && validateSpawn(species, state);
     });
 
     if (validPool.length === 0) return;
 
     const speciesId = Phaser.Utils.Array.GetRandom(validPool);
-    const species = MONSTER_DATA[speciesId];
+    const species = dataManager.getMonsterSpecies(speciesId);
     if (!species) return; // Guard against undefined species
 
-    const level = Phaser.Math.Between(zone.levelRange[0], zone.levelRange[1]);
+    const level = Phaser.Math.Between(region.levelRange.wilder.min || 1, region.levelRange.wilder.max || 5);
 
     const monster = this.add.container(spawnX, spawnY);
 

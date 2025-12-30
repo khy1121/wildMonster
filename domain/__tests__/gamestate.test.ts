@@ -40,7 +40,7 @@ describe('GameStateManager', () => {
         // Clear localStorage or mock SaveManager if needed
         gsm = new GameStateManager();
         // Initialize with a clean state
-        gsm.startNewGame('zero', 'pyrocat');
+        gsm.startNewGame('leo', 'pyrocat');
     });
 
     it('attempts capture and succeeds based on RNG', () => {

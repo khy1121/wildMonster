@@ -1,0 +1,114 @@
+{
+    "potion": {
+        "id": "potion",
+        "name": "Potion",
+        "nameKo": "포션",
+        "description": "Restores 50 HP",
+        "descriptionKo": "HP를 50 회복합니다",
+        "category": "Healing",
+        "power": 50,
+        "price": 50,
+        "icon": "🧪"
+    },
+    "super_potion": {
+        "id": "super_potion",
+        "name": "Super Potion",
+        "nameKo": "슈퍼 포션",
+        "description": "Restores 150 HP",
+        "descriptionKo": "HP를 150 회복합니다",
+        "category": "Healing",
+        "power": 150,
+        "price": 200,
+        "icon": "🧪✨"
+    },
+    "capture_orb": {
+        "id": "capture_orb",
+        "name": "Capture Orb",
+        "nameKo": "포획 구슬",
+        "description": "Basic monster capture device",
+        "descriptionKo": "기본 몬스터 포획 장치",
+        "category": "Capture",
+        "tier": "D",
+        "power": 30,
+        "price": 100,
+        "icon": "⚪"
+    },
+    "rare_capture_orb": {
+        "id": "rare_capture_orb",
+        "name": "Rare Capture Orb",
+        "nameKo": "레어 포획 구슬",
+        "description": "Enhanced capture device for rare monsters",
+        "descriptionKo": "레어 몬스터용 강화 포획 장치",
+        "category": "Capture",
+        "tier": "B",
+        "power": 60,
+        "price": 500,
+        "icon": "🔵"
+    },
+    "fire_fragment": {
+        "id": "fire_fragment",
+        "name": "Fire Fragment",
+        "nameKo": "화염 파편",
+        "description": "Fragment of fire essence",
+        "descriptionKo": "화염 정수의 파편",
+        "category": "Material",
+        "power": 0,
+        "price": 1000,
+        "icon": "🔥💎"
+    },
+    "water_fragment": {
+        "id": "water_fragment",
+        "name": "Water Fragment",
+        "nameKo": "물 파편",
+        "description": "Fragment of water essence",
+        "descriptionKo": "물 정수의 파편",
+        "category": "Material",
+        "power": 0,
+        "price": 1000,
+        "icon": "💧💎"
+    },
+    "electric_fragment": {
+        "id": "electric_fragment",
+        "name": "Electric Fragment",
+        "nameKo": "전기 파편",
+        "description": "Fragment of electric essence",
+        "descriptionKo": "전기 정수의 파편",
+        "category": "Material",
+        "power": 0,
+        "price": 1000,
+        "icon": "⚡💎"
+    },
+    "fire_titan_egg": {
+        "id": "fire_titan_egg",
+        "name": "Fire Titan Egg",
+        "nameKo": "화염 타이탄 알",
+        "description": "Egg of the Fire Titan boss",
+        "descriptionKo": "화염 타이탄 보스의 알",
+        "category": "Egg",
+        "power": 0,
+        "price": 5000,
+        "icon": "🥚🔥"
+    },
+    "basic_incubator": {
+        "id": "basic_incubator",
+        "name": "Basic Incubator",
+        "nameKo": "기본 인큐베이터",
+        "description": "Hatches monster eggs",
+        "descriptionKo": "몬스터 알을 부화시킵니다",
+        "category": "Incubator",
+        "power": 0,
+        "price": 2000,
+        "icon": "🔆"
+    },
+    "evolution_stone": {
+        "id": "evolution_stone",
+        "name": "Evolution Stone",
+        "nameKo": "진화의 돌",
+        "description": "Triggers special evolutions",
+        "descriptionKo": "특수 진화를 발동시킵니다",
+        "category": "Evolution",
+        "power": 0,
+        "price": 3000,
+        "icon": "💎✨"
+    }
+}
