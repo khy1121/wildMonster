@@ -1,9 +1,8 @@
-
 import Phaser from 'phaser';
 import { BootScene } from './scenes/BootScene';
 import { MenuScene } from './scenes/MenuScene';
 import { OverworldScene } from './scenes/OverworldScene';
-import { BattleScene } from './scenes/BattleScene';
+// BattleScene removed - transitioning to real-time combat
 
 export const createGameConfig = (containerId: string): Phaser.Types.Core.GameConfig => {
   return {
@@ -16,7 +15,7 @@ export const createGameConfig = (containerId: string): Phaser.Types.Core.GameCon
         debug: false
       }
     },
-    scene: [BootScene, MenuScene, OverworldScene, BattleScene],
+    scene: [BootScene, MenuScene, OverworldScene],
     scale: {
       mode: Phaser.Scale.RESIZE,
       autoCenter: Phaser.Scale.CENTER_BOTH,

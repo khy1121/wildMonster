@@ -36,7 +36,6 @@ import { tutorialManager } from './engine/TutorialManager';
 // 3D World
 import { TestWorld3D } from './components/World3D/TestWorld3D';
 import { R3FWorld } from './components/World3D/R3FWorld';
-import { BattleOverlay } from './ui/BattleOverlay';
 import { GameState, EvolutionOption, MonsterInstance } from './domain/types';  // Removed Quest - using Phase 5 structure
 import { gameEvents } from './engine/EventBus';
 import { gameStateManager } from './engine/GameStateManager';
@@ -240,10 +239,7 @@ export const App: React.FC = () => {
           </GameHUD>
         )}
 
-        {/* Battle HUD */}
-        {activeScene === 'BattleScene' && viewMode === 'PHASER' && (
-          <BattleOverlay />
-        )}
+        {/* Battle HUD - Removed (transitioning to real-time combat) */}
       </div>
 
       {/* --- LAYER 20: MODALS (Z-20) --- */}
