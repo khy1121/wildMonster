@@ -34,7 +34,6 @@ import { TutorialOverlay } from './ui/TutorialOverlay';
 import { HelpManualUI } from './ui/HelpManualUI';
 import { tutorialManager } from './engine/TutorialManager';
 // 3D World
-import { World3D } from './components/World3D/World3D';
 import { TestWorld3D } from './components/World3D/TestWorld3D';
 import { R3FWorld } from './components/World3D/R3FWorld';
 import { BattleOverlay } from './ui/BattleOverlay';
