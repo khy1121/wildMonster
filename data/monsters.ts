@@ -1,5 +1,6 @@
 
 import { MonsterSpecies, ElementType, FactionType } from '../domain/types';
+import { PHASE5_MONSTERS } from './phase5Monsters';
 
 export const MONSTER_DATA: Record<string, MonsterSpecies> = {
   // --- 스타터: 이그니스 계열 (FIRE) ---
@@ -264,4 +265,9 @@ export const MONSTER_DATA: Record<string, MonsterSpecies> = {
     skills: { basic: 'tackle', special: 'bubble' }
   }
 };
+
+// Merge Phase 5 Monsters
+Object.assign(MONSTER_DATA, PHASE5_MONSTERS);
+
+console.log(`Total monsters loaded: ${Object.keys(MONSTER_DATA).length}`);
 

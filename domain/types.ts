@@ -412,6 +412,15 @@ export interface EncounterPool {
   mythic?: string[];     // Very rare, 0.1% chance
 }
 
+export interface BossTrigger {
+  bossId: string;
+  condition: {
+    type: 'LEVEL' | 'QUEST' | 'TIME' | 'DEFEAT_COUNT';
+    value: any;
+  };
+  spawnLocation?: { x: number; z: number };
+}
+
 export interface Region {
   id: string;
   name: string;
@@ -422,6 +431,7 @@ export interface Region {
   levelRange: { tamer: { min: number; max: number }; wilder: { min: number; max: number } };
   encounterPool: EncounterPool;
   boss: string;  // Boss ID
+  bossTriggers?: BossTrigger[];  // Boss spawn conditions
   quests: string[];  // Quest IDs
   portals: string[];  // Portal IDs
   npcs: string[];  // NPC IDs

@@ -54,6 +54,14 @@ export class BattleService {
             this.trackAchievement(state, 'combat_10_victories', 1);
             this.trackAchievement(state, 'combat_50_victories', 1);
             this.trackAchievement(state, 'combat_100_victories', 1);
+
+            // Emit MONSTER_DEFEATED event for quest tracking
+            bus.emitEvent({
+                type: 'MONSTER_DEFEATED',
+                enemySpeciesId: enemySpeciesId,
+                level: enemyLevel,
+                isBoss: isBoss
+            });
         } else if (winner === 'ENEMY') {
             // Reset win streaks
             state.flags['quest_progress_win_streak_10'] = 0;

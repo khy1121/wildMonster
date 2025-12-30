@@ -28,6 +28,8 @@ export type UIEvent =
 export type WorldEvent =
     | { type: 'PLAYER_MOVE'; position: { x: number; y: number; z: number }; rotation: number }
     | { type: 'INTERACTION_SHOW'; label: string; targetId: string }
-    | { type: 'INTERACTION_HIDE' };
+    | { type: 'INTERACTION_HIDE' }
+    | { type: 'MONSTER_DEFEATED'; enemySpeciesId: string; level: number; isBoss: boolean }
+    | { type: 'ITEM_COLLECTED'; itemId: string; quantity: number };
 
 export type GameEvent = BattleEvent | UIEvent | WorldEvent;

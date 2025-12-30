@@ -51,6 +51,18 @@ export const REGION_DATA: Region[] = [
             elite: ['inferno_sprite']
         },
         boss: 'pyroclast_titan',
+        bossTriggers: [
+            {
+                bossId: 'flarelion',
+                condition: { type: 'LEVEL', value: 10 },
+                spawnLocation: { x: 50, z: 50 }
+            },
+            {
+                bossId: 'thunderhoof',
+                condition: { type: 'TIME', value: 'MIDNIGHT' },
+                spawnLocation: { x: -30, z: 40 }
+            }
+        ],
         quests: ['first_steps', 'forest_fire', 'keepers_request', 'shrine_guardian', 'titans_fall', 'intro_evolution'],
         portals: ['portal_emberfall_to_hub'],
         npcs: ['flame_keeper_ignar', 'wandering_trader_sam'],
@@ -76,6 +88,13 @@ export const REGION_DATA: Region[] = [
             hidden: ['oceanid']  // Rain weather only
         },
         boss: 'leviathans_echo',
+        bossTriggers: [
+            {
+                bossId: 'leviathans_echo',
+                condition: { type: 'DEFEAT_COUNT', value: 50 },
+                spawnLocation: { x: 0, z: 100 }
+            }
+        ],
         quests: ['tides_of_change', 'fog_walker', 'lost_treasure', 'temple_trial', 'leviathans_wrath'],
         portals: ['portal_tidecrest_to_hub', 'portal_tidecrest_to_emberfall', 'portal_tidecrest_to_stormwatch'],
         npcs: ['tide_priestess_nereia', 'fisher_kael', 'shipwreck_survivor_marco'],

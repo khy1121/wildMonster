@@ -200,7 +200,7 @@ export const App: React.FC = () => {
 
         {/* 3D Worlds - Mounted here as base layer components */}
         {viewMode === '3D' && (
-          <World3D onClose={handleClose3D} />
+          <R3FWorld onClose={handleClose3D} />
         )}
         {viewMode === 'TEST_3D' && (
           <TestWorld3D onClose={handleClose3D} />

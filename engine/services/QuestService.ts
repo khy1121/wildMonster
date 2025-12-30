@@ -207,7 +207,7 @@ export class QuestService {
         bus.onEvent('MONSTER_DEFEATED', (event: any) => {
             if (event.type === 'MONSTER_DEFEATED') {
                 const state = getState();
-                this.updateObjectiveProgress(state, 'defeat', event.speciesId, 1);
+                this.updateObjectiveProgress(state, 'defeat', event.enemySpeciesId, 1);
             }
         });
 

@@ -558,9 +558,7 @@ export class GameStateManager {
   handleBattleEnd(winner: 'PLAYER' | 'ENEMY' | 'CAPTURED', enemySpeciesId: string, enemyLevel: number, isBoss: boolean) {
     battleService.handleBattleEnd(this.state, winner, enemySpeciesId, enemyLevel, isBoss);
 
-    if (winner === 'PLAYER') {
-      bus.emitEvent({ type: 'MONSTER_DEFEATED', speciesId: enemySpeciesId, level: enemyLevel });
-    }
+    // Note: MONSTER_DEFEATED event is now emitted by BattleService.handleBattleEnd()
 
     this.checkQuests();
     this.autoSave();
